@@ -18,7 +18,7 @@ Add SaneUI to your Swift Package dependencies:
 dependencies: [
     .package(path: "../SaneUI")  // Local path
     // or
-    .package(url: "https://github.com/stephanjoseph/SaneUI", from: "1.0.0")
+    .package(url: "https://github.com/sane-apps/SaneUI", from: "1.0.0")
 ]
 ```
 

@@ -1,5 +1,5 @@
 // SaneUI - Shared Design System for SaneApps
-// https://github.com/stephanjoseph/SaneUI
+// https://github.com/sane-apps/SaneUI
 
 import SwiftUI
 
