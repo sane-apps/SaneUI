@@ -1,6 +1,6 @@
 # SaneUI Development Guide (SOP)
 
-**Version 1.0** | Last updated: 2026-01-20
+**Version 1.0** | Last updated: 2026-02-02
 
 > **Shared UI library for all Sane Apps**
 
@@ -48,7 +48,7 @@ swift build
 swift test
 
 # Check which apps use this
-grep -r "SaneUI" ~/SaneApps/apps/*/Package.swift
+rg -n "SaneUI" ~/SaneApps/apps/* || true
 ```
 
 ---
@@ -57,7 +57,7 @@ grep -r "SaneUI" ~/SaneApps/apps/*/Package.swift
 
 ### #1: STAY IN YOUR LANE
 
-All files stay in `/Users/sj/SaneApps/infra/SaneUI/`
+All files stay in `/Users/sj/SaneApps/apps/Projects/SaneUI/`
 
 ### #2: VERIFY BEFORE YOU TRY
 
@@ -154,17 +154,11 @@ After each task, rate yourself:
 
 ## Consuming Apps
 
-SaneUI is used by all Sane Apps. Changes here affect:
+SaneUI is currently used by:
 
 | App | Import Location |
 |-----|-----------------|
 | SaneBar | `Package.swift` |
-| SaneClip | `Package.swift` |
-| SaneVideo | `Package.swift` |
-| SaneSync | `Package.swift` |
-| SaneHosts | `Package.swift` |
-| SaneAI | `Package.swift` |
-| SaneScript | `Package.swift` |
 
 **Before changing any public API**, check all consumers.
 

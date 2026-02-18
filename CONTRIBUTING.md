@@ -30,16 +30,16 @@ swift test
 
 ### Requirements
 
-- **macOS 15.0+** (Sequoia or later)
+- **macOS 14.0+**
 - **Xcode 16+**
-- **Swift 5.9+**
+- **Swift 6.0+**
 
 ### Adding SaneUI to a Sane App
 
 In the app's `Package.swift` or Xcode project:
 
 ```swift
-.package(path: "../../../infra/SaneUI")
+.package(path: "../Projects/SaneUI")
 ```
 
 ---

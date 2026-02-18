@@ -1,12 +1,12 @@
 # SaneUI
 
-A shared SwiftUI design system for all SaneApps (SaneClip, SaneHosts, SaneBar, etc.).
+A shared SwiftUI design system for Sane Apps. Currently used by SaneBar.
 
 ## Features
 
 - Glass morphism backgrounds with adaptive light/dark mode
-- Consistent component library (sections, rows, toggles, badges)
-- Semantic color and icon systems
+- Semantic color system with adaptive tokens
+- Shared SF Symbol constants
 - macOS 14+ optimized
 - Swift 6 concurrency safe
 
@@ -16,7 +16,7 @@ Add SaneUI to your Swift Package dependencies:
 
 ```swift
 dependencies: [
-    .package(path: "../SaneUI")  // Local path
+    .package(path: "../Projects/SaneUI")  // Local path (monorepo)
     // or
     .package(url: "https://github.com/sane-apps/SaneUI", from: "1.0.0")
 ]
@@ -44,24 +44,11 @@ struct SettingsView: View {
         ZStack {
             SaneGradientBackground()
 
-            ScrollView {
-                VStack(spacing: 20) {
-                    CompactSection("General", icon: SaneIcons.settings, iconColor: .gray) {
-                        CompactToggle(
-                            label: "Enable Feature",
-                            icon: "star",
-                            iconColor: .yellow,
-                            isOn: $isEnabled
-                        )
-                        CompactDivider()
-                        CompactRow("Version", icon: "info.circle", iconColor: .blue) {
-                            Text("1.0")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(20)
+            GroupBox("General") {
+                Toggle("Enable Feature", isOn: $isEnabled)
             }
+            .groupBoxStyle(GlassGroupBoxStyle())
+            .padding(20)
         }
     }
 }
@@ -75,41 +62,11 @@ struct SettingsView: View {
 - `VisualEffectBlur` - macOS blur effect (NSVisualEffectView wrapper)
 - `GlassGroupBoxStyle` - Glass morphism style for GroupBox
 
-### Layout
+### Colors
 
-- `CompactSection` - Grouped content with header, glass background, and shadow
-- `CompactRow` - Standard row with icon, label, and trailing content
-- `CompactToggle` - Toggle switch row with icon and label
-- `CompactDivider` - Inset divider for separating rows
-
-### Status
-
-- `StatusBadge` - Rounded capsule badge for status indicators
-- `ColorDot` - Small colored circle indicator
-- `ActionButton` - Styled button with icon (primary, secondary, destructive)
-
-### States
-
-- `SaneEmptyState` - Empty view placeholder with icon, title, and action
-- `SaneErrorState` - Error state with message and retry action
-- `LoadingOverlay` - Semi-transparent loading indicator
-
-## Colors
-
-```swift
-// Semantic colors
-SaneColors.accent    // .teal
-SaneColors.success   // .green
-SaneColors.danger    // .red
-SaneColors.warning   // .orange
-SaneColors.info      // .blue
-
-// Color extensions
-Color.saneAccent
-Color.saneSuccess
-Color.saneDanger
-Color.saneWarning
-```
+- `SaneColors` - Semantic colors (`accent`, `success`, `danger`, `warning`, `info`)
+- `AdaptiveColors` - Light/dark adaptive card colors and shadows
+  - `EnvironmentValues.adaptiveColors` provides access in SwiftUI
 
 ## Icons
 
@@ -153,8 +110,6 @@ Image(systemName: SaneIcons.settings)   // gear
 
 ## Apps Using SaneUI
 
-- **SaneClip** - Clipboard manager
-- **SaneHosts** - Hosts file manager
 - **SaneBar** - Menu bar manager
 
 ## License
