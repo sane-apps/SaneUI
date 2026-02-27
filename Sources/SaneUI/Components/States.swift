@@ -62,7 +62,7 @@ public struct SaneEmptyState: View {
             if let actionTitle = actionTitle, let action = action {
                 Button(actionTitle, action: action)
                     .buttonStyle(.borderedProminent)
-                    .tint(.teal)
+                    .tint(Color.saneAccent)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

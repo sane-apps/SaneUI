@@ -218,7 +218,7 @@ public struct GlassGroupBoxStyle: GroupBoxStyle {
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .stroke(
-                    colorScheme == .dark ? Color.white.opacity(0.12) : Color.teal.opacity(0.15),
+                    colorScheme == .dark ? Color.white.opacity(0.12) : Color.saneAccent.opacity(0.15),
                     lineWidth: 1
                 )
         )

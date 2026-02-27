@@ -89,7 +89,7 @@ public struct ActionButton: View {
                     buttonContent
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.teal)
+                .tint(Color.saneAccent)
 
             case .secondary:
                 Button(action: action) {
@@ -175,7 +175,7 @@ public struct ColorDot: View {
         HStack(spacing: 12) {
             Button("Primary") {}
                 .buttonStyle(.borderedProminent)
-                .tint(.teal)
+                .tint(Color.saneAccent)
 
             Button("Secondary") {}
                 .buttonStyle(.bordered)

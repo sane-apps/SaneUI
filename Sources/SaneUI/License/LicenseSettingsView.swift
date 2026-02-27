@@ -94,7 +94,7 @@ public struct LicenseSettingsView: View {
                             .font(.system(size: 12, weight: .semibold))
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.teal)
+                    .tint(Color.saneAccent)
                     .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
                 } else {
@@ -105,7 +105,7 @@ public struct LicenseSettingsView: View {
                             .font(.system(size: 12, weight: .semibold))
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.teal)
+                    .tint(Color.saneAccent)
                     .controlSize(.small)
                 }
             }

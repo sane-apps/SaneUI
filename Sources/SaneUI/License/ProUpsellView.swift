@@ -46,7 +46,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
             VStack(spacing: 8) {
                 Image(systemName: feature.featureIcon)
                     .font(.system(size: 36))
-                    .foregroundStyle(.teal)
+                    .foregroundStyle(Color.saneAccent)
 
                 Text(feature.featureName)
                     .font(.system(size: 17, weight: .semibold))
@@ -77,7 +77,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
             VStack(spacing: 8) {
                 Text(licenseService.appStoreDisplayPrice ?? "$6.99")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.teal)
+                    .foregroundStyle(Color.saneAccent)
 
                 Text("One-time purchase")
                     .font(.system(size: 13))
@@ -94,7 +94,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             .padding(.vertical, 8)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.teal)
+                    .tint(Color.saneAccent)
                     .controlSize(.large)
                     .disabled(licenseService.isPurchasing)
 
@@ -121,14 +121,14 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             .padding(.vertical, 8)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.teal)
+                    .tint(Color.saneAccent)
                     .controlSize(.large)
 
                     Button("I Have a Key") {
                         showingLicenseEntry = true
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.teal)
+                    .foregroundStyle(Color.saneAccent)
                     .font(.system(size: 13))
                 }
 
@@ -165,7 +165,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
     private func proPoint(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: icon)
-                .foregroundStyle(.teal)
+                .foregroundStyle(Color.saneAccent)
                 .frame(width: 20)
             Text(text)
                 .font(.system(size: 13))

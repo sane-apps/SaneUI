@@ -2,8 +2,10 @@ import SwiftUI
 
 /// Full-screen license gate that replaces the entire app window when unlicensed.
 ///
-/// Shows "Buy Now" and "I Have a Key" options. On successful activation,
-/// displays a checkmark animation then dismisses after 1.5 seconds.
+/// Shows either:
+/// - direct checkout + key entry for website builds, or
+/// - App Store IAP + restore for App Store builds.
+/// On successful activation, displays a checkmark animation and dismisses after 1.5 seconds.
 public struct LicenseGateView: View {
     @Bindable var licenseService: LicenseService
     let appIcon: String
@@ -75,8 +77,8 @@ public struct LicenseGateView: View {
 
             Image(systemName: appIcon)
                 .font(.system(size: 64))
-                .foregroundStyle(.teal)
-                .shadow(color: .teal.opacity(0.3), radius: 12)
+                .foregroundStyle(Color.saneAccent)
+                .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
             Text(licenseService.appName)
                 .font(.largeTitle.bold())
@@ -102,30 +104,64 @@ public struct LicenseGateView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    if let url = licenseService.checkoutURL { NSWorkspace.shared.open(url) }
-                } label: {
-                    Text("Buy Now — $6.99")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.teal)
-                .controlSize(.large)
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showKeyEntry = true
+                    if licenseService.usesAppStorePurchase {
+                        Task { await licenseService.purchasePro() }
+                    } else if let url = licenseService.checkoutURL {
+                        NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Text("I Have a Key")
-                        .foregroundStyle(.white.opacity(0.9))
+                    if licenseService.isPurchasing {
+                        ProgressView()
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text(licenseService.usesAppStorePurchase
+                             ? "Unlock Pro"
+                             : "Buy Now — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderedProminent)
+                .tint(Color.saneAccent)
+                .controlSize(.large)
+                .disabled(licenseService.isPurchasing)
+
+                if licenseService.usesAppStorePurchase {
+                    Button {
+                        Task { await licenseService.restorePurchases() }
+                    } label: {
+                        Text("Restore Purchases")
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(licenseService.isPurchasing)
+                } else {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showKeyEntry = true
+                        }
+                    } label: {
+                        Text("I Have a Key")
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let error = licenseService.purchaseError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: 280)
 
-            Text("$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates")
+            Text(licenseService.usesAppStorePurchase
+                 ? "Unlock Pro in-app to continue"
+                 : "$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.9))
 
@@ -142,7 +178,7 @@ public struct LicenseGateView: View {
 
             Image(systemName: "key.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.teal)
+                .foregroundStyle(Color.saneAccent)
 
             Text("Enter License Key")
                 .font(.title2.bold())
@@ -191,7 +227,7 @@ public struct LicenseGateView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.teal)
+                .tint(Color.saneAccent)
                 .disabled(licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || licenseService.isValidating)
             }
 

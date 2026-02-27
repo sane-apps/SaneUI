@@ -84,7 +84,7 @@ public struct LicenseEntryView: View {
                 Task { await licenseService.purchasePro() }
             }
             .buttonStyle(.borderedProminent)
-            .tint(.teal)
+            .tint(Color.saneAccent)
             .disabled(licenseService.isPurchasing)
 
             Button("Restore Purchases") {

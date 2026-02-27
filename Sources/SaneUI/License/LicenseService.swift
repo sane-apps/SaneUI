@@ -40,6 +40,8 @@ public final class LicenseService {
 
     public let appName: String
     public let purchaseBackend: PurchaseBackend
+    private static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
+    private static let fallbackLogCategory = "License"
     public var checkoutURL: URL? {
         if case let .direct(url) = purchaseBackend {
             return url
@@ -62,6 +64,14 @@ public final class LicenseService {
         static let lastValidation = "last_validation"
     }
 
+    private static func appStoreProductIDFromBundle() -> String? {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: appStoreProductIDInfoPlistKey) as? String else {
+            return nil
+        }
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     /// Offline grace period in days.
     private let offlineGraceDays: TimeInterval = 30
 
@@ -76,6 +86,19 @@ public final class LicenseService {
         checkoutURL: URL,
         keychain: KeychainServiceProtocol? = nil
     ) {
+        #if APP_STORE
+            if let productID = Self.appStoreProductIDFromBundle() {
+                self.init(
+                    appName: appName,
+                    purchaseBackend: .appStore(productID: productID),
+                    keychain: keychain
+                )
+                return
+            }
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.saneui", category: Self.fallbackLogCategory).error(
+                "APP_STORE_PRODUCT_ID not configured; using direct checkout for \(appName)."
+            )
+        #endif
         self.init(
             appName: appName,
             purchaseBackend: .direct(checkoutURL: checkoutURL),

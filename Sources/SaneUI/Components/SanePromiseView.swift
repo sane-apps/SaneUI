@@ -3,7 +3,7 @@ import SwiftUI
 /// The Sane Promise page — shared philosophy section used in onboarding across all SaneApps.
 ///
 /// Displays the 2 Timothy 1:7 scripture with three pillar cards (Power, Love, Sound Mind).
-/// Each app can customize the tagline (e.g. "Why SaneBar?") and pillar descriptions.
+/// Title is standardized as "Our Sane Philosophy" for consistency across apps.
 ///
 /// ```swift
 /// // Default descriptions:
@@ -18,13 +18,12 @@ import SwiftUI
 /// )
 /// ```
 public struct SanePromiseView: View {
-    private let appName: String
     private let powerLines: [String]
     private let loveLines: [String]
     private let soundMindLines: [String]
 
     public init(
-        appName: String,
+        appName _: String,
         powerLines: [String] = [
             "Your data stays on your device.",
             "100% transparent code.",
@@ -41,7 +40,6 @@ public struct SanePromiseView: View {
             "No clutter."
         ]
     ) {
-        self.appName = appName
         self.powerLines = powerLines
         self.loveLines = loveLines
         self.soundMindLines = soundMindLines
@@ -50,10 +48,9 @@ public struct SanePromiseView: View {
     public var body: some View {
         VStack(spacing: 20) {
             // Title
-            (Text("Why ").foregroundColor(.teal) +
-                Text(appName).foregroundColor(.white) +
-                Text("?").foregroundColor(.white))
+            Text("Our Sane Philosophy")
                 .font(.system(size: 28, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
 
             // Scripture
             VStack(spacing: 6) {
@@ -147,9 +144,9 @@ public struct SanePillarCard: View {
                 .fill(cardBg)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.saneAccent.opacity(0.2), lineWidth: 1)
                 )
-                .shadow(color: Color.teal.opacity(0.1), radius: 8, x: 0, y: 3)
+                .shadow(color: Color.saneAccent.opacity(0.1), radius: 8, x: 0, y: 3)
         )
     }
 }
