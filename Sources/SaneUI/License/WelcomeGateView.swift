@@ -56,16 +56,23 @@ public struct WelcomeGateView: View {
 
                 Button {
                     if selectedTier == .pro, !licenseService.isPro {
-                        NSWorkspace.shared.open(licenseService.checkoutURL)
+                        if licenseService.usesAppStorePurchase {
+                            Task { await licenseService.purchasePro() }
+                            return
+                        }
+                        if let url = licenseService.checkoutURL { NSWorkspace.shared.open(url) }
                     }
                     dismiss()
                 } label: {
-                    Text(selectedTier == .pro && !licenseService.isPro ? "Get Started" : "Start Free")
+                    Text(selectedTier == .pro && !licenseService.isPro
+                             ? (licenseService.usesAppStorePurchase ? "Unlock Pro" : "Get Started")
+                             : "Start Free")
                         .font(.system(size: 14, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.teal)
                 .controlSize(.large)
+                .disabled(licenseService.isPurchasing)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 30)
@@ -80,6 +87,11 @@ public struct WelcomeGateView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     dismiss()
                 }
+            }
+        }
+        .task {
+            if licenseService.usesAppStorePurchase {
+                await licenseService.preloadAppStoreProduct()
             }
         }
     }
@@ -148,31 +160,46 @@ public struct WelcomeGateView: View {
             HStack(alignment: .top, spacing: 14) {
                 tierCard(
                     tier: .pro,
-                    title: "Pro — $6.99",
+                    title: "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")",
                     price: "One-time — yours forever",
                     features: proFeatures,
                     actions: {
                         VStack(spacing: 6) {
                             Button {
-                                NSWorkspace.shared.open(licenseService.checkoutURL)
-                                Task.detached {
-                                    await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                                if licenseService.usesAppStorePurchase {
+                                    Task { await licenseService.purchasePro() }
+                                } else {
+                                    if let url = licenseService.checkoutURL { NSWorkspace.shared.open(url) }
+                                    Task.detached {
+                                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                                    }
                                 }
                             } label: {
-                                Text("Unlock Pro")
+                                Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro")
                                     .font(.system(size: 13, weight: .semibold))
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.teal)
                             .controlSize(.regular)
+                            .disabled(licenseService.isPurchasing)
 
-                            Button("I Have a Key") {
-                                showingLicenseEntry = true
+                            if licenseService.usesAppStorePurchase {
+                                Button("Restore Purchases") {
+                                    Task { await licenseService.restorePurchases() }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .font(.system(size: 12))
+                                .disabled(licenseService.isPurchasing)
+                            } else {
+                                Button("I Have a Key") {
+                                    showingLicenseEntry = true
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .font(.system(size: 12))
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .font(.system(size: 12))
                         }
                     }
                 )

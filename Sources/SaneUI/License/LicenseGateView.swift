@@ -102,7 +102,7 @@ public struct LicenseGateView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    NSWorkspace.shared.open(licenseService.checkoutURL)
+                    if let url = licenseService.checkoutURL { NSWorkspace.shared.open(url) }
                 } label: {
                     Text("Buy Now — $6.99")
                         .font(.headline)

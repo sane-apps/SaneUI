@@ -47,10 +47,21 @@ public struct LicenseSettingsView: View {
                 }
             }
 
-            Button("Deactivate License") {
-                licenseService.deactivate()
+            if licenseService.usesAppStorePurchase {
+                Text("Managed by App Store")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+
+                Button("Restore Purchases") {
+                    Task { await licenseService.restorePurchases() }
+                }
+                .disabled(licenseService.isPurchasing)
+            } else {
+                Button("Deactivate License") {
+                    licenseService.deactivate()
+                }
+                .foregroundStyle(.red)
             }
-            .foregroundStyle(.red)
         }
     }
 
@@ -73,26 +84,51 @@ public struct LicenseSettingsView: View {
                     )
                 Spacer()
 
-                Button {
-                    NSWorkspace.shared.open(licenseService.checkoutURL)
-                } label: {
-                    Text("Unlock Pro — $6.99")
-                        .font(.system(size: 12, weight: .semibold))
+                if licenseService.usesAppStorePurchase {
+                    Button {
+                        Task { await licenseService.purchasePro() }
+                    } label: {
+                        Text(licenseService.isPurchasing
+                                 ? "Processing..."
+                                 : "Unlock Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.teal)
+                    .controlSize(.small)
+                    .disabled(licenseService.isPurchasing)
+                } else {
+                    Button {
+                        if let url = licenseService.checkoutURL { NSWorkspace.shared.open(url) }
+                    } label: {
+                        Text("Unlock Pro — $6.99")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.teal)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.teal)
-                .controlSize(.small)
             }
 
             HStack(spacing: 8) {
-                Button("Enter Key") {
-                    showingLicenseEntry = true
+                if licenseService.usesAppStorePurchase {
+                    Button("Restore Purchases") {
+                        Task { await licenseService.restorePurchases() }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .font(.system(size: 12))
+                    .disabled(licenseService.isPurchasing)
+                } else {
+                    Button("Enter Key") {
+                        showingLicenseEntry = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .font(.system(size: 12))
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .font(.system(size: 12))
 
-                if let error = licenseService.validationError {
+                if let error = licenseService.validationError ?? licenseService.purchaseError {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(.red)
@@ -101,6 +137,11 @@ public struct LicenseSettingsView: View {
         }
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
+        }
+        .task {
+            if licenseService.usesAppStorePurchase {
+                await licenseService.preloadAppStoreProduct()
+            }
         }
     }
 }

@@ -16,6 +16,8 @@ public struct LicenseEntryView: View {
         VStack(spacing: 16) {
             if showingSuccess {
                 successContent
+            } else if licenseService.usesAppStorePurchase {
+                appStoreContent
             } else {
                 entryContent
             }
@@ -54,6 +56,55 @@ public struct LicenseEntryView: View {
     }
 
     // MARK: - Entry Form
+
+    private var appStoreContent: some View {
+        Group {
+            HStack {
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                .buttonStyle(.plain)
+                .help("Close")
+            }
+
+            Text("Unlock Pro")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+
+            Text("This App Store build unlocks Pro with an in-app purchase.")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.92))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(licenseService.isPurchasing ? "Processing..." : "Unlock Pro") {
+                Task { await licenseService.purchasePro() }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.teal)
+            .disabled(licenseService.isPurchasing)
+
+            Button("Restore Purchases") {
+                Task { await licenseService.restorePurchases() }
+            }
+            .buttonStyle(.bordered)
+            .disabled(licenseService.isPurchasing)
+
+            if let error = licenseService.purchaseError {
+                Text(error)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .task {
+            await licenseService.preloadAppStoreProduct()
+        }
+    }
 
     private var entryContent: some View {
         Group {
