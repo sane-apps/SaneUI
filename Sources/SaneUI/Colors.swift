@@ -4,8 +4,8 @@ import SwiftUI
 
 /// Semantic color definitions for SaneApps
 public enum SaneColors {
-    /// Primary accent color (teal)
-    public static let accent = Color.teal
+    /// Primary accent color (teal-blue, SaneUI standard)
+    public static let accent = Color.saneAccent
 
     /// Success state color
     public static let success = Color.green
@@ -33,7 +33,11 @@ public extension Color {
     static let saneWarning = Color.orange
 
     /// Primary accent color for SaneApps
-    static let saneAccent = Color.teal
+    static let saneAccent = Color(red: 0.05, green: 0.64, blue: 0.78)
+    /// Deeper teal accent for gradients and hover states
+    static let saneAccentDeep = Color(red: 0.06, green: 0.45, blue: 0.56)
+    /// Brighter accent endpoint for premium gradients
+    static let saneAccentSoft = Color(red: 0.36, green: 0.86, blue: 0.95)
 }
 
 // MARK: - Adaptive Colors
@@ -53,12 +57,12 @@ public struct AdaptiveColors: Sendable {
 
     /// Border color for cards/sections
     public var cardBorder: Color {
-        colorScheme == .dark ? Color.white.opacity(0.12) : Color.teal.opacity(0.15)
+        colorScheme == .dark ? Color.white.opacity(0.12) : Color.saneAccent.opacity(0.18)
     }
 
     /// Shadow color for cards/sections
     public var cardShadow: Color {
-        colorScheme == .dark ? Color.black.opacity(0.15) : Color.teal.opacity(0.08)
+        colorScheme == .dark ? Color.black.opacity(0.15) : Color.saneAccentDeep.opacity(0.12)
     }
 
     /// Shadow radius for cards/sections
