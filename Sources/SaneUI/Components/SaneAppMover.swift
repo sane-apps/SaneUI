@@ -20,15 +20,40 @@
     /// 4. Falls back to AppleScript with admin privileges (password prompt)
     /// 5. Relaunches from /Applications on success
     public enum SaneAppMover {
+        static func isInApplicationsDirectory(_ appPath: String, homeDirectory: String = NSHomeDirectory()) -> Bool {
+            let normalizedPath = (appPath as NSString).standardizingPath
+            let systemApplications = ("/Applications" as NSString).standardizingPath
+            let userApplications = ((homeDirectory as NSString).appendingPathComponent("Applications") as NSString).standardizingPath
+
+            if normalizedPath == systemApplications || normalizedPath.hasPrefix(systemApplications + "/") {
+                return true
+            }
+
+            if normalizedPath == userApplications || normalizedPath.hasPrefix(userApplications + "/") {
+                return true
+            }
+
+            return false
+        }
+
         @MainActor
         @discardableResult
         public static func moveToApplicationsFolderIfNeeded() -> Bool {
+            if ProcessInfo.processInfo.environment["SANEAPPS_SKIP_MOVE_TO_APPLICATIONS"] == "1" ||
+                ProcessInfo.processInfo.arguments.contains("--sane-skip-app-move")
+            {
+                return false
+            }
+
             let appPath = Bundle.main.bundlePath
             let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
                 ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
                 ?? "This app"
+            let appBundleName = URL(fileURLWithPath: appPath).lastPathComponent
 
-            guard !appPath.hasPrefix("/Applications") else { return false }
+            // Treat both /Applications and ~/Applications as installed locations.
+            // This avoids update-time relaunch loops when Sparkle relaunches from ~/Applications.
+            guard !isInApplicationsDirectory(appPath) else { return false }
 
             NSApp.activate()
 
@@ -41,8 +66,7 @@
 
             guard alert.runModal() == .alertFirstButtonReturn else { return false }
 
-            let safeName = appName.replacingOccurrences(of: "/", with: "-")
-            let destPath = "/Applications/\(safeName).app"
+            let destPath = "/Applications/\(appBundleName)"
             let fm = FileManager.default
 
             // Try direct move first (no admin needed if user owns /Applications)
@@ -78,12 +102,22 @@
             }
 
             // Relaunch from /Applications
+            var relaunchSucceeded = false
             do {
                 let task = Process()
                 task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-                task.arguments = [destPath]
+                // Force a brand-new process. Without -n, LaunchServices can send a reopen
+                // event to the current process, then this process terminates and nothing remains running.
+                task.arguments = ["-n", destPath]
                 try task.run()
-            } catch {}
+                task.waitUntilExit()
+                relaunchSucceeded = task.terminationStatus == 0
+            } catch {
+                relaunchSucceeded = false
+            }
+
+            // Keep the current process alive if relaunch fails.
+            guard relaunchSucceeded else { return false }
             NSApp.terminate(nil)
             return true
         }
