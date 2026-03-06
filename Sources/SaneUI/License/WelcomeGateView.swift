@@ -442,10 +442,7 @@ public struct WelcomeGateView: View {
         if appSlug == "sanehosts" {
             saneHostsCorePage
         } else {
-            GeometryReader { geo in
-                let topHeight = geo.size.height / (1 + goldenRatio)
-                let cardHeight = geo.size.height - topHeight - goldenGap
-
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
                     VStack(spacing: goldenBase * 0.62) {
                         (Text("How ").foregroundStyle(.white) + Text(appName).foregroundStyle(saneAccentGradient) + Text(" Works").foregroundStyle(.white))
@@ -457,7 +454,7 @@ public struct WelcomeGateView: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: topHeight, alignment: .center)
+                    .padding(.top, goldenBase * 0.35)
 
                     VStack(spacing: goldenBase * 0.62) {
                         featureCard(
@@ -467,7 +464,6 @@ public struct WelcomeGateView: View {
                             columns: 1,
                             compact: false
                         )
-                        .frame(height: appName.lowercased() == "saneclip" ? cardHeight * 0.78 : cardHeight)
 
                         if appName.lowercased() == "saneclip" {
                             VStack(alignment: .leading, spacing: 8) {
@@ -489,14 +485,14 @@ public struct WelcomeGateView: View {
                                             .stroke(saneAccent.opacity(0.2), lineWidth: 1)
                                     )
                             )
-                            .frame(height: cardHeight * 0.22, alignment: .top)
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, goldenPad)
+                .padding(.top, goldenBase)
+                .padding(.bottom, goldenBase * 1.4)
             }
-            .padding(.horizontal, goldenPad)
-            .padding(.vertical, goldenBase)
         }
     }
 
@@ -505,9 +501,7 @@ public struct WelcomeGateView: View {
         if appSlug == "sanehosts" {
             saneHostsAdvancedPage
         } else {
-            GeometryReader { geo in
-                let topHeight = geo.size.height / (1 + goldenRatio)
-
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
                     VStack(spacing: goldenBase * 0.62) {
                         (Text("Advanced ").foregroundStyle(.white) + Text("Workflow").foregroundStyle(saneAccentGradient) + Text(" Tools").foregroundStyle(.white))
@@ -519,7 +513,7 @@ public struct WelcomeGateView: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: topHeight, alignment: .center)
+                    .padding(.top, goldenBase * 0.35)
 
                     featureCard(
                         title: proCardTitle,
@@ -528,12 +522,12 @@ public struct WelcomeGateView: View {
                         columns: 1,
                         compact: false
                     )
-                    .frame(maxHeight: .infinity, alignment: .top)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, goldenPad)
+                .padding(.top, goldenBase)
+                .padding(.bottom, goldenBase * 1.4)
             }
-            .padding(.horizontal, goldenPad)
-            .padding(.vertical, goldenBase)
         }
     }
 
