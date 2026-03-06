@@ -13,7 +13,7 @@ import SwiftUI
 /// SanePromiseView(
 ///     appName: "SaneClip",
 ///     powerLines: ["Your clipboard never leaves your Mac.", "End-to-end encrypted.", "Open source."],
-///     loveLines: ["Built to serve you.", "Pay once, yours forever.", "No subscriptions."],
+///     loveLines: ["Built to serve you.", "Pay once, yours forever.", "No subscriptions. No ads."],
 ///     soundMindLines: ["No clutter.", "Clean and focused.", "Does one thing well."]
 /// )
 /// ```
@@ -32,7 +32,7 @@ public struct SanePromiseView: View {
         loveLines: [String] = [
             "Built to serve you.",
             "Pay once, yours forever.",
-            "No subscriptions."
+            "No subscriptions. No ads."
         ],
         soundMindLines: [String] = [
             "Calm and focused.",

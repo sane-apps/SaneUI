@@ -121,6 +121,16 @@ public final class LicenseService {
 
     /// Check cached license on launch. Call from `applicationDidFinishLaunching` or app init.
     public func checkCachedLicense() {
+        // Review override: force free mode regardless of build type or stored license.
+        if ProcessInfo.processInfo.environment["SANEAPPS_FORCE_FREE_MODE"] == "1" {
+            isLicensed = false
+            licenseEmail = nil
+            validationError = nil
+            purchaseError = nil
+            logger.info("License forced to free mode via SANEAPPS_FORCE_FREE_MODE")
+            return
+        }
+
         if usesAppStorePurchase {
             Task {
                 await preloadAppStoreProduct()

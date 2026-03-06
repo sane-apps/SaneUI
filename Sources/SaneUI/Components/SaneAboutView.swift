@@ -4,7 +4,7 @@ import SwiftUI
 /// Standardized About section for all SaneApps settings views.
 ///
 /// Provides: app icon, version, trust messaging, and a consistent set of links
-/// (GitHub, Licenses, Donate, Report a Bug, View Issues, Email).
+/// (GitHub, Licenses, Donate, Report a Bug, View Issues, Questions).
 ///
 /// ```swift
 /// SaneAboutView(
@@ -146,7 +146,7 @@ public struct SaneAboutView: View {
                     }
 
                     Link(destination: URL(string: "mailto:hi@saneapps.com")!) {
-                        Label("Email Me", systemImage: "envelope")
+                        Label("Questions", systemImage: "envelope")
                     }
                 }
             }

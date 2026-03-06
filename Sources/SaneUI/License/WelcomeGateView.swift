@@ -16,8 +16,42 @@ private let saneButtonGradient = LinearGradient(
     startPoint: .topLeading,
     endPoint: .bottomTrailing
 )
+private let goldenRatio: CGFloat = 1.618
+private let goldenBase: CGFloat = 13
+private let goldenGap: CGFloat = goldenBase
+private let goldenPad: CGFloat = goldenBase * goldenRatio
 
-private enum Tier { case free, pro }
+enum Tier { case free, pro }
+enum WelcomeGatePrimaryAction {
+    case complete
+    case purchasePro
+    case openCheckout
+}
+
+enum WelcomeGateFlowPolicy {
+    static func finalPrimaryAction(
+        isPro: Bool,
+        selectedTier: Tier,
+        usesAppStorePurchase: Bool
+    ) -> WelcomeGatePrimaryAction {
+        guard !isPro else { return .complete }
+        guard selectedTier == .pro else { return .complete }
+        return usesAppStorePurchase ? .purchasePro : .openCheckout
+    }
+
+    static func finalPrimaryButtonLabel(
+        isPro: Bool,
+        selectedTier: Tier,
+        usesAppStorePurchase: Bool
+    ) -> String {
+        switch finalPrimaryAction(isPro: isPro, selectedTier: selectedTier, usesAppStorePurchase: usesAppStorePurchase) {
+        case .purchasePro:
+            return "Unlock Pro"
+        case .openCheckout, .complete:
+            return "Get Started"
+        }
+    }
+}
 
 private struct OnboardingPrimaryButtonStyle: ButtonStyle {
     let cornerRadius: CGFloat
@@ -69,22 +103,28 @@ public struct WelcomeGateView: View {
     @State private var selectedTier: Tier = .pro
     @State private var showingLicenseEntry = false
     @State private var accessibilityGranted = AXIsProcessTrusted()
+    private let autoDismissOnPro: Bool
+    private let onComplete: (() -> Void)?
 
-    // Shorter than SaneBar's 8 pages but same format and progression.
-    private let totalPages = 6
+    // Canonical onboarding flow across all apps.
+    private let totalPages = 7
 
     public init(
         appName: String,
         appIcon: String,
         freeFeatures: [(icon: String, text: String)],
         proFeatures: [(icon: String, text: String)],
-        licenseService: LicenseService
+        licenseService: LicenseService,
+        autoDismissOnPro: Bool = true,
+        onComplete: (() -> Void)? = nil
     ) {
         self.appName = appName
         self.appIcon = appIcon
         self.freeFeatures = freeFeatures
         self.proFeatures = proFeatures
         self.licenseService = licenseService
+        self.autoDismissOnPro = autoDismissOnPro
+        self.onComplete = onComplete
     }
 
     public var body: some View {
@@ -124,8 +164,9 @@ public struct WelcomeGateView: View {
             accessibilityGranted = AXIsProcessTrusted()
         }
         .onChange(of: licenseService.isPro) { _, newValue in
-            guard newValue else { return }
+            guard autoDismissOnPro, newValue else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                onComplete?()
                 dismiss()
             }
         }
@@ -144,14 +185,16 @@ public struct WelcomeGateView: View {
         case 0:
             welcomePage
         case 1:
-            coreFeaturesPage
+            dontSkipPage
         case 2:
-            proWorkflowPage
+            coreFeaturesPage
         case 3:
-            sanePromisePage
+            proWorkflowPage
         case 4:
-            permissionPage
+            sanePromisePage
         case 5:
+            permissionPage
+        case 6:
             finalTierPage
         default:
             welcomePage
@@ -164,8 +207,17 @@ public struct WelcomeGateView: View {
                 ("doc.on.doc", "Every copy is saved to your clipboard history."),
                 ("magnifyingglass", "Search by content, source app, or date."),
                 ("keyboard", "Use hotkeys: Cmd+Shift+V opens history, Cmd+Control+1-9 pastes fast."),
+                ("cursorarrow.motionlines", "Choose where history opens: menu bar icon or mouse cursor."),
                 ("app.fill", "Source-app labels and colors help you scan quickly."),
                 ("iphone", "Use the iPhone companion with iCloud sync.")
+            ]
+        }
+        if appSlug == "sanehosts" {
+            return [
+                ("shield.checkered", "Choose your protection level."),
+                ("checkmark.circle.fill", "Click Activate once."),
+                ("gearshape.2.fill", "SaneHosts safely updates your hosts file."),
+                ("bolt.horizontal.circle", "System-wide blocking starts immediately.")
             ]
         }
         return freeFeatures
@@ -185,7 +237,116 @@ public struct WelcomeGateView: View {
                 ("link.badge.plus", "Use Integrations, Shortcuts, and webhooks for automation.")
             ]
         }
+        if appSlug == "sanehosts" {
+            return [
+                ("doc.on.doc", "Create multiple profiles for different environments."),
+                ("arrow.down.circle", "Install downloadable presets in one click."),
+                ("arrow.triangle.merge", "Merge profiles into a single ruleset."),
+                ("checklist", "Run bulk operations across large entry sets."),
+                ("square.and.arrow.down", "Import profiles from files or URLs.")
+            ]
+        }
         return proFeatures.filter { !$0.text.localizedCaseInsensitiveContains("everything in basic") }
+    }
+
+    private var appSlug: String {
+        appName.lowercased().replacingOccurrences(of: " ", with: "")
+    }
+
+    private var welcomeSummary: String {
+        switch appSlug {
+        case "sanehosts":
+            return "Block ads, trackers, malware, and distractions system-wide on your Mac."
+        case "saneclick":
+            return "Run useful Finder actions from right-click, without leaving your workflow."
+        case "sanesales":
+            return "Track revenue, orders, and trends across your sales platforms in one place."
+        case "saneclip":
+            return "Save everything you copy, find it instantly, and paste cleaner."
+        case "sanebar":
+            return "Take control of your menu bar so your Mac stays clean and focused."
+        default:
+            return "A calm setup to get productive fast."
+        }
+    }
+
+    private var setupGuidance: String {
+        switch appSlug {
+        case "sanehosts":
+            return "Pick, Click, Protected."
+        case "saneclick":
+            return "In under 60 seconds: enable Finder extension, pick scripts, then right-click to run."
+        case "sanesales":
+            return "In under 60 seconds: connect data sources, review dashboard, then monitor in real time."
+        case "saneclip":
+            return "In under 60 seconds: confirm permissions, choose plan, then start copying."
+        default:
+            return "This takes about a minute. Follow each step in order."
+        }
+    }
+
+    private var welcomeChips: [(icon: String, text: String)] {
+        switch appSlug {
+        case "sanehosts":
+            return [("checkmark.seal", "Choose Profile"), ("shield.checkered", "Activate"), ("arrow.right.circle", "Done")]
+        case "saneclick":
+            return [("checkmark.seal", "Enable"), ("cursorarrow.click.2", "Right-Click"), ("arrow.right.circle", "Run")]
+        case "sanesales":
+            return [("checkmark.seal", "Connect"), ("chart.xyaxis.line", "Review"), ("arrow.right.circle", "Track")]
+        default:
+            return [("checkmark.seal", "Set Up"), ("sparkles", "Learn"), ("arrow.right.circle", "Launch")]
+        }
+    }
+
+    private var welcomeHighlights: [(icon: String, text: String)] {
+        if appSlug == "sanehosts" {
+            return []
+        }
+        return Array(freeFeatures.prefix(3))
+    }
+
+    private var coreLeadText: String {
+        switch appSlug {
+        case "sanehosts":
+            return "Basic setup once, then protection runs quietly in the background."
+        default:
+            return "Daily workflow, in order."
+        }
+    }
+
+    private var coreCardTitle: String {
+        appSlug == "sanehosts" ? "Basic Setup" : "Core Workflow"
+    }
+
+    private var coreCardSubtitle: String {
+        switch appSlug {
+        case "sanehosts":
+            return "One-click protection: choose level, activate, done"
+        default:
+            return "Capture, find, and paste in seconds"
+        }
+    }
+
+    private var proLeadText: String {
+        switch appSlug {
+        case "sanehosts":
+            return "Advanced features for power users who need deeper control."
+        default:
+            return "Set once, then copy/paste stays clean and consistent."
+        }
+    }
+
+    private var proCardTitle: String {
+        appSlug == "sanehosts" ? "Advanced Features" : "Power Features"
+    }
+
+    private var proCardSubtitle: String {
+        switch appSlug {
+        case "sanehosts":
+            return "Profiles, presets, merge, import, and bulk tools"
+        default:
+            return "Automation, privacy, and control"
+        }
     }
 
     private var welcomePage: some View {
@@ -205,19 +366,41 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 30, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("Your clipboard, finally under control.")
+            Text(welcomeSummary)
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(.white.opacity(0.92))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Text("Copy once. Find instantly. Paste cleanly anywhere.")
+            Text(setupGuidance)
                 .font(.system(size: 14))
                 .foregroundStyle(.white.opacity(0.92))
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                quickChip(icon: "doc.on.doc", text: "Copy")
-                quickChip(icon: "line.3.horizontal.decrease.circle", text: "Find")
-                quickChip(icon: "arrow.down.doc", text: "Paste")
+                ForEach(Array(welcomeChips.enumerated()), id: \.offset) { _, chip in
+                    quickChip(icon: chip.icon, text: chip.text, accented: appSlug == "sanehosts")
+                }
+            }
+
+            if !welcomeHighlights.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(welcomeHighlights.enumerated()), id: \.offset) { _, item in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: item.icon)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(saneAccentSoft)
+                                .frame(width: 14)
+                            Text(item.text)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
             }
 
             Text("This setup takes under 60 seconds.")
@@ -227,67 +410,210 @@ public struct WelcomeGateView: View {
         .padding(32)
     }
 
-    private var coreFeaturesPage: some View {
-        VStack(spacing: 16) {
-            (Text("How ").foregroundStyle(.white) + Text(appName).foregroundStyle(saneAccentGradient) + Text(" Works").foregroundStyle(.white))
+    private var dontSkipPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "hand.wave.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(saneAccent)
+
+            Text("Don't skip this.")
                 .font(.system(size: 28, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
 
-            Text("Daily workflow, in order.")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.92))
+            Text("It's only a few screens and you'll be\nconfused if you rush through.")
+                .font(.system(size: 17))
+                .foregroundStyle(.white.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-            featureCard(
-                title: "Core Workflow",
-                subtitle: "Capture, find, and paste in seconds",
-                features: setupCoreFeatures
-            )
+            Text("— Mr. Sane")
+                .font(.system(size: 15, weight: .medium, design: .serif))
+                .foregroundStyle(.white.opacity(0.9))
 
-            if appName.lowercased() == "saneclip" {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Default paste modes")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Text("Original keeps formatting. Plain strips formatting. Smart auto-cleans URLs and code pastes.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.92))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(cardBg)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(saneAccent.opacity(0.2), lineWidth: 1)
+            Spacer()
+        }
+        .padding(.horizontal, 40)
+    }
+
+    @ViewBuilder
+    private var coreFeaturesPage: some View {
+        if appSlug == "sanehosts" {
+            saneHostsCorePage
+        } else {
+            GeometryReader { geo in
+                let topHeight = geo.size.height / (1 + goldenRatio)
+                let cardHeight = geo.size.height - topHeight - goldenGap
+
+                VStack(spacing: goldenGap) {
+                    VStack(spacing: goldenBase * 0.62) {
+                        (Text("How ").foregroundStyle(.white) + Text(appName).foregroundStyle(saneAccentGradient) + Text(" Works").foregroundStyle(.white))
+                            .font(.system(size: 30, weight: .bold, design: .serif))
+
+                        Text(coreLeadText)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.95))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: topHeight, alignment: .center)
+
+                    VStack(spacing: goldenBase * 0.62) {
+                        featureCard(
+                            title: coreCardTitle,
+                            subtitle: coreCardSubtitle,
+                            features: setupCoreFeatures,
+                            columns: 1,
+                            compact: false
                         )
+                        .frame(height: appName.lowercased() == "saneclip" ? cardHeight * 0.78 : cardHeight)
+
+                        if appName.lowercased() == "saneclip" {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Default paste modes")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                Text("Original keeps formatting. Plain strips formatting. Smart auto-cleans URLs and code pastes.")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.white.opacity(0.95))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(cardBg)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(saneAccent.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                            .frame(height: cardHeight * 0.22, alignment: .top)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .padding(.horizontal, goldenPad)
+            .padding(.vertical, goldenBase)
+        }
+    }
+
+    @ViewBuilder
+    private var proWorkflowPage: some View {
+        if appSlug == "sanehosts" {
+            saneHostsAdvancedPage
+        } else {
+            GeometryReader { geo in
+                let topHeight = geo.size.height / (1 + goldenRatio)
+
+                VStack(spacing: goldenGap) {
+                    VStack(spacing: goldenBase * 0.62) {
+                        (Text("Advanced ").foregroundStyle(.white) + Text("Workflow").foregroundStyle(saneAccentGradient) + Text(" Tools").foregroundStyle(.white))
+                            .font(.system(size: 30, weight: .bold, design: .serif))
+
+                        Text(proLeadText)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.95))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: topHeight, alignment: .center)
+
+                    featureCard(
+                        title: proCardTitle,
+                        subtitle: proCardSubtitle,
+                        features: setupPowerFeatures,
+                        columns: 1,
+                        compact: false
+                    )
+                    .frame(maxHeight: .infinity, alignment: .top)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .padding(.horizontal, goldenPad)
+            .padding(.vertical, goldenBase)
+        }
+    }
+
+    private var saneHostsCorePage: some View {
+        VStack(spacing: goldenBase * 1.2) {
+            VStack(spacing: goldenBase * 0.62) {
+                (Text("How ").foregroundStyle(.white) + Text("SaneHosts").foregroundStyle(saneAccentGradient) + Text(" Works").foregroundStyle(.white))
+                    .font(.system(size: 30, weight: .bold, design: .serif))
+
+                Text("One click, then you're protected.")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+
+            HStack(alignment: .top, spacing: 13) {
+                onboardingStepCard(
+                    title: "Setup",
+                    rows: [
+                        ("1", "Choose protection level"),
+                        ("2", "Click Enable Protection"),
+                        ("3", "Done")
+                    ]
+                )
+                .frame(width: 250)
+
+                onboardingResultCard(
+                    title: "After you enable",
+                    bullets: [
+                        "System-wide blocking starts",
+                        "Hosts file updates safely",
+                        "DNS cache flushes automatically"
+                    ]
+                )
+                .frame(width: 250)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding(.horizontal, goldenPad)
+        .padding(.vertical, goldenBase)
+    }
+
+    private var saneHostsAdvancedPage: some View {
+        VStack(spacing: goldenBase * 1.2) {
+            VStack(spacing: goldenBase * 0.62) {
+                (Text("Advanced ").foregroundStyle(.white) + Text("Features").foregroundStyle(saneAccentGradient))
+                    .font(.system(size: 30, weight: .bold, design: .serif))
+
+                Text("More control when you need it.")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: goldenGap), GridItem(.flexible(), spacing: goldenGap)], spacing: goldenGap) {
+                advancedFeatureTile(
+                    title: "Multiple Profiles",
+                    subtitle: "Create separate setups for different needs."
+                )
+                advancedFeatureTile(
+                    title: "Downloadable Presets",
+                    subtitle: "Install curated blocklists in one click."
+                )
+                advancedFeatureTile(
+                    title: "Merge Profiles",
+                    subtitle: "Combine rule sets into one unified profile."
+                )
+                advancedFeatureTile(
+                    title: "Import from File / URL",
+                    subtitle: "Bring in external sources quickly."
                 )
             }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 12)
+        .padding(.horizontal, goldenPad)
+        .padding(.vertical, goldenBase)
     }
 
-    private var proWorkflowPage: some View {
-        VStack(spacing: 16) {
-            (Text("Advanced ").foregroundStyle(.white) + Text("Workflow").foregroundStyle(saneAccentGradient) + Text(" Tools").foregroundStyle(.white))
-                .font(.system(size: 28, weight: .bold, design: .serif))
-
-            Text("Set once, then copy/paste stays clean and consistent.")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.92))
-
-            featureCard(
-                title: "Power Features",
-                subtitle: "Automation, privacy, and control",
-                features: setupPowerFeatures
-            )
-        }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 12)
-    }
-
-    // MARK: - Page 4: Sane Promise (matches SaneBar format)
+    // MARK: - Page 5: Sane Philosophy
 
     private var sanePromisePage: some View {
         VStack(spacing: 20) {
@@ -307,28 +633,28 @@ public struct WelcomeGateView: View {
                     .foregroundStyle(.white.opacity(0.9))
             }
 
-            HStack(spacing: 14) {
+            HStack(spacing: goldenBase) {
                 PromisePillarCard(
                     icon: "bolt.fill", color: .yellow, title: "Power",
                     lines: ["Your data stays on your device.", "100% transparent code.", "Actively maintained."]
                 )
                 PromisePillarCard(
                     icon: "heart.fill", color: .red, title: "Love",
-                    lines: ["Built to serve you.", "Pay once, yours forever.", "No subscriptions."]
+                    lines: ["Built to serve you.", "Pay once, yours forever.", "No subscriptions. No ads."]
                 )
                 PromisePillarCard(
                     icon: "brain.head.profile", color: .cyan, title: "Sound Mind",
                     lines: ["Calm and focused.", "Does one thing well.", "No clutter."]
                 )
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, goldenBase)
             .padding(.top, 4)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .padding(.horizontal, goldenPad)
+        .padding(.vertical, goldenBase)
     }
 
-    // MARK: - Page 5: Permission
+    // MARK: - Page 6: Permissions
 
     private var permissionPage: some View {
         VStack(spacing: 24) {
@@ -380,7 +706,7 @@ public struct WelcomeGateView: View {
         .padding(.horizontal, 40)
     }
 
-    // MARK: - Page 6: Basic vs Pro (SaneBar-style close)
+    // MARK: - Page 7: Plan / Upgrade
 
     @ViewBuilder
     private var finalTierPage: some View {
@@ -601,76 +927,251 @@ public struct WelcomeGateView: View {
     }
 
     private var finalPrimaryButtonLabel: String {
-        if selectedTier == .pro, !licenseService.isPro {
-            return licenseService.usesAppStorePurchase ? "Unlock Pro" : "Get Started"
-        }
-        return "Start Free"
+        WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
+            isPro: licenseService.isPro,
+            selectedTier: selectedTier,
+            usesAppStorePurchase: licenseService.usesAppStorePurchase
+        )
     }
 
     private func completeOnboarding() {
-        if selectedTier == .pro, !licenseService.isPro {
+        switch WelcomeGateFlowPolicy.finalPrimaryAction(
+            isPro: licenseService.isPro,
+            selectedTier: selectedTier,
+            usesAppStorePurchase: licenseService.usesAppStorePurchase
+        ) {
+        case .purchasePro:
             if licenseService.usesAppStorePurchase {
                 Task { await licenseService.purchasePro() }
                 return
             }
+        case .openCheckout:
             if let url = licenseService.checkoutURL {
                 NSWorkspace.shared.open(url)
                 Task.detached {
                     await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                 }
             }
+        case .complete:
+            break
         }
+        onComplete?()
         dismiss()
     }
 
     // MARK: - Shared UI Helpers
 
-    private func quickChip(icon: String, text: String) -> some View {
+    private func onboardingStepCard(
+        title: String,
+        rows: [(String, String)]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            gradientLeadingWordText(title)
+                .font(.system(size: 16, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text(row.0)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 17, height: 17)
+                            .background(
+                                Circle()
+                                    .fill(saneAccentDeep.opacity(0.8))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(saneAccent.opacity(0.7), lineWidth: 1)
+                                    )
+                            )
+                        Text(row.1)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(cardBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(saneAccent.opacity(0.24), lineWidth: 1)
+                )
+                .shadow(color: saneAccentDeep.opacity(0.16), radius: 8, x: 0, y: 3)
+        )
+    }
+
+    private func onboardingResultCard(
+        title: String,
+        bullets: [String]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            gradientLeadingWordText(title)
+                .font(.system(size: 16, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(bullets.enumerated()), id: \.offset) { _, bullet in
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(saneAccentSoft)
+                            .frame(width: 5, height: 5)
+                            .padding(.top, 5)
+                        Text(bullet)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(saneAccentSoft)
+                Text("Protection status updates in real time.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.95))
+            }
+            .padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(cardBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(saneAccent.opacity(0.24), lineWidth: 1)
+                )
+                .shadow(color: saneAccentDeep.opacity(0.16), radius: 8, x: 0, y: 3)
+        )
+    }
+
+    private func gradientLeadingWordText(_ title: String) -> Text {
+        let parts = title.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+        if parts.count == 2 {
+            return Text(String(parts[0])).foregroundStyle(saneAccentGradient) + Text(" \(parts[1])").foregroundStyle(.white)
+        }
+        return Text(title).foregroundStyle(saneAccentGradient)
+    }
+
+    private func advancedFeatureTile(
+        title: String,
+        subtitle: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(saneAccentSoft)
+                gradientLeadingWordText(title)
+                    .font(.system(size: 16, weight: .semibold))
+            }
+
+            Text(subtitle)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white.opacity(0.95))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 98, alignment: .topLeading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(cardBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(saneAccent.opacity(0.24), lineWidth: 1)
+                )
+                .shadow(color: saneAccentDeep.opacity(0.14), radius: 6, x: 0, y: 2)
+        )
+    }
+
+    private func quickChip(icon: String, text: String, accented: Bool = false) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
             Text(text)
                 .font(.system(size: 12, weight: .semibold))
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(accented ? saneAccentSoft : .white)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(cardBg)
+                .fill(accented ? saneAccentDeep.opacity(0.4) : cardBg)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(saneAccent.opacity(0.2), lineWidth: 1)
+                        .stroke(accented ? saneAccent.opacity(0.55) : saneAccent.opacity(0.2), lineWidth: 1)
                 )
         )
     }
 
-    private func featureCard(title: String, subtitle: String, features: [(icon: String, text: String)]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func featureCard(
+        title: String,
+        subtitle: String,
+        features: [(icon: String, text: String)],
+        columns: Int = 1,
+        compact: Bool = true
+    ) -> some View {
+        let titleSize: CGFloat = compact ? 16 : 19
+        let subtitleSize: CGFloat = compact ? 12 : 15
+        let bodySize: CGFloat = compact ? 13 : 16
+        let iconSize: CGFloat = compact ? 12 : 14
+        let rowSpacing: CGFloat = compact ? 8 : 12
+
+        return VStack(alignment: .leading, spacing: compact ? 10 : 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: titleSize, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(subtitle)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: subtitleSize, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
             }
 
-            ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: feature.icon)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(saneAccentSoft)
-                        .frame(width: 14)
-                    Text(feature.text)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white)
-                        .fixedSize(horizontal: false, vertical: true)
+            if columns <= 1 {
+                ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
+                    HStack(alignment: .top, spacing: rowSpacing) {
+                        Image(systemName: feature.icon)
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(saneAccentSoft)
+                            .frame(width: compact ? 14 : 16)
+                        Text(feature.text)
+                            .font(.system(size: bodySize, weight: .medium))
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } else {
+                let chunkSize = max(1, (features.count + columns - 1) / columns)
+                HStack(alignment: .top, spacing: compact ? 18 : 24) {
+                    ForEach(0 ..< columns, id: \.self) { col in
+                        VStack(alignment: .leading, spacing: rowSpacing) {
+                            ForEach(Array(features.dropFirst(col * chunkSize).prefix(chunkSize).enumerated()), id: \.offset) { _, feature in
+                                HStack(alignment: .top, spacing: rowSpacing) {
+                                    Image(systemName: feature.icon)
+                                        .font(.system(size: iconSize, weight: .semibold))
+                                        .foregroundStyle(saneAccentSoft)
+                                        .frame(width: compact ? 14 : 16)
+                                    Text(feature.text)
+                                        .font(.system(size: bodySize, weight: .medium))
+                                        .foregroundStyle(.white)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(compact ? 14 : 18)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(cardBg)
@@ -731,15 +1232,15 @@ private struct PromisePillarCard: View {
     let lines: [String]
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 28))
+                .font(.system(size: 30))
                 .foregroundStyle(color)
             Text(title)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(lines, id: \.self) { line in
                     HStack(alignment: .top, spacing: 5) {
                         Image(systemName: "checkmark")
@@ -748,14 +1249,14 @@ private struct PromisePillarCard: View {
                             .frame(width: 12)
                             .padding(.top, 2)
                         Text(line)
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.white)
                     }
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, minHeight: 188, alignment: .top)
+        .padding(.vertical, 12)
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)

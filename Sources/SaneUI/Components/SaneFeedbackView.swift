@@ -116,7 +116,7 @@ public struct SaneFeedbackView: View {
 
             // Footer
             HStack {
-                Link("Email us instead", destination: URL(string: "mailto:hi@saneapps.com")!)
+                Link("Questions instead?", destination: URL(string: "mailto:hi@saneapps.com")!)
                     .font(.system(size: 13))
 
                 Spacer()

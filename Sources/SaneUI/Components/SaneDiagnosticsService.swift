@@ -125,18 +125,31 @@ public extension SaneDiagnosticReport {
             baseDescription
         }
 
+        let collectedAtISO = ISO8601DateFormatter().string(from: collectedAt)
+
         let shortBody = """
         ## Issue Description
         \(shortDescription)
 
         ---
-        **Diagnostics have been copied to your clipboard.** Paste them below:
+
+        ## Environment
+        | Property | Value |
+        |----------|-------|
+        | App Version | \(appVersion) (\(buildNumber)) |
+        | macOS | \(macOSVersion) |
+        | Hardware | \(hardwareModel) |
+        | Collected | \(collectedAtISO) |
+
+        ---
+        **Full diagnostics were copied to your clipboard.** Press **Cmd+V** below to paste them.
 
 
         """
 
         var components = URLComponents(string: "https://github.com/sane-apps/\(githubRepo)/issues/new")
         components?.queryItems = [
+            URLQueryItem(name: "template", value: "bug_report.md"),
             URLQueryItem(name: "title", value: title),
             URLQueryItem(name: "body", value: shortBody)
         ]
