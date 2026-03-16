@@ -314,3 +314,16 @@ struct PurchaseBackendInferenceTests {
         }
     }
 }
+
+@Suite("About View Policy")
+struct SaneAboutViewPolicyTests {
+    @Test("App Store builds hide support section")
+    func appStoreBuildHidesSupportSection() {
+        #expect(!SaneAboutViewPolicy.showsSupportSection(usesAppStoreBuild: true))
+    }
+
+    @Test("Direct builds keep support section")
+    func directBuildKeepsSupportSection() {
+        #expect(SaneAboutViewPolicy.showsSupportSection(usesAppStoreBuild: false))
+    }
+}

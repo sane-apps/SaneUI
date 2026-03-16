@@ -5,7 +5,7 @@ import SwiftUI
 /// Standardized About section for all SaneApps settings views.
 ///
 /// Provides: app icon, version, trust messaging, and a consistent set of links
-/// (GitHub, Licenses, Donate, Report a Bug, View Issues, Questions).
+/// (GitHub, Licenses, optional Donate, Report a Bug, View Issues, Questions).
 ///
 /// ```swift
 /// SaneAboutView(
@@ -24,6 +24,7 @@ public struct SaneAboutView: View {
     private let diagnosticsService: SaneDiagnosticsService?
     private let licenses: [LicenseEntry]
     private let feedbackExtraAttachments: [(icon: String, label: String)]
+    private let showsSupportSection: Bool
 
     @State private var showLicenses = false
     @State private var showSupport = false
@@ -51,18 +52,21 @@ public struct SaneAboutView: View {
     ///     If nil, "Report a Bug" links directly to GitHub Issues.
     ///   - licenses: Third-party licenses to display in the Licenses popover.
     ///   - feedbackExtraAttachments: Extra items for the feedback form's "We'll automatically attach" list.
+    ///   - showsSupportSection: Whether to show donation and support links in the About view.
     public init(
         appName: String,
         githubRepo: String,
         diagnosticsService: SaneDiagnosticsService? = nil,
         licenses: [LicenseEntry] = [],
-        feedbackExtraAttachments: [(icon: String, label: String)] = []
+        feedbackExtraAttachments: [(icon: String, label: String)] = [],
+        showsSupportSection: Bool = true
     ) {
         self.appName = appName
         self.githubRepo = githubRepo
         self.diagnosticsService = diagnosticsService
         self.licenses = licenses
         self.feedbackExtraAttachments = feedbackExtraAttachments
+        self.showsSupportSection = showsSupportSection
     }
 
     public var body: some View {
@@ -116,14 +120,16 @@ public struct SaneAboutView: View {
                         }
                     }
 
-                    Button {
-                        showSupport = true
-                    } label: {
-                        Label {
-                            Text("Donate")
-                        } icon: {
-                            Image(systemName: "heart.fill")
-                                .foregroundStyle(.red)
+                    if showsSupportSection {
+                        Button {
+                            showSupport = true
+                        } label: {
+                            Label {
+                                Text("Donate")
+                            } icon: {
+                                Image(systemName: "heart.fill")
+                                    .foregroundStyle(.red)
+                            }
                         }
                     }
                 }
@@ -290,6 +296,12 @@ public struct SaneAboutView: View {
             }
         }
         .frame(width: 420, height: 360)
+    }
+}
+
+enum SaneAboutViewPolicy {
+    static func showsSupportSection(usesAppStoreBuild: Bool) -> Bool {
+        !usesAppStoreBuild
     }
 }
 
