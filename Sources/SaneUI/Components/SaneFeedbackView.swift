@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// In-app issue reporting view with diagnostic log collection.
@@ -9,6 +8,7 @@ import SwiftUI
 /// ```
 public struct SaneFeedbackView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     private let diagnosticsService: SaneDiagnosticsService
     /// Optional extra line items describing what gets attached (app-specific).
@@ -39,125 +39,148 @@ public struct SaneFeedbackView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Report an Issue")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.white.opacity(0.9))
-                        .font(.title2)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
+        ZStack {
+            SaneGradientBackground()
+                .ignoresSafeArea()
 
-            Divider()
+            VStack(spacing: 16) {
+                header
 
-            // Form
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("What happened?")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.92))
-                        TextEditor(text: $issueDescription)
-                            .font(.body)
-                            .frame(minHeight: 120)
-                            .padding(4)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.primary.opacity(0.3), lineWidth: 1)
-                            )
-                    }
+                ScrollView {
+                    VStack(spacing: 16) {
+                        CompactSection("What happened?", icon: "ladybug.fill", iconColor: .orange) {
+                            TextEditor(text: $issueDescription)
+                                .font(.body)
+                                .frame(minHeight: 160)
+                                .padding(10)
+                                .background(editorBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.14 : 0.2), lineWidth: 1)
+                                )
+                                .padding(12)
+                                .scrollContentBackground(.hidden)
+                        }
 
-                    // What gets attached automatically
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("We'll automatically attach:")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.92))
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Label("App version & macOS version", systemImage: "info.circle")
-                            Label("Hardware info (Mac model)", systemImage: "desktopcomputer")
-                            Label("Recent logs (last 5 minutes)", systemImage: "doc.text")
-                            Label("Current settings (no personal data)", systemImage: "gearshape")
+                        CompactSection("We'll Attach", icon: "paperclip", iconColor: .teal) {
+                            CompactRow("App version and OS", icon: "info.circle", iconColor: .teal) { EmptyView() }
+                            CompactDivider()
+                            CompactRow("Device and hardware details", icon: "desktopcomputer", iconColor: .blue) { EmptyView() }
+                            CompactDivider()
+                            CompactRow("Recent logs when available", icon: "doc.text", iconColor: .orange) { EmptyView() }
+                            CompactDivider()
+                            CompactRow("Current settings summary", icon: "gearshape", iconColor: .green) { EmptyView() }
 
                             ForEach(extraAttachments.indices, id: \.self) { index in
-                                Label(extraAttachments[index].label, systemImage: extraAttachments[index].icon)
+                                CompactDivider()
+                                CompactRow(
+                                    extraAttachments[index].label,
+                                    icon: extraAttachments[index].icon,
+                                    iconColor: .purple
+                                ) { EmptyView() }
                             }
                         }
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.92))
-                    }
-                    .padding()
-                    .background(Color.primary.opacity(0.1))
-                    .cornerRadius(8)
 
-                    // Privacy note
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.shield")
-                            .foregroundStyle(.green)
-                        Text("Opens in your browser. Nothing is sent without your approval.")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.92))
+                        CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
+                            CompactRow(
+                                "Nothing is sent until GitHub opens in your browser.",
+                                icon: "checkmark.shield",
+                                iconColor: .green
+                            ) { EmptyView() }
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
                 }
-                .padding()
+
+                footer
             }
-
-            Divider()
-
-            // Footer
-            HStack {
-                Link("Questions instead?", destination: URL(string: "mailto:hi@saneapps.com")!)
-                    .font(.system(size: 13))
-
-                Spacer()
-
-                Button("Cancel") {
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-
-                Button {
-                    copyDiagnostics()
-                } label: {
-                    if collectingAction == .copy {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(.horizontal, 8)
-                    } else {
-                        Text(didCopyDiagnostics ? "Copied" : "Copy Diagnostics")
-                    }
-                }
-                .buttonStyle(.bordered)
-                .disabled(collectingAction != nil)
-
-                Button {
-                    submitReport()
-                } label: {
-                    if collectingAction == .report {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(.horizontal, 8)
-                    } else {
-                        Text("Report Issue")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(issueDescription.isEmpty || collectingAction != nil)
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding()
+            .padding(.vertical, 20)
         }
-        .frame(width: 480, height: 420)
+        #if os(macOS)
+            .frame(width: 540, height: 520)
+        #endif
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Report an Issue")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("Describe the problem and the diagnostics will be attached automatically.")
+                    .font(.callout)
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 12) {
+            Link("Questions instead?", destination: URL(string: "mailto:hi@saneapps.com")!)
+                .font(.callout)
+                .foregroundStyle(.white)
+
+            Spacer()
+
+            Button("Cancel") {
+                dismiss()
+            }
+            .buttonStyle(.bordered)
+            .keyboardShortcut(.cancelAction)
+
+            Button {
+                copyDiagnostics()
+            } label: {
+                if collectingAction == .copy {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.horizontal, 8)
+                } else {
+                    Text(didCopyDiagnostics ? "Copied" : "Copy Diagnostics")
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(collectingAction != nil)
+
+            Button {
+                submitReport()
+            } label: {
+                if collectingAction == .report {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.horizontal, 8)
+                } else {
+                    Text("Report Issue")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(issueDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || collectingAction != nil)
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var editorBackground: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(colorScheme == .dark ? Color.white.opacity(0.08) : Color.white.opacity(0.78))
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+            )
     }
 
     private func copyDiagnostics() {
@@ -168,8 +191,7 @@ public struct SaneFeedbackView: View {
             let markdown = report.toMarkdown(userDescription: description)
 
             await MainActor.run {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(markdown, forType: .string)
+                SanePlatform.copyToPasteboard(markdown)
                 collectingAction = nil
                 didCopyDiagnostics = true
             }
@@ -200,7 +222,7 @@ public struct SaneFeedbackView: View {
             userDescription: issueDescription,
             githubRepo: diagnosticsService.githubRepo
         ) {
-            NSWorkspace.shared.open(url)
+            SanePlatform.open(url)
             dismiss()
         }
     }

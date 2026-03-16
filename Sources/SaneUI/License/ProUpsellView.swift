@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// Contextual upgrade modal shown when a free user tries a Pro action.
@@ -107,7 +106,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                 } else {
                     Button {
                         if let url = licenseService.checkoutURL {
-                            NSWorkspace.shared.open(url)
+                            SanePlatform.open(url)
                         }
                         let appName = licenseService.appName.lowercased()
                         Task.detached {
@@ -124,12 +123,12 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .tint(Color.saneAccent)
                     .controlSize(.large)
 
-                    Button("I Have a Key") {
+                    Button(LicenseService.usePurchaseKeyLabel()) {
                         showingLicenseEntry = true
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(Color.saneAccent)
-                    .font(.system(size: 13))
+                        .foregroundStyle(Color.saneAccent)
+                        .font(.system(size: 13))
                 }
 
                 if let purchaseError = licenseService.purchaseError {
@@ -144,7 +143,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
         .padding(24)
         .frame(width: 380)
         .fixedSize(horizontal: false, vertical: true)
-        .onExitCommand { closeView() }
+        .saneOnExitCommand { closeView() }
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
         }

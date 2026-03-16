@@ -119,11 +119,11 @@ public struct LicenseEntryView: View {
                 .help("Close")
             }
 
-            Text("Enter License Key")
+            Text(LicenseService.usePurchaseKeyLabel())
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
-            Text("Paste the license key from your purchase confirmation email.")
+            Text(LicenseService.purchaseKeyEmailInstruction())
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.92))
                 .multilineTextAlignment(.center)
@@ -132,6 +132,7 @@ public struct LicenseEntryView: View {
             TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $licenseKey)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13, design: .monospaced))
+                .accessibilityIdentifier("saneui-license-key-field")
 
             if let error = licenseService.validationError {
                 Text(error)
@@ -147,6 +148,7 @@ public struct LicenseEntryView: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 .font(.system(size: 13))
+                .accessibilityIdentifier("saneui-license-cancel")
 
                 Button("Activate") {
                     Task {
@@ -156,6 +158,7 @@ public struct LicenseEntryView: View {
                 .keyboardShortcut(.defaultAction)
                 .font(.system(size: 13))
                 .disabled(licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || licenseService.isValidating)
+                .accessibilityIdentifier("saneui-license-activate")
 
                 if licenseService.isValidating {
                     ProgressView()

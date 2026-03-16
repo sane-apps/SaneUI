@@ -1,6 +1,9 @@
-import AppKit
+import Darwin
 import Foundation
 import OSLog
+#if canImport(UIKit)
+    import UIKit
+#endif
 
 // MARK: - SaneDiagnosticReport
 
@@ -10,8 +13,8 @@ public struct SaneDiagnosticReport: Sendable {
     public let appName: String
     public let appVersion: String
     public let buildNumber: String
-    public let macOSVersion: String
-    public let hardwareModel: String
+    public let platformDescription: String
+    public let deviceDescription: String
     public let recentLogs: [LogEntry]
     public let settingsSummary: String
     public let collectedAt: Date
@@ -32,8 +35,8 @@ public struct SaneDiagnosticReport: Sendable {
         appName: String,
         appVersion: String,
         buildNumber: String,
-        macOSVersion: String,
-        hardwareModel: String,
+        platformDescription: String,
+        deviceDescription: String,
         recentLogs: [LogEntry],
         settingsSummary: String,
         collectedAt: Date
@@ -41,8 +44,8 @@ public struct SaneDiagnosticReport: Sendable {
         self.appName = appName
         self.appVersion = appVersion
         self.buildNumber = buildNumber
-        self.macOSVersion = macOSVersion
-        self.hardwareModel = hardwareModel
+        self.platformDescription = platformDescription
+        self.deviceDescription = deviceDescription
         self.recentLogs = recentLogs
         self.settingsSummary = settingsSummary
         self.collectedAt = collectedAt
@@ -60,8 +63,8 @@ public struct SaneDiagnosticReport: Sendable {
         | Property | Value |
         |----------|-------|
         | App Version | \(appVersion) (\(buildNumber)) |
-        | macOS | \(macOSVersion) |
-        | Hardware | \(hardwareModel) |
+        | OS | \(platformDescription) |
+        | Device | \(deviceDescription) |
         | Collected | \(ISO8601DateFormatter().string(from: collectedAt)) |
 
         """
@@ -107,13 +110,12 @@ public extension SaneDiagnosticReport {
     /// Generate a URL that opens a pre-filled GitHub issue.
     /// Diagnostics are copied to clipboard instead of stuffed into URL params
     /// (GitHub has URL length limits and the full markdown easily exceeds them).
+    @MainActor
     func gitHubIssueURL(title: String, userDescription: String, githubRepo: String) -> URL? {
         let fullBody = toMarkdown(userDescription: userDescription)
 
         // Copy full diagnostics to clipboard — user pastes into the issue
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(fullBody, forType: .string)
+        SanePlatform.copyToPasteboard(fullBody)
 
         // URL only carries the title + short user text (hard-clamped).
         let trimmedDescription = userDescription.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -137,8 +139,8 @@ public extension SaneDiagnosticReport {
         | Property | Value |
         |----------|-------|
         | App Version | \(appVersion) (\(buildNumber)) |
-        | macOS | \(macOSVersion) |
-        | Hardware | \(hardwareModel) |
+        | OS | \(platformDescription) |
+        | Device | \(deviceDescription) |
         | Collected | \(collectedAtISO) |
 
         ---
@@ -204,8 +206,8 @@ public final class SaneDiagnosticsService: @unchecked Sendable {
             appName: appName,
             appVersion: appVersion,
             buildNumber: buildNumber,
-            macOSVersion: macOSVersion,
-            hardwareModel: hardwareModel,
+            platformDescription: platformDescription,
+            deviceDescription: deviceDescription,
             recentLogs: logs,
             settingsSummary: settings,
             collectedAt: Date()
@@ -224,40 +226,69 @@ public final class SaneDiagnosticsService: @unchecked Sendable {
 
     // MARK: - System Info
 
-    private var macOSVersion: String {
+    private var platformDescription: String {
         let version = ProcessInfo.processInfo.operatingSystemVersion
-        return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        #if os(macOS)
+            return "macOS \(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        #elseif os(iOS)
+            return "iOS \(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        #else
+            return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        #endif
     }
 
-    private var hardwareModel: String {
+    private var deviceDescription: String {
+        #if os(macOS)
+            let modelString = hardwareIdentifier
+            #if arch(arm64)
+                return "\(modelString) (Apple Silicon)"
+            #else
+                return "\(modelString) (Intel)"
+            #endif
+        #elseif os(iOS)
+            let env = ProcessInfo.processInfo.environment
+            let simulatedModel = env["SIMULATOR_DEVICE_NAME"]
+            let simulatedIdentifier = env["SIMULATOR_MODEL_IDENTIFIER"]
+            let identifier = simulatedIdentifier ?? hardwareIdentifier
+            let model = simulatedModel ?? identifier
+            return identifier.isEmpty || identifier == model ? model : "\(model) (\(identifier))"
+        #else
+            return hardwareIdentifier
+        #endif
+    }
+
+    private var hardwareIdentifier: String {
         var size = 0
-        sysctlbyname("hw.model", nil, &size, nil, 0)
-        var model = [CChar](repeating: 0, count: size)
-        sysctlbyname("hw.model", &model, &size, nil, 0)
-        let modelString = String(
-            bytes: model.prefix(while: { $0 != 0 }).map(UInt8.init),
+        let key: String = {
+            #if os(macOS)
+                "hw.model"
+            #elseif os(iOS)
+                "hw.machine"
+            #else
+                "hw.model"
+            #endif
+        }()
+        sysctlbyname(key, nil, &size, nil, 0)
+        var identifier = [CChar](repeating: 0, count: size)
+        sysctlbyname(key, &identifier, &size, nil, 0)
+        return String(
+            bytes: identifier.prefix(while: { $0 != 0 }).map(UInt8.init),
             encoding: .utf8
         ) ?? "Unknown"
-
-        #if arch(arm64)
-            return "\(modelString) (Apple Silicon)"
-        #else
-            return "\(modelString) (Intel)"
-        #endif
     }
 
     // MARK: - Log Collection
 
     private func collectRecentLogs() async -> [SaneDiagnosticReport.LogEntry] {
-        guard #available(macOS 15.0, *) else {
-            return [
-                SaneDiagnosticReport.LogEntry(
-                    timestamp: Date(),
-                    level: "INFO",
-                    message: "Log collection requires macOS 15+. Current OS: \(macOSVersion). Paste logs manually: log show --predicate 'subsystem == \"\(subsystem)\"' --last 5m --style compact"
-                )
-            ]
-        }
+        #if os(macOS)
+            guard #available(macOS 15.0, *) else {
+                return unavailableLogCollectionMessage()
+            }
+        #elseif os(iOS)
+            guard #available(iOS 17.0, *) else {
+                return unavailableLogCollectionMessage()
+            }
+        #endif
 
         do {
             let store = try OSLogStore(scope: .currentProcessIdentifier)
@@ -301,12 +332,22 @@ public final class SaneDiagnosticsService: @unchecked Sendable {
         }
     }
 
+    private func unavailableLogCollectionMessage() -> [SaneDiagnosticReport.LogEntry] {
+        [
+            SaneDiagnosticReport.LogEntry(
+                timestamp: Date(),
+                level: "INFO",
+                message: "Log collection requires a newer OS logging API. Current OS: \(platformDescription). Paste logs manually if needed."
+            )
+        ]
+    }
+
     // MARK: - Privacy
 
     private func sanitize(_ message: String) -> String {
         var sanitized = message
 
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        let homeDir = NSHomeDirectory()
         sanitized = sanitized.replacingOccurrences(of: homeDir, with: "~")
 
         let patterns = [

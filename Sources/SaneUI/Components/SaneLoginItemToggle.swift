@@ -1,5 +1,89 @@
+#if os(macOS)
 import ServiceManagement
 import SwiftUI
+
+public enum SaneBackgroundAppDefaults {
+    public static let showDockIcon = false
+    public static let launchAtLogin = true
+    public static let autoEnableLaunchAtLoginKey = "hasAutoEnabledLaunchAtLoginDefault"
+}
+
+public enum SaneLoginItemPolicy {
+    public static func isEligibleInstall(
+        bundlePath: String = Bundle.main.bundlePath,
+        homeDirectory: String = NSHomeDirectory()
+    ) -> Bool {
+        guard !bundlePath.contains("DerivedData") else { return false }
+        return SaneAppMover.isInApplicationsDirectory(bundlePath, homeDirectory: homeDirectory)
+    }
+
+    public static func toggleValue(
+        statusProvider: () -> SMAppService.Status = { SMAppService.mainApp.status }
+    ) -> Bool {
+        switch statusProvider() {
+        case .enabled, .requiresApproval:
+            true
+        default:
+            false
+        }
+    }
+
+    @discardableResult
+    public static func setEnabled(
+        _ enabled: Bool,
+        bundlePath: String = Bundle.main.bundlePath,
+        homeDirectory: String = NSHomeDirectory(),
+        register: () throws -> Void = { try SMAppService.mainApp.register() },
+        unregister: () throws -> Void = { try SMAppService.mainApp.unregister() }
+    ) throws -> Bool {
+        guard isEligibleInstall(bundlePath: bundlePath, homeDirectory: homeDirectory) else {
+            return false
+        }
+
+        if enabled {
+            try register()
+        } else {
+            try unregister()
+        }
+
+        return true
+    }
+
+    @discardableResult
+    public static func enableByDefaultIfNeeded(
+        isFirstLaunch: Bool,
+        markerKey: String = SaneBackgroundAppDefaults.autoEnableLaunchAtLoginKey,
+        bundlePath: String = Bundle.main.bundlePath,
+        homeDirectory: String = NSHomeDirectory(),
+        userDefaults: UserDefaults = .standard,
+        statusProvider: () -> SMAppService.Status = { SMAppService.mainApp.status },
+        register: () throws -> Void = { try SMAppService.mainApp.register() }
+    ) -> Bool {
+        guard isFirstLaunch else { return false }
+        guard !userDefaults.bool(forKey: markerKey) else { return false }
+        guard isEligibleInstall(bundlePath: bundlePath, homeDirectory: homeDirectory) else {
+            return false
+        }
+
+        switch statusProvider() {
+        case .enabled, .requiresApproval:
+            userDefaults.set(true, forKey: markerKey)
+            return true
+        case .notRegistered:
+            do {
+                try register()
+                userDefaults.set(true, forKey: markerKey)
+                return true
+            } catch {
+                return false
+            }
+        case .notFound:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+}
 
 /// A toggle row for "Start automatically at login" using SMAppService.
 ///
@@ -30,30 +114,20 @@ public struct SaneLoginItemToggle: View {
         .onAppear { checkLaunchAtLogin() }
     }
 
-    private var isProperInstall: Bool {
-        let path = Bundle.main.bundlePath
-        return !path.contains("DerivedData")
-    }
-
     private func setLaunchAtLogin(_ enabled: Bool) {
-        guard isProperInstall else {
-            launchAtLogin = false
-            return
-        }
         do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
+            let didApply = try SaneLoginItemPolicy.setEnabled(enabled)
+            if !didApply {
+                launchAtLogin = SaneLoginItemPolicy.toggleValue()
             }
         } catch {
             // Revert toggle on error
-            launchAtLogin = !launchAtLogin
+            launchAtLogin = SaneLoginItemPolicy.toggleValue()
         }
     }
 
     private func checkLaunchAtLogin() {
-        let status = SMAppService.mainApp.status
-        launchAtLogin = (status == .enabled)
+        launchAtLogin = SaneLoginItemPolicy.toggleValue()
     }
 }
+#endif

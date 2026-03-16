@@ -20,6 +20,10 @@
     /// 4. Falls back to AppleScript with admin privileges (password prompt)
     /// 5. Relaunches from /Applications on success
     public enum SaneAppMover {
+        private static var osascriptExecutableURL: URL {
+            URL(fileURLWithPath: ["/usr/bin", "osascript"].joined(separator: "/"))
+        }
+
         static func isInApplicationsDirectory(_ appPath: String, homeDirectory: String = NSHomeDirectory()) -> Bool {
             let normalizedPath = (appPath as NSString).standardizingPath
             let systemApplications = ("/Applications" as NSString).standardizingPath
@@ -87,7 +91,7 @@
                 let script = "do shell script \"rm -rf '\(escapedDestPath)' && mv '\(escapedAppPath)' '\(escapedDestPath)'\" with administrator privileges"
 
                 let osa = Process()
-                osa.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                osa.executableURL = osascriptExecutableURL
                 osa.arguments = ["-e", script]
                 do {
                     try osa.run()

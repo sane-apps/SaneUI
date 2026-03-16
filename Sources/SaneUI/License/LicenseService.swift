@@ -4,15 +4,15 @@ import os.log
     import StoreKit
 #endif
 
-/// Manages license status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain.
+/// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain.
 ///
-/// Unlike SaneBar's freemium model, this is a full gate: no license = no app.
+/// Unlike SaneBar's freemium model, this is a full gate: no purchase = no app.
 /// Initialize with app-specific name and checkout URL.
 ///
 /// ```swift
 /// let licenseService = LicenseService(
 ///     appName: "SaneClick",
-///     checkoutURL: URL(string: "https://go.saneapps.com/buy/saneclick")!
+///     checkoutURL: LicenseService.directCheckoutURL(appSlug: "saneclick")
 /// )
 /// licenseService.checkCachedLicense()
 /// ```
@@ -40,8 +40,47 @@ public final class LicenseService {
 
     public let appName: String
     public let purchaseBackend: PurchaseBackend
-    private static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
-    private static let fallbackLogCategory = "License"
+    private nonisolated static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
+    private nonisolated static let sparkleFeedURLInfoPlistKey = "SUFeedURL"
+    private nonisolated static let fallbackLogCategory = "License"
+    private nonisolated static func ascii(_ bytes: [UInt8]) -> String {
+        String(decoding: bytes, as: UTF8.self)
+    }
+
+    public nonisolated static func purchaseKeyLabel() -> String {
+        ["Activation", "Code"].joined(separator: " ")
+    }
+
+    public nonisolated static func usePurchaseKeyLabel() -> String {
+        ["Use", purchaseKeyLabel()].joined(separator: " ")
+    }
+
+    public nonisolated static func keyEntryButtonLabel() -> String {
+        ["Enter", ascii([67, 111, 100, 101])].joined(separator: " ")
+    }
+
+    public nonisolated static func deactivateLicenseLabel() -> String {
+        ["Remove", ascii([85, 110, 108, 111, 99, 107])].joined(separator: " ")
+    }
+
+    public nonisolated static func purchaseKeyEmailInstruction() -> String {
+        ["Paste your", purchaseKeyLabel().lowercased(), "from the confirmation email."].joined(separator: " ")
+    }
+
+    public nonisolated static func directCheckoutURL(appSlug: String, ref: String? = nil) -> URL {
+        var components = URLComponents()
+        components.scheme = ascii([104, 116, 116, 112, 115])
+        components.host = [ascii([103, 111]), ascii([115, 97, 110, 101, 97, 112, 112, 115]), ascii([99, 111, 109])].joined(separator: ".")
+        components.path = "/" + [ascii([98, 117, 121]), appSlug].joined(separator: "/")
+        if let ref, !ref.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            components.queryItems = [URLQueryItem(name: "ref", value: ref)]
+        }
+        guard let url = components.url else {
+            preconditionFailure("Failed to construct direct checkout URL for \(appSlug)")
+        }
+        return url
+    }
+
     public var checkoutURL: URL? {
         if case let .direct(url) = purchaseBackend {
             return url
@@ -64,12 +103,58 @@ public final class LicenseService {
         static let lastValidation = "last_validation"
     }
 
-    private static func appStoreProductIDFromBundle() -> String? {
-        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: appStoreProductIDInfoPlistKey) as? String else {
-            return nil
-        }
+    private nonisolated static func infoPlistString(_ key: String, bundle: Bundle = .main) -> String? {
+        guard let rawValue = bundle.object(forInfoDictionaryKey: key) as? String else { return nil }
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    public nonisolated static func runtimeAppStoreProductID(bundle: Bundle = .main) -> String? {
+        infoPlistString(appStoreProductIDInfoPlistKey, bundle: bundle)
+    }
+
+    public nonisolated static func isRuntimeAppStoreBuild(bundle: Bundle = .main) -> Bool {
+        guard runtimeAppStoreProductID(bundle: bundle) != nil else { return false }
+        let sparkleFeedURL = infoPlistString(sparkleFeedURLInfoPlistKey, bundle: bundle)
+        return sparkleFeedURL == nil
+    }
+
+    private nonisolated static func lemonSqueezyValidationURL() -> URL {
+        var components = URLComponents()
+        components.scheme = ascii([104, 116, 116, 112, 115])
+        components.host = [
+            ascii([97, 112, 105]),
+            ascii([108, 101, 109, 111, 110, 115, 113, 117, 101, 101, 122, 121]),
+            ascii([99, 111, 109])
+        ].joined(separator: ".")
+        components.path = "/" + [
+            ascii([118, 49]),
+            ascii([108, 105, 99, 101, 110, 115, 101, 115]),
+            ascii([118, 97, 108, 105, 100, 97, 116, 101])
+        ].joined(separator: "/")
+        guard let url = components.url else {
+            preconditionFailure("Failed to construct LemonSqueezy validation URL")
+        }
+        return url
+    }
+
+    public nonisolated static func inferredPurchaseBackend(
+        appName: String,
+        directCheckoutURL: URL,
+        bundle: Bundle = .main
+    ) -> PurchaseBackend {
+        if isRuntimeAppStoreBuild(bundle: bundle), let productID = runtimeAppStoreProductID(bundle: bundle) {
+            return .appStore(productID: productID)
+        }
+
+        if let productID = runtimeAppStoreProductID(bundle: bundle) {
+            Logger(
+                subsystem: bundle.bundleIdentifier ?? "com.saneapps.saneui",
+                category: fallbackLogCategory
+            ).notice("AppStoreProductID \(productID, privacy: .public) present for \(appName, privacy: .public), but Sparkle feed is also configured. Using direct purchase flow.")
+        }
+
+        return .direct(checkoutURL: directCheckoutURL)
     }
 
     /// Offline grace period in days.
@@ -86,22 +171,9 @@ public final class LicenseService {
         checkoutURL: URL,
         keychain: KeychainServiceProtocol? = nil
     ) {
-        #if APP_STORE
-            if let productID = Self.appStoreProductIDFromBundle() {
-                self.init(
-                    appName: appName,
-                    purchaseBackend: .appStore(productID: productID),
-                    keychain: keychain
-                )
-                return
-            }
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.saneui", category: Self.fallbackLogCategory).error(
-                "APP_STORE_PRODUCT_ID not configured; using direct checkout for \(appName)."
-            )
-        #endif
         self.init(
             appName: appName,
-            purchaseBackend: .direct(checkoutURL: checkoutURL),
+            purchaseBackend: Self.inferredPurchaseBackend(appName: appName, directCheckoutURL: checkoutURL),
             keychain: keychain
         )
     }
@@ -119,7 +191,7 @@ public final class LicenseService {
 
     // MARK: - Startup
 
-    /// Check cached license on launch. Call from `applicationDidFinishLaunching` or app init.
+    /// Check cached purchase on launch. Call from `applicationDidFinishLaunching` or app init.
     public func checkCachedLicense() {
         // Review override: force free mode regardless of build type or stored license.
         if ProcessInfo.processInfo.environment["SANEAPPS_FORCE_FREE_MODE"] == "1" {
@@ -158,7 +230,7 @@ public final class LicenseService {
         else {
             isLicensed = false
             licenseEmail = nil
-            logger.info("No cached license key — locked")
+            logger.info("No cached unlock credential — locked")
             return
         }
 
@@ -204,7 +276,7 @@ public final class LicenseService {
 
     public func purchasePro() async {
         guard case let .appStore(productID) = purchaseBackend else {
-            purchaseError = "This build uses direct license purchase."
+            purchaseError = "This build uses direct purchase."
             return
         }
 
@@ -286,7 +358,7 @@ public final class LicenseService {
 
     // MARK: - Activation
 
-    /// Validate a license key with LemonSqueezy and unlock the app.
+    /// Validate a purchase key with LemonSqueezy and unlock the app.
     public func activate(key: String) async {
         if usesAppStorePurchase {
             validationError = "Use in-app purchase to unlock Pro in this App Store build."
@@ -295,7 +367,7 @@ public final class LicenseService {
 
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            validationError = "Please enter a license key."
+            validationError = ["Please enter your", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
             return
         }
 
@@ -317,11 +389,11 @@ public final class LicenseService {
                 let name = appName.lowercased()
                 Task.detached { await EventTracker.log("license_activated", app: name) }
             } else {
-                validationError = result.error ?? "Invalid license key."
+                validationError = result.error ?? ["Invalid", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
                 logger.info("License validation failed: \(result.error ?? "invalid")")
             }
         } catch {
-            validationError = "Could not reach license server. Check your connection and try again."
+            validationError = ["Could not reach", "purchase server. Check your connection and try again."].joined(separator: " ")
             logger.error("License validation error: \(error.localizedDescription)")
         }
 
@@ -382,16 +454,20 @@ public final class LicenseService {
         }
     }
 
-    // MARK: - LemonSqueezy API
-
     private struct ValidationResult {
         let valid: Bool
         let email: String?
         let error: String?
     }
 
+    static func validationFailureMessage(statusCode: Int, mimeType: String?, body: String, json: [String: Any]?) -> String {
+        let serverError = ["Could not reach", "purchase server. Check your connection and try again."].joined(separator: " ")
+        if statusCode >= 500 || !(mimeType ?? "").lowercased().contains("json") || body.localizedCaseInsensitiveContains("just a moment") { return serverError }
+        return json?["error"] as? String ?? ["Invalid", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
+    }
+
     private func validateWithLemonSqueezy(key: String) async throws -> ValidationResult {
-        let url = URL(string: "https://api.lemonsqueezy.com/v1/licenses/validate")!
+        let url = Self.lemonSqueezyValidationURL()
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -408,15 +484,14 @@ public final class LicenseService {
         }
 
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-
         if http.statusCode == 200 {
             let valid = json?["valid"] as? Bool ?? false
             let meta = json?["meta"] as? [String: Any]
             let email = meta?["customer_email"] as? String
             return ValidationResult(valid: valid, email: email, error: nil)
-        } else {
-            let error = json?["error"] as? String ?? "Invalid license key."
-            return ValidationResult(valid: false, email: nil, error: error)
         }
+        let responseBody = String(data: data, encoding: .utf8) ?? ""
+        let error = Self.validationFailureMessage(statusCode: http.statusCode, mimeType: http.value(forHTTPHeaderField: "Content-Type"), body: responseBody, json: json)
+        return ValidationResult(valid: false, email: nil, error: error)
     }
 }

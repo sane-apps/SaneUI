@@ -1,34 +1,52 @@
-import AppKit
 import SwiftUI
+#if canImport(AppKit)
+    import AppKit
+#elseif canImport(UIKit)
+    import UIKit
+#endif
 
 // MARK: - Visual Effect Blur
 
 /// A translucent blur effect view for macOS glass morphism.
-public struct VisualEffectBlur: NSViewRepresentable {
-    public let material: NSVisualEffectView.Material
-    public let blendingMode: NSVisualEffectView.BlendingMode
+#if canImport(AppKit)
+    public struct VisualEffectBlur: NSViewRepresentable {
+        public let material: NSVisualEffectView.Material
+        public let blendingMode: NSVisualEffectView.BlendingMode
 
-    public init(
-        material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
-    ) {
-        self.material = material
-        self.blendingMode = blendingMode
-    }
+        public init(
+            material: NSVisualEffectView.Material = .hudWindow,
+            blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
+        ) {
+            self.material = material
+            self.blendingMode = blendingMode
+        }
 
-    public func makeNSView(context _: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
+        public func makeNSView(context _: Context) -> NSVisualEffectView {
+            let view = NSVisualEffectView()
+            view.material = material
+            view.blendingMode = blendingMode
+            view.state = .active
+            return view
+        }
 
-    public func updateNSView(_ nsView: NSVisualEffectView, context _: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
+        public func updateNSView(_ nsView: NSVisualEffectView, context _: Context) {
+            nsView.material = material
+            nsView.blendingMode = blendingMode
+        }
     }
-}
+#elseif canImport(UIKit)
+    public struct VisualEffectBlur: UIViewRepresentable {
+        public init() {}
+
+        public func makeUIView(context _: Context) -> UIVisualEffectView {
+            UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+        }
+
+        public func updateUIView(_ uiView: UIVisualEffectView, context _: Context) {
+            uiView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        }
+    }
+#endif
 
 // MARK: - Sane Brand Colors
 
@@ -75,11 +93,15 @@ public struct SaneGradientBackground: View {
         ZStack {
             // Layer 0: System vibrancy (dark mode depth)
             if colorScheme == .dark {
-                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                #if os(macOS)
+                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                #else
+                    VisualEffectBlur()
+                #endif
             }
 
             // Layer 1: Living mesh or linear fallback
-            if #available(macOS 15.0, *) {
+            if #available(iOS 18.0, macOS 15.0, *) {
                 if reduceMotion {
                     staticMesh
                 } else {
@@ -94,7 +116,7 @@ public struct SaneGradientBackground: View {
 
     // MARK: - Living Mesh (Animated, macOS 15+)
 
-    @available(macOS 15.0, *)
+    @available(iOS 18.0, macOS 15.0, *)
     private var livingMesh: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 12.0, paused: false)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
@@ -146,7 +168,7 @@ public struct SaneGradientBackground: View {
 
     // MARK: - Static Mesh (Reduce Motion, macOS 15+)
 
-    @available(macOS 15.0, *)
+    @available(iOS 18.0, macOS 15.0, *)
     private var staticMesh: some View {
         MeshGradient(
             width: 4, height: 4,

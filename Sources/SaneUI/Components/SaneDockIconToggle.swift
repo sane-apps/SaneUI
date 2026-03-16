@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -108,3 +109,4 @@ public enum SaneActivationPolicy {
         return false
     }
 }
+#endif

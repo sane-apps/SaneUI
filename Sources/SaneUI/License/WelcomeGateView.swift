@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 // Onboarding palette and controls aligned with SaneBar.
@@ -26,6 +25,37 @@ enum WelcomeGatePrimaryAction {
     case complete
     case purchasePro
     case openCheckout
+}
+
+public struct WelcomeGatePermissionConfig {
+    public let title: String
+    public let bullets: [(icon: String, text: String)]
+    public let grantedMessage: String?
+    public let actionLabel: String?
+    public let actionHint: String?
+    public let initiallyGranted: Bool
+    public let refreshGranted: (() -> Bool)?
+    public let action: (() -> Void)?
+
+    public init(
+        title: String,
+        bullets: [(icon: String, text: String)],
+        grantedMessage: String? = nil,
+        actionLabel: String? = nil,
+        actionHint: String? = nil,
+        initiallyGranted: Bool = false,
+        refreshGranted: (() -> Bool)? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.bullets = bullets
+        self.grantedMessage = grantedMessage
+        self.actionLabel = actionLabel
+        self.actionHint = actionHint
+        self.initiallyGranted = initiallyGranted
+        self.refreshGranted = refreshGranted
+        self.action = action
+    }
 }
 
 enum WelcomeGateFlowPolicy {
@@ -95,6 +125,7 @@ public struct WelcomeGateView: View {
     let appIcon: String
     let freeFeatures: [(icon: String, text: String)]
     let proFeatures: [(icon: String, text: String)]
+    let permissionConfig: WelcomeGatePermissionConfig
     @Bindable var licenseService: LicenseService
     @Environment(\.dismiss) private var dismiss
 
@@ -102,8 +133,11 @@ public struct WelcomeGateView: View {
     @State private var navigateForward = true
     @State private var selectedTier: Tier = .pro
     @State private var showingLicenseEntry = false
-    @State private var accessibilityGranted = AXIsProcessTrusted()
+    @State private var permissionGranted = false
     private let autoDismissOnPro: Bool
+    private let secondaryCompletionActionLabel: String?
+    private let secondaryCompletionAccessibilityIdentifier: String?
+    private let onSecondaryCompletion: (() -> Void)?
     private let onComplete: (() -> Void)?
 
     // Canonical onboarding flow across all apps.
@@ -114,17 +148,34 @@ public struct WelcomeGateView: View {
         appIcon: String,
         freeFeatures: [(icon: String, text: String)],
         proFeatures: [(icon: String, text: String)],
+        permissionConfig: WelcomeGatePermissionConfig? = nil,
         licenseService: LicenseService,
         autoDismissOnPro: Bool = true,
+        secondaryCompletionActionLabel: String? = nil,
+        secondaryCompletionAccessibilityIdentifier: String? = nil,
+        onSecondaryCompletion: (() -> Void)? = nil,
         onComplete: (() -> Void)? = nil
     ) {
         self.appName = appName
         self.appIcon = appIcon
         self.freeFeatures = freeFeatures
         self.proFeatures = proFeatures
+        self.permissionConfig = permissionConfig ?? WelcomeGatePermissionConfig(
+            title: "Privacy First",
+            bullets: [
+                ("video.slash.fill", "No screen recording."),
+                ("eye.slash.fill", "No screenshots."),
+                ("icloud.slash", "No data collected.")
+            ],
+            grantedMessage: "You're all set. No extra setup is required here."
+        )
         self.licenseService = licenseService
         self.autoDismissOnPro = autoDismissOnPro
+        self.secondaryCompletionActionLabel = secondaryCompletionActionLabel
+        self.secondaryCompletionAccessibilityIdentifier = secondaryCompletionAccessibilityIdentifier
+        self.onSecondaryCompletion = onSecondaryCompletion
         self.onComplete = onComplete
+        _permissionGranted = State(initialValue: self.permissionConfig.initiallyGranted)
     }
 
     public var body: some View {
@@ -160,8 +211,9 @@ public struct WelcomeGateView: View {
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            accessibilityGranted = AXIsProcessTrusted()
+        .onReceive(NotificationCenter.default.publisher(for: SanePlatform.didBecomeActiveNotification)) { _ in
+            guard let refreshGranted = permissionConfig.refreshGranted else { return }
+            permissionGranted = refreshGranted()
         }
         .onChange(of: licenseService.isPro) { _, newValue in
             guard autoDismissOnPro, newValue else { return }
@@ -351,16 +403,22 @@ public struct WelcomeGateView: View {
 
     private var welcomePage: some View {
         VStack(spacing: 20) {
-            if let nsIcon = NSApp.applicationIconImage {
-                Image(nsImage: nsIcon)
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
-            } else {
+            #if os(macOS)
+                if let nsIcon = NSApp.applicationIconImage {
+                    Image(nsImage: nsIcon)
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
+                } else {
+                    Image(systemName: appIcon)
+                        .font(.system(size: 56))
+                        .foregroundStyle(saneAccentSoft)
+                }
+            #else
                 Image(systemName: appIcon)
                     .font(.system(size: 56))
                     .foregroundStyle(saneAccentSoft)
-            }
+            #endif
 
             Text("Welcome to \(appName)")
                 .font(.system(size: 30, weight: .bold, design: .serif))
@@ -658,41 +716,49 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(saneAccent)
 
-            Text("Grant Access")
+            Text(permissionConfig.title)
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
             VStack(alignment: .leading, spacing: 12) {
-                permissionLine(icon: "video.slash.fill", text: "No screen recording.")
-                permissionLine(icon: "eye.slash.fill", text: "No screenshots.")
-                permissionLine(icon: "icloud.slash", text: "No data collected.")
+                ForEach(Array(permissionConfig.bullets.enumerated()), id: \.offset) { _, bullet in
+                    permissionLine(icon: bullet.icon, text: bullet.text)
+                }
             }
 
-            if accessibilityGranted {
+            if permissionGranted, let grantedMessage = permissionConfig.grantedMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("Permission granted — you're all set!")
+                    Text(grantedMessage)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.green)
                 }
                 .padding(.top, 8)
-            } else {
+            } else if let actionLabel = permissionConfig.actionLabel,
+                      let action = permissionConfig.action {
                 Button {
-                    openAccessibilitySettings()
+                    action()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.open.fill")
                             .font(.system(size: 14))
-                        Text("Open Accessibility Settings")
+                        Text(actionLabel)
                             .font(.system(size: 15, weight: .semibold))
                     }
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 10))
 
-                Text("Toggle \(appName) on in the list that appears")
-                    .font(.system(size: 13))
+                if let actionHint = permissionConfig.actionHint {
+                    Text(actionHint)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.92))
+                }
+            } else if let grantedMessage = permissionConfig.grantedMessage {
+                Text(grantedMessage)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white.opacity(0.92))
+                    .multilineTextAlignment(.center)
             }
 
             Spacer()
@@ -760,7 +826,7 @@ public struct WelcomeGateView: View {
                                 if licenseService.usesAppStorePurchase {
                                     Task { await licenseService.purchasePro() }
                                 } else if let url = licenseService.checkoutURL {
-                                    NSWorkspace.shared.open(url)
+                                    SanePlatform.open(url)
                                     Task.detached {
                                         await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                                     }
@@ -782,12 +848,12 @@ public struct WelcomeGateView: View {
                                 .font(.system(size: 13))
                                 .disabled(licenseService.isPurchasing)
                             } else {
-                                Button("I Have a Key") {
+                                Button(LicenseService.usePurchaseKeyLabel()) {
                                     showingLicenseEntry = true
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
-                                .font(.system(size: 13))
+                                    .font(.system(size: 13))
                             }
                         })
                     }
@@ -911,11 +977,24 @@ public struct WelcomeGateView: View {
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle())
             } else {
-                Button(finalPrimaryButtonLabel) {
-                    completeOnboarding()
+                HStack(spacing: 10) {
+                    if let secondaryCompletionActionLabel {
+                        Button(secondaryCompletionActionLabel) {
+                            completeOnboarding(useSecondaryAction: true)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .font(.system(size: 14, weight: .medium))
+                        .disabled(licenseService.isPurchasing)
+                        .accessibilityIdentifier(secondaryCompletionAccessibilityIdentifier ?? "")
+                    }
+
+                    Button(finalPrimaryButtonLabel) {
+                        completeOnboarding()
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 20, verticalPadding: 9))
+                    .disabled(licenseService.isPurchasing)
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 20, verticalPadding: 9))
-                .disabled(licenseService.isPurchasing)
             }
         }
     }
@@ -928,7 +1007,14 @@ public struct WelcomeGateView: View {
         )
     }
 
-    private func completeOnboarding() {
+    private func completeOnboarding(useSecondaryAction: Bool = false) {
+        if useSecondaryAction {
+            onSecondaryCompletion?()
+            onComplete?()
+            dismiss()
+            return
+        }
+
         switch WelcomeGateFlowPolicy.finalPrimaryAction(
             isPro: licenseService.isPro,
             selectedTier: selectedTier,
@@ -941,7 +1027,7 @@ public struct WelcomeGateView: View {
             }
         case .openCheckout:
             if let url = licenseService.checkoutURL {
-                NSWorkspace.shared.open(url)
+                SanePlatform.open(url)
                 Task.detached {
                     await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                 }
@@ -1189,12 +1275,6 @@ public struct WelcomeGateView: View {
         }
     }
 
-    private func openAccessibilitySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
     private var onboardingBackground: some View {
         ZStack {
             SaneGradientBackground()
@@ -1268,6 +1348,7 @@ private struct PromisePillarCard: View {
 
 /// Creates a standalone NSWindow for the welcome screen.
 /// Used by menu bar apps (SaneClip, etc.) that don't have a main WindowGroup.
+#if os(macOS)
 @MainActor
 public enum WelcomeWindow {
     private static var window: NSWindow?
@@ -1279,6 +1360,7 @@ public enum WelcomeWindow {
         appIcon: String,
         freeFeatures: [(icon: String, text: String)],
         proFeatures: [(icon: String, text: String)],
+        permissionConfig: WelcomeGatePermissionConfig? = nil,
         licenseService: LicenseService,
         onDismiss: @escaping () -> Void = {}
     ) {
@@ -1305,6 +1387,7 @@ public enum WelcomeWindow {
             appIcon: appIcon,
             freeFeatures: freeFeatures,
             proFeatures: proFeatures,
+            permissionConfig: permissionConfig,
             licenseService: licenseService
         )
 
@@ -1360,3 +1443,4 @@ public enum WelcomeWindow {
         }
     }
 }
+#endif

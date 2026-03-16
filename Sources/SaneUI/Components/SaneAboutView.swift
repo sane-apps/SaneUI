@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -94,7 +95,7 @@ public struct SaneAboutView: View {
                 Text(" \u{00B7} ")
                 Text("100% On-Device")
                 Text(" \u{00B7} ")
-                Text("No Analytics")
+                Text("No Spying")
             }
             .font(.callout)
             .foregroundStyle(.white.opacity(0.92))
@@ -331,3 +332,4 @@ private struct CryptoAddressRow: View {
         }
     }
 }
+#endif

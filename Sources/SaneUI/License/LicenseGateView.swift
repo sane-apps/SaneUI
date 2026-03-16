@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// Full-screen license gate that replaces the entire app window when unlicensed.
@@ -143,7 +144,7 @@ public struct LicenseGateView: View {
                             showKeyEntry = true
                         }
                     } label: {
-                        Text("I Have a Key")
+                        Text(LicenseService.usePurchaseKeyLabel())
                             .foregroundStyle(.white.opacity(0.9))
                     }
                     .buttonStyle(.plain)
@@ -180,11 +181,11 @@ public struct LicenseGateView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.saneAccent)
 
-            Text("Enter License Key")
+            Text(LicenseService.usePurchaseKeyLabel())
                 .font(.title2.bold())
                 .foregroundStyle(.white)
 
-            Text("Paste the license key from your purchase confirmation email.")
+            Text(LicenseService.purchaseKeyEmailInstruction())
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.9))
                 .multilineTextAlignment(.center)
@@ -274,3 +275,4 @@ public struct LicenseGateView: View {
         }
     }
 }
+#endif
