@@ -98,7 +98,7 @@ public struct LicenseSettingsView: View {
             }
 
             CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
-                Text("This only checks whether your activation code is valid. It does not upload your files, profiles, or app content.")
+                Text(licenseService.distributionChannel.unlockExplanation)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -129,15 +129,17 @@ public struct LicenseSettingsView: View {
 
     @ViewBuilder
     private var managementContent: some View {
-        if licenseService.usesAppStorePurchase {
-            Text("Managed by App Store")
+        if let managementLabel = licenseService.distributionChannel.managementLabel {
+            Text(managementLabel)
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
 
-            Button("Restore Purchases") {
-                Task { await licenseService.restorePurchases() }
+            if licenseService.usesAppStorePurchase {
+                Button("Restore Purchases") {
+                    Task { await licenseService.restorePurchases() }
+                }
+                .disabled(licenseService.isPurchasing)
             }
-            .disabled(licenseService.isPurchasing)
         } else {
             Button(LicenseService.deactivateLicenseLabel()) {
                 licenseService.deactivate()
@@ -159,6 +161,10 @@ public struct LicenseSettingsView: View {
                 .controlSize(.small)
                 .font(.system(size: 12))
                 .disabled(licenseService.isPurchasing)
+            } else if licenseService.usesSetappPurchase {
+                Text("Managed by Setapp")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.82))
             } else {
                 Button(LicenseService.keyEntryButtonLabel()) {
                     showingLicenseEntry = true
@@ -185,6 +191,10 @@ public struct LicenseSettingsView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
+            } else if licenseService.usesSetappPurchase {
+                Text("Managed by Setapp")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             } else {
                 Button(LicenseService.deactivateLicenseLabel()) {
                     licenseService.deactivate()
@@ -208,6 +218,10 @@ public struct LicenseSettingsView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
+                } else if licenseService.usesSetappPurchase {
+                    Text("Managed by Setapp")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
                     Button(LicenseService.keyEntryButtonLabel()) {
                         showingLicenseEntry = true
@@ -226,6 +240,12 @@ public struct LicenseSettingsView: View {
                     Task { await licenseService.purchasePro() }
                 }
                 .disabled(licenseService.isPurchasing)
+            } else if licenseService.usesSetappPurchase {
+                Text("Included with Setapp")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
             } else {
                 Button("Unlock Pro — $6.99") {
                     if let url = licenseService.checkoutURL {

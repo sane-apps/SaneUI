@@ -62,11 +62,43 @@ enum WelcomeGateFlowPolicy {
     static func finalPrimaryAction(
         isPro: Bool,
         selectedTier: Tier,
-        usesAppStorePurchase: Bool
+        channel: SaneDistributionChannel
     ) -> WelcomeGatePrimaryAction {
         guard !isPro else { return .complete }
         guard selectedTier == .pro else { return .complete }
-        return usesAppStorePurchase ? .purchasePro : .openCheckout
+        switch channel {
+        case .appStore:
+            return .purchasePro
+        case .direct:
+            return .openCheckout
+        case .setapp:
+            return .complete
+        }
+    }
+
+    static func finalPrimaryAction(
+        isPro: Bool,
+        selectedTier: Tier,
+        usesAppStorePurchase: Bool
+    ) -> WelcomeGatePrimaryAction {
+        finalPrimaryAction(
+            isPro: isPro,
+            selectedTier: selectedTier,
+            channel: usesAppStorePurchase ? .appStore : .direct
+        )
+    }
+
+    static func finalPrimaryButtonLabel(
+        isPro: Bool,
+        selectedTier: Tier,
+        channel: SaneDistributionChannel
+    ) -> String {
+        switch finalPrimaryAction(isPro: isPro, selectedTier: selectedTier, channel: channel) {
+        case .purchasePro:
+            return "Unlock Pro"
+        case .openCheckout, .complete:
+            return "Get Started"
+        }
     }
 
     static func finalPrimaryButtonLabel(
@@ -74,12 +106,11 @@ enum WelcomeGateFlowPolicy {
         selectedTier: Tier,
         usesAppStorePurchase: Bool
     ) -> String {
-        switch finalPrimaryAction(isPro: isPro, selectedTier: selectedTier, usesAppStorePurchase: usesAppStorePurchase) {
-        case .purchasePro:
-            return "Unlock Pro"
-        case .openCheckout, .complete:
-            return "Get Started"
-        }
+        finalPrimaryButtonLabel(
+            isPro: isPro,
+            selectedTier: selectedTier,
+            channel: usesAppStorePurchase ? .appStore : .direct
+        )
     }
 }
 
@@ -817,14 +848,16 @@ public struct WelcomeGateView: View {
             HStack(alignment: .top, spacing: 14) {
                 selectableTierCard(
                     tier: .pro,
-                    title: "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")",
-                    price: "One-time — yours forever",
+                    title: licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")",
+                    price: licenseService.usesSetappPurchase ? "Included with your Setapp install" : "One-time — yours forever",
                     features: proFeatures,
                     actions: {
                         AnyView(VStack(spacing: 6) {
                             Button {
                                 if licenseService.usesAppStorePurchase {
                                     Task { await licenseService.purchasePro() }
+                                } else if licenseService.usesSetappPurchase {
+                                    return
                                 } else if let url = licenseService.checkoutURL {
                                     SanePlatform.open(url)
                                     Task.detached {
@@ -837,7 +870,7 @@ public struct WelcomeGateView: View {
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 9, horizontalPadding: 14, verticalPadding: 7))
-                            .disabled(licenseService.isPurchasing)
+                            .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
 
                             if licenseService.usesAppStorePurchase {
                                 Button("Restore Purchases") {
@@ -847,6 +880,10 @@ public struct WelcomeGateView: View {
                                 .controlSize(.small)
                                 .font(.system(size: 13))
                                 .disabled(licenseService.isPurchasing)
+                            } else if licenseService.usesSetappPurchase {
+                                Text("Managed by Setapp")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.white.opacity(0.82))
                             } else {
                                 Button(LicenseService.usePurchaseKeyLabel()) {
                                     showingLicenseEntry = true
@@ -1003,7 +1040,7 @@ public struct WelcomeGateView: View {
         WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,
             selectedTier: selectedTier,
-            usesAppStorePurchase: licenseService.usesAppStorePurchase
+            channel: licenseService.distributionChannel
         )
     }
 
@@ -1018,7 +1055,7 @@ public struct WelcomeGateView: View {
         switch WelcomeGateFlowPolicy.finalPrimaryAction(
             isPro: licenseService.isPro,
             selectedTier: selectedTier,
-            usesAppStorePurchase: licenseService.usesAppStorePurchase
+            channel: licenseService.distributionChannel
         ) {
         case .purchasePro:
             if licenseService.usesAppStorePurchase {

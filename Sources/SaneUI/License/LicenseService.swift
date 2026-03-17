@@ -4,6 +4,53 @@ import os.log
     import StoreKit
 #endif
 
+public enum SaneDistributionChannel: Sendable {
+    case direct
+    case appStore
+    case setapp
+
+    public var showsSupportSection: Bool {
+        self == .direct
+    }
+
+    public var supportsInAppUpdates: Bool {
+        self == .direct
+    }
+
+    public var managementLabel: String? {
+        switch self {
+        case .direct:
+            nil
+        case .appStore:
+            "Managed by App Store"
+        case .setapp:
+            "Managed by Setapp"
+        }
+    }
+
+    public var unlockExplanation: String {
+        switch self {
+        case .direct:
+            "This only checks whether your activation code is valid. It does not upload your files, profiles, or app content."
+        case .appStore:
+            "This build unlocks Pro through the App Store. It does not upload your files, profiles, or app content."
+        case .setapp:
+            "This build unlocks through Setapp. It does not upload your files, profiles, or app content."
+        }
+    }
+
+    public var purchaseManagementMessage: String {
+        switch self {
+        case .direct:
+            "This build uses direct purchase."
+        case .appStore:
+            "This App Store build unlocks Pro with an in-app purchase."
+        case .setapp:
+            "This Setapp build manages access through Setapp."
+        }
+    }
+}
+
 /// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain.
 ///
 /// Unlike SaneBar's freemium model, this is a full gate: no purchase = no app.
@@ -21,6 +68,7 @@ public final class LicenseService {
     public enum PurchaseBackend: Sendable {
         case direct(checkoutURL: URL)
         case appStore(productID: String)
+        case setapp
     }
 
     // MARK: - Public State
@@ -88,11 +136,23 @@ public final class LicenseService {
         return nil
     }
 
-    public var usesAppStorePurchase: Bool {
-        if case .appStore = purchaseBackend {
-            return true
+    public var distributionChannel: SaneDistributionChannel {
+        switch purchaseBackend {
+        case .direct:
+            .direct
+        case .appStore:
+            .appStore
+        case .setapp:
+            .setapp
         }
-        return false
+    }
+
+    public var usesAppStorePurchase: Bool {
+        distributionChannel == .appStore
+    }
+
+    public var usesSetappPurchase: Bool {
+        distributionChannel == .setapp
     }
 
     // MARK: - Keychain Keys
@@ -211,6 +271,15 @@ public final class LicenseService {
             return
         }
 
+        if usesSetappPurchase {
+            isLicensed = false
+            licenseEmail = nil
+            validationError = nil
+            purchaseError = nil
+            logger.notice("Setapp purchase backend selected; runtime entitlement integration is still pending.")
+            return
+        }
+
         #if DEBUG
             // Debug builds: auto-grant so dev builds aren't blocked by license checks.
             // Skip when running under test host to preserve test expectations.
@@ -276,7 +345,7 @@ public final class LicenseService {
 
     public func purchasePro() async {
         guard case let .appStore(productID) = purchaseBackend else {
-            purchaseError = "This build uses direct purchase."
+            purchaseError = distributionChannel.purchaseManagementMessage
             return
         }
 
@@ -365,6 +434,11 @@ public final class LicenseService {
             return
         }
 
+        if usesSetappPurchase {
+            validationError = distributionChannel.purchaseManagementMessage
+            return
+        }
+
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             validationError = ["Please enter your", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
@@ -404,6 +478,10 @@ public final class LicenseService {
     public func deactivate() {
         if usesAppStorePurchase {
             purchaseError = "App Store purchases are managed by Apple. Use Restore Purchases if needed."
+            return
+        }
+        if usesSetappPurchase {
+            purchaseError = "This Setapp build is managed by Setapp."
             return
         }
         try? keychain.delete(Keys.licenseKey)

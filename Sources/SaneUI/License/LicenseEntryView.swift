@@ -16,6 +16,8 @@ public struct LicenseEntryView: View {
         VStack(spacing: 16) {
             if showingSuccess {
                 successContent
+            } else if licenseService.usesSetappPurchase {
+                setappContent
             } else if licenseService.usesAppStorePurchase {
                 appStoreContent
             } else {
@@ -57,6 +59,31 @@ public struct LicenseEntryView: View {
 
     // MARK: - Entry Form
 
+    private var setappContent: some View {
+        Group {
+            HStack {
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                .buttonStyle(.plain)
+                .help("Close")
+            }
+
+            Text("Managed by Setapp")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+
+            Text(licenseService.distributionChannel.purchaseManagementMessage)
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.92))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private var appStoreContent: some View {
         Group {
             HStack {
@@ -74,7 +101,7 @@ public struct LicenseEntryView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
-            Text("This App Store build unlocks Pro with an in-app purchase.")
+            Text(licenseService.distributionChannel.purchaseManagementMessage)
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.92))
                 .multilineTextAlignment(.center)

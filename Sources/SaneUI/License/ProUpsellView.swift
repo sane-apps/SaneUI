@@ -74,13 +74,23 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
             // Price + CTA
             VStack(spacing: 8) {
-                Text(licenseService.appStoreDisplayPrice ?? "$6.99")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.saneAccent)
+                if licenseService.usesSetappPurchase {
+                    Text("Setapp")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.saneAccent)
 
-                Text("One-time purchase")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.92))
+                    Text("Included with your Setapp install")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.92))
+                } else {
+                    Text(licenseService.appStoreDisplayPrice ?? "$6.99")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.saneAccent)
+
+                    Text("One-time purchase")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.92))
+                }
 
                 if licenseService.usesAppStorePurchase {
                     Button {
@@ -103,6 +113,17 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
+                } else if licenseService.usesSetappPurchase {
+                    Text("Included with Setapp")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.vertical, 4)
+
+                    Text(licenseService.distributionChannel.purchaseManagementMessage)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.82))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Button {
                         if let url = licenseService.checkoutURL {

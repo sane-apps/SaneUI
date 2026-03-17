@@ -300,8 +300,12 @@ public struct SaneAboutView: View {
 }
 
 enum SaneAboutViewPolicy {
+    static func showsSupportSection(channel: SaneDistributionChannel) -> Bool {
+        channel.showsSupportSection
+    }
+
     static func showsSupportSection(usesAppStoreBuild: Bool) -> Bool {
-        !usesAppStoreBuild
+        showsSupportSection(channel: usesAppStoreBuild ? .appStore : .direct)
     }
 }
 

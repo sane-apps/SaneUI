@@ -44,6 +44,16 @@ struct WelcomeGateFlowPolicyTests {
         #expect(label == "Get Started")
     }
 
+    @Test("Setapp selection stays on Get Started")
+    func setappLabel() {
+        let label = WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
+            isPro: false,
+            selectedTier: .pro,
+            channel: .setapp
+        )
+        #expect(label == "Get Started")
+    }
+
     @Test("Policy action is purchase for App Store Basic+Pro selection")
     func appStoreAction() {
         let action = WelcomeGateFlowPolicy.finalPrimaryAction(
@@ -62,6 +72,16 @@ struct WelcomeGateFlowPolicyTests {
             usesAppStorePurchase: false
         )
         #expect(action == .openCheckout)
+    }
+
+    @Test("Policy action is complete for Setapp Basic+Pro selection")
+    func setappAction() {
+        let action = WelcomeGateFlowPolicy.finalPrimaryAction(
+            isPro: false,
+            selectedTier: .pro,
+            channel: .setapp
+        )
+        #expect(action == .complete)
     }
 }
 
@@ -309,7 +329,7 @@ struct PurchaseBackendInferenceTests {
         switch backend {
         case .direct(let checkoutURL):
             #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanehosts"))
-        case .appStore:
+        case .appStore, .setapp:
             Issue.record("Direct bundle unexpectedly inferred App Store purchase backend")
         }
     }
@@ -325,5 +345,27 @@ struct SaneAboutViewPolicyTests {
     @Test("Direct builds keep support section")
     func directBuildKeepsSupportSection() {
         #expect(SaneAboutViewPolicy.showsSupportSection(usesAppStoreBuild: false))
+    }
+
+    @Test("Setapp builds hide support section")
+    func setappBuildHidesSupportSection() {
+        #expect(!SaneAboutViewPolicy.showsSupportSection(channel: .setapp))
+    }
+}
+
+@Suite("Distribution Channel Policy")
+struct SaneDistributionChannelTests {
+    @Test("Direct channel keeps support and in-app updates")
+    func directPolicy() {
+        #expect(SaneDistributionChannel.direct.showsSupportSection)
+        #expect(SaneDistributionChannel.direct.supportsInAppUpdates)
+        #expect(SaneDistributionChannel.direct.managementLabel == nil)
+    }
+
+    @Test("Setapp channel hides support and updates")
+    func setappPolicy() {
+        #expect(!SaneDistributionChannel.setapp.showsSupportSection)
+        #expect(!SaneDistributionChannel.setapp.supportsInAppUpdates)
+        #expect(SaneDistributionChannel.setapp.managementLabel == "Managed by Setapp")
     }
 }

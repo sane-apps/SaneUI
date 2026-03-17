@@ -107,6 +107,8 @@ public struct LicenseGateView: View {
                 Button {
                     if licenseService.usesAppStorePurchase {
                         Task { await licenseService.purchasePro() }
+                    } else if licenseService.usesSetappPurchase {
+                        return
                     } else if let url = licenseService.checkoutURL {
                         NSWorkspace.shared.open(url)
                     }
@@ -116,9 +118,11 @@ public struct LicenseGateView: View {
                             .controlSize(.small)
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text(licenseService.usesAppStorePurchase
-                             ? "Unlock Pro"
-                             : "Buy Now — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+                        Text(licenseService.usesSetappPurchase
+                             ? "Managed by Setapp"
+                             : (licenseService.usesAppStorePurchase
+                                 ? "Unlock Pro"
+                                 : "Buy Now — \(licenseService.appStoreDisplayPrice ?? "$6.99")"))
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -127,7 +131,7 @@ public struct LicenseGateView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Color.saneAccent)
                 .controlSize(.large)
-                .disabled(licenseService.isPurchasing)
+                .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
 
                 if licenseService.usesAppStorePurchase {
                     Button {
@@ -138,6 +142,12 @@ public struct LicenseGateView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(licenseService.isPurchasing)
+                } else if licenseService.usesSetappPurchase {
+                    Text(licenseService.distributionChannel.purchaseManagementMessage)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -160,9 +170,11 @@ public struct LicenseGateView: View {
             }
             .frame(maxWidth: 280)
 
-            Text(licenseService.usesAppStorePurchase
-                 ? "Unlock Pro in-app to continue"
-                 : "$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates")
+            Text(licenseService.usesSetappPurchase
+                 ? "This Setapp build unlocks through Setapp."
+                 : (licenseService.usesAppStorePurchase
+                     ? "Unlock Pro in-app to continue"
+                     : "$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.9))
 
