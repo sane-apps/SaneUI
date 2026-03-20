@@ -14,7 +14,7 @@ public enum SaneLoginItemPolicy {
         homeDirectory: String = NSHomeDirectory()
     ) -> Bool {
         guard !bundlePath.contains("DerivedData") else { return false }
-        return SaneAppMover.isInApplicationsDirectory(bundlePath, homeDirectory: homeDirectory)
+        return SaneInstallLocation.isInApplicationsDirectory(bundlePath, homeDirectory: homeDirectory)
     }
 
     public static func toggleValue(

@@ -141,7 +141,7 @@ public struct LicenseSettingsView: View {
                 .disabled(licenseService.isPurchasing)
             }
         } else {
-            Button(LicenseService.deactivateLicenseLabel()) {
+            Button(licenseService.accessManagementLabel) {
                 licenseService.deactivate()
             }
             .foregroundStyle(.red)
@@ -166,7 +166,7 @@ public struct LicenseSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.82))
             } else {
-                Button(LicenseService.keyEntryButtonLabel()) {
+                Button(licenseService.alternateEntryLabel) {
                     showingLicenseEntry = true
                 }
                 .buttonStyle(.bordered)
@@ -196,7 +196,7 @@ public struct LicenseSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Button(LicenseService.deactivateLicenseLabel()) {
+                Button(licenseService.accessManagementLabel) {
                     licenseService.deactivate()
                 }
                 .buttonStyle(.bordered)
@@ -223,7 +223,7 @@ public struct LicenseSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Button(LicenseService.keyEntryButtonLabel()) {
+                    Button(licenseService.alternateEntryLabel) {
                         showingLicenseEntry = true
                     }
                     .buttonStyle(.bordered)

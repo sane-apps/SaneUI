@@ -146,11 +146,11 @@ public struct LicenseEntryView: View {
                 .help("Close")
             }
 
-            Text(LicenseService.usePurchaseKeyLabel())
+            Text(licenseService.alternateUnlockLabel)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
-            Text(LicenseService.purchaseKeyEmailInstruction())
+            Text(licenseService.alternateEntryInstruction)
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.92))
                 .multilineTextAlignment(.center)

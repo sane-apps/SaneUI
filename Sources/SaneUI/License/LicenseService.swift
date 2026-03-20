@@ -31,7 +31,7 @@ public enum SaneDistributionChannel: Sendable {
     public var unlockExplanation: String {
         switch self {
         case .direct:
-            "This only checks whether your activation code is valid. It does not upload your files, profiles, or app content."
+            "This only checks whether your unlock is valid. It does not upload your files, profiles, or app content."
         case .appStore:
             "This build unlocks Pro through the App Store. It does not upload your files, profiles, or app content."
         case .setapp:
@@ -65,6 +65,25 @@ public enum SaneDistributionChannel: Sendable {
 /// ```
 @MainActor @Observable
 public final class LicenseService {
+    public struct DirectCopy: Sendable {
+        public let alternateUnlockLabel: String
+        public let alternateEntryLabel: String
+        public let accessManagementLabel: String
+        public let alternateEntryInstruction: String
+
+        public init(
+            alternateUnlockLabel: String,
+            alternateEntryLabel: String,
+            accessManagementLabel: String,
+            alternateEntryInstruction: String
+        ) {
+            self.alternateUnlockLabel = alternateUnlockLabel
+            self.alternateEntryLabel = alternateEntryLabel
+            self.accessManagementLabel = accessManagementLabel
+            self.alternateEntryInstruction = alternateEntryInstruction
+        }
+    }
+
     public enum PurchaseBackend: Sendable {
         case direct(checkoutURL: URL)
         case appStore(productID: String)
@@ -88,6 +107,7 @@ public final class LicenseService {
 
     public let appName: String
     public let purchaseBackend: PurchaseBackend
+    public let directCopy: DirectCopy?
     private nonisolated static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
     private nonisolated static let sparkleFeedURLInfoPlistKey = "SUFeedURL"
     private nonisolated static let fallbackLogCategory = "License"
@@ -95,24 +115,20 @@ public final class LicenseService {
         String(decoding: bytes, as: UTF8.self)
     }
 
-    public nonisolated static func purchaseKeyLabel() -> String {
-        ["Activation", "Code"].joined(separator: " ")
+    public var alternateUnlockLabel: String {
+        directCopy?.alternateUnlockLabel ?? "Unlock Pro"
     }
 
-    public nonisolated static func usePurchaseKeyLabel() -> String {
-        ["Use", purchaseKeyLabel()].joined(separator: " ")
+    public var alternateEntryLabel: String {
+        directCopy?.alternateEntryLabel ?? "Manage Access"
     }
 
-    public nonisolated static func keyEntryButtonLabel() -> String {
-        ["Enter", ascii([67, 111, 100, 101])].joined(separator: " ")
+    public var accessManagementLabel: String {
+        directCopy?.accessManagementLabel ?? "Manage Access"
     }
 
-    public nonisolated static func deactivateLicenseLabel() -> String {
-        ["Remove", ascii([85, 110, 108, 111, 99, 107])].joined(separator: " ")
-    }
-
-    public nonisolated static func purchaseKeyEmailInstruction() -> String {
-        ["Paste your", purchaseKeyLabel().lowercased(), "from the confirmation email."].joined(separator: " ")
+    public var alternateEntryInstruction: String {
+        directCopy?.alternateEntryInstruction ?? "Follow the instructions from your email."
     }
 
     public nonisolated static func directCheckoutURL(appSlug: String, ref: String? = nil) -> URL {
@@ -229,11 +245,13 @@ public final class LicenseService {
     public convenience init(
         appName: String,
         checkoutURL: URL,
-        keychain: KeychainServiceProtocol? = nil
+        keychain: KeychainServiceProtocol? = nil,
+        directCopy: DirectCopy? = nil
     ) {
         self.init(
             appName: appName,
             purchaseBackend: Self.inferredPurchaseBackend(appName: appName, directCheckoutURL: checkoutURL),
+            directCopy: directCopy,
             keychain: keychain
         )
     }
@@ -241,10 +259,12 @@ public final class LicenseService {
     public init(
         appName: String,
         purchaseBackend: PurchaseBackend,
+        directCopy: DirectCopy? = nil,
         keychain: KeychainServiceProtocol? = nil
     ) {
         self.appName = appName
         self.purchaseBackend = purchaseBackend
+        self.directCopy = directCopy
         self.keychain = keychain ?? KeychainService(service: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())")
         logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())", category: "License")
     }
@@ -441,7 +461,7 @@ public final class LicenseService {
 
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            validationError = ["Please enter your", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
+            validationError = "Please enter your code."
             return
         }
 
@@ -463,7 +483,7 @@ public final class LicenseService {
                 let name = appName.lowercased()
                 Task.detached { await EventTracker.log("license_activated", app: name) }
             } else {
-                validationError = result.error ?? ["Invalid", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
+                validationError = result.error ?? "Invalid code."
                 logger.info("License validation failed: \(result.error ?? "invalid")")
             }
         } catch {
@@ -541,7 +561,7 @@ public final class LicenseService {
     static func validationFailureMessage(statusCode: Int, mimeType: String?, body: String, json: [String: Any]?) -> String {
         let serverError = ["Could not reach", "purchase server. Check your connection and try again."].joined(separator: " ")
         if statusCode >= 500 || !(mimeType ?? "").lowercased().contains("json") || body.localizedCaseInsensitiveContains("just a moment") { return serverError }
-        return json?["error"] as? String ?? ["Invalid", Self.purchaseKeyLabel().lowercased() + "."].joined(separator: " ")
+        return json?["error"] as? String ?? "Invalid code."
     }
 
     private func validateWithLemonSqueezy(key: String) async throws -> ValidationResult {

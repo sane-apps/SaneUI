@@ -101,6 +101,28 @@ struct WelcomeGateFlowPolicyTests {
 
 @Suite("License Service")
 struct SaneLicenseServiceTests {
+    @Test("Direct copy uses app-provided labels")
+    @MainActor
+    func directCopyUsesAppProvidedLabels() {
+        let copy = LicenseService.DirectCopy(
+            alternateUnlockLabel: "Use Activation Code",
+            alternateEntryLabel: "Enter Code",
+            accessManagementLabel: "Remove Unlock",
+            alternateEntryInstruction: "Paste your activation code from the confirmation email."
+        )
+        let service = LicenseService(
+            appName: "SaneClick",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "saneclick"),
+            keychain: MockKeychainService(),
+            directCopy: copy
+        )
+
+        #expect(service.alternateUnlockLabel == "Use Activation Code")
+        #expect(service.alternateEntryLabel == "Enter Code")
+        #expect(service.accessManagementLabel == "Remove Unlock")
+        #expect(service.alternateEntryInstruction == "Paste your activation code from the confirmation email.")
+    }
+
     @Test("Setapp purchase backend starts unlocked")
     @MainActor
     func setappPurchaseBackendStartsUnlocked() {
@@ -168,21 +190,21 @@ struct SaneEventTrackerTests {
     }
 }
 
-@Suite("Sane App Mover")
-struct SaneAppMoverTests {
+@Suite("Install Location")
+struct SaneInstallLocationTests {
     @Test("Treats /Applications as installed")
     func systemApplicationsPathIsInstalled() {
-        #expect(SaneAppMover.isInApplicationsDirectory("/Applications/SaneBar.app", homeDirectory: "/Users/tester"))
+        #expect(SaneInstallLocation.isInApplicationsDirectory("/Applications/SaneBar.app", homeDirectory: "/Users/tester"))
     }
 
     @Test("Treats ~/Applications as installed")
     func userApplicationsPathIsInstalled() {
-        #expect(SaneAppMover.isInApplicationsDirectory("/Users/tester/Applications/SaneBar.app", homeDirectory: "/Users/tester"))
+        #expect(SaneInstallLocation.isInApplicationsDirectory("/Users/tester/Applications/SaneBar.app", homeDirectory: "/Users/tester"))
     }
 
     @Test("Treats Downloads as not installed")
     func downloadsPathIsNotInstalled() {
-        #expect(!SaneAppMover.isInApplicationsDirectory("/Users/tester/Downloads/SaneBar.app", homeDirectory: "/Users/tester"))
+        #expect(!SaneInstallLocation.isInApplicationsDirectory("/Users/tester/Downloads/SaneBar.app", homeDirectory: "/Users/tester"))
     }
 }
 

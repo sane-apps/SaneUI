@@ -154,7 +154,7 @@ public struct LicenseGateView: View {
                             showKeyEntry = true
                         }
                     } label: {
-                        Text(LicenseService.usePurchaseKeyLabel())
+                        Text(licenseService.alternateUnlockLabel)
                             .foregroundStyle(.white.opacity(0.9))
                     }
                     .buttonStyle(.plain)
@@ -193,11 +193,11 @@ public struct LicenseGateView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.saneAccent)
 
-            Text(LicenseService.usePurchaseKeyLabel())
+            Text(licenseService.alternateUnlockLabel)
                 .font(.title2.bold())
                 .foregroundStyle(.white)
 
-            Text(LicenseService.purchaseKeyEmailInstruction())
+            Text(licenseService.alternateEntryInstruction)
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.9))
                 .multilineTextAlignment(.center)

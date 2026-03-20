@@ -885,7 +885,7 @@ public struct WelcomeGateView: View {
                                     .font(.system(size: 13))
                                     .foregroundStyle(.white.opacity(0.82))
                             } else {
-                                Button(LicenseService.usePurchaseKeyLabel()) {
+                                Button(licenseService.alternateUnlockLabel) {
                                     showingLicenseEntry = true
                                 }
                                 .buttonStyle(.bordered)

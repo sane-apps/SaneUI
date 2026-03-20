@@ -68,7 +68,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                 proPoint(icon: "star.fill", text: "All Pro features unlocked")
                 proPoint(icon: "infinity", text: "Lifetime updates — no subscription")
                 proPoint(icon: "lock.shield", text: "100% on-device, no account required")
-                proPoint(icon: "heart.fill", text: "Support independent development")
+                proPoint(icon: "heart.fill", text: "Helps keep new features coming")
             }
             .padding(.horizontal, 10)
 
@@ -144,7 +144,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .tint(Color.saneAccent)
                     .controlSize(.large)
 
-                    Button(LicenseService.usePurchaseKeyLabel()) {
+                    Button(licenseService.alternateUnlockLabel) {
                         showingLicenseEntry = true
                     }
                     .buttonStyle(.plain)
