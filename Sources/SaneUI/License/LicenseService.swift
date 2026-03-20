@@ -272,11 +272,11 @@ public final class LicenseService {
         }
 
         if usesSetappPurchase {
-            isLicensed = false
+            isLicensed = true
             licenseEmail = nil
             validationError = nil
             purchaseError = nil
-            logger.notice("Setapp purchase backend selected; runtime entitlement integration is still pending.")
+            logger.info("Setapp purchase backend selected; access is managed by Setapp.")
             return
         }
 

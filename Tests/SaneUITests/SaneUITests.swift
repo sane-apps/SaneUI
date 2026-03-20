@@ -2,6 +2,20 @@ import Foundation
 import Testing
 @testable import SaneUI
 
+private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sendable {
+    private var bools: [String: Bool] = [:]
+    private var strings: [String: String] = [:]
+
+    func bool(forKey key: String) throws -> Bool? { bools[key] }
+    func set(_ value: Bool, forKey key: String) throws { bools[key] = value }
+    func string(forKey key: String) throws -> String? { strings[key] }
+    func set(_ value: String, forKey key: String) throws { strings[key] = value }
+    func delete(_ key: String) throws {
+        bools.removeValue(forKey: key)
+        strings.removeValue(forKey: key)
+    }
+}
+
 @Suite("Welcome Gate Flow Policy")
 struct WelcomeGateFlowPolicyTests {
     @Test("Pro user always lands on Get Started")
@@ -82,6 +96,75 @@ struct WelcomeGateFlowPolicyTests {
             channel: .setapp
         )
         #expect(action == .complete)
+    }
+}
+
+@Suite("License Service")
+struct SaneLicenseServiceTests {
+    @Test("Setapp purchase backend starts unlocked")
+    @MainActor
+    func setappPurchaseBackendStartsUnlocked() {
+        let service = LicenseService(
+            appName: "SaneClip",
+            purchaseBackend: .setapp,
+            keychain: MockKeychainService()
+        )
+
+        service.checkCachedLicense()
+
+        #expect(service.isLicensed)
+        #expect(service.isPro)
+        #expect(service.validationError == nil)
+        #expect(service.purchaseError == nil)
+    }
+}
+
+@Suite("Event Tracker")
+struct SaneEventTrackerTests {
+    @Test("Telemetry payload includes version, channel, tier, and update target")
+    func telemetryPayloadIncludesDimensions() {
+        let payload = EventTracker.telemetryPayload(
+            app: "saneclip",
+            event: "update_available",
+            tier: "pro",
+            targetVersion: "2.1.33",
+            targetBuild: "2133",
+            appVersion: "2.1.32",
+            build: "2132",
+            osVersion: "15.3.1",
+            platform: "macos",
+            channel: "direct"
+        )
+
+        #expect(payload["app"] == "saneclip")
+        #expect(payload["event"] == "update_available")
+        #expect(payload["app_version"] == "2.1.32")
+        #expect(payload["build"] == "2132")
+        #expect(payload["os_version"] == "15.3.1")
+        #expect(payload["platform"] == "macos")
+        #expect(payload["channel"] == "direct")
+        #expect(payload["tier"] == "pro")
+        #expect(payload["target_version"] == "2.1.33")
+        #expect(payload["target_build"] == "2133")
+    }
+
+    @Test("Telemetry payload infers free tier from event name")
+    func telemetryPayloadInfersTier() {
+        let payload = EventTracker.telemetryPayload(
+            app: "saneclick",
+            event: "app_launch_free",
+            tier: nil,
+            targetVersion: nil,
+            targetBuild: nil,
+            appVersion: "1.0",
+            build: "100",
+            osVersion: "15.3.1",
+            platform: "macos",
+            channel: "setapp"
+        )
+
+        #expect(payload["tier"] == "free")
+        #expect(payload["channel"] == "setapp")
     }
 }
 
