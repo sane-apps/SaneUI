@@ -18,6 +18,29 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
 
 @Suite("Welcome Gate Flow Policy")
 struct WelcomeGateFlowPolicyTests {
+    @Test("Welcome gate accepts tier copy overrides")
+    @MainActor
+    func welcomeGateAcceptsTierCopyOverrides() {
+        let service = LicenseService(
+            appName: "SaneClick",
+            purchaseBackend: .appStore(productID: "com.saneclick.app.pro.unlock.v3"),
+            keychain: MockKeychainService()
+        )
+
+        let view = WelcomeGateView(
+            appName: "SaneClick",
+            appIcon: "cursorarrow.click.2",
+            freeFeatures: [("star.fill", "9 core Finder actions")],
+            proFeatures: [("checkmark", "Everything in Basic, plus:")],
+            freeTierPrice: "Included",
+            proTierPriceOverride: "One-time unlock",
+            licenseService: service,
+            initialPage: 6
+        )
+
+        #expect(String(describing: type(of: view)).contains("WelcomeGateView"))
+    }
+
     @Test("Pro user always lands on Get Started")
     func proUserLabel() {
         let label = WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
@@ -472,5 +495,15 @@ struct SaneDistributionChannelTests {
         #expect(!SaneDistributionChannel.setapp.showsSupportSection)
         #expect(!SaneDistributionChannel.setapp.supportsInAppUpdates)
         #expect(SaneDistributionChannel.setapp.managementLabel == "Managed by Setapp")
+    }
+}
+
+@Suite("Shared Gradient Background")
+struct SaneGradientBackgroundTests {
+    @Test("Panel gradient stays calmer than standard")
+    func panelGradientUsesLowerOpacity() {
+        #expect(SaneGradientBackground.meshOpacity(for: .panel) < SaneGradientBackground.meshOpacity(for: .standard))
+        #expect(SaneGradientBackground.meshOpacity(for: .panel) == 0.9)
+        #expect(SaneGradientBackground.meshOpacity(for: .standard) == 1.0)
     }
 }

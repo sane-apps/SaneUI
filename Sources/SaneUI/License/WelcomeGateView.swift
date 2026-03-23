@@ -156,6 +156,10 @@ public struct WelcomeGateView: View {
     let appIcon: String
     let freeFeatures: [(icon: String, text: String)]
     let proFeatures: [(icon: String, text: String)]
+    let freeTierTitle: String
+    let freeTierPrice: String?
+    let proTierTitleOverride: String?
+    let proTierPriceOverride: String?
     let permissionConfig: WelcomeGatePermissionConfig
     @Bindable var licenseService: LicenseService
     @Environment(\.dismiss) private var dismiss
@@ -172,15 +176,21 @@ public struct WelcomeGateView: View {
     private let onComplete: (() -> Void)?
 
     // Canonical onboarding flow across all apps.
-    private let totalPages = 7
+    private static let pageCount = 7
+    private let totalPages = Self.pageCount
 
     public init(
         appName: String,
         appIcon: String,
         freeFeatures: [(icon: String, text: String)],
         proFeatures: [(icon: String, text: String)],
+        freeTierTitle: String = "Basic",
+        freeTierPrice: String? = "$0 forever",
+        proTierTitleOverride: String? = nil,
+        proTierPriceOverride: String? = nil,
         permissionConfig: WelcomeGatePermissionConfig? = nil,
         licenseService: LicenseService,
+        initialPage: Int = 0,
         autoDismissOnPro: Bool = true,
         secondaryCompletionActionLabel: String? = nil,
         secondaryCompletionAccessibilityIdentifier: String? = nil,
@@ -191,6 +201,10 @@ public struct WelcomeGateView: View {
         self.appIcon = appIcon
         self.freeFeatures = freeFeatures
         self.proFeatures = proFeatures
+        self.freeTierTitle = freeTierTitle
+        self.freeTierPrice = freeTierPrice
+        self.proTierTitleOverride = proTierTitleOverride
+        self.proTierPriceOverride = proTierPriceOverride
         self.permissionConfig = permissionConfig ?? WelcomeGatePermissionConfig(
             title: "Privacy First",
             bullets: [
@@ -206,6 +220,7 @@ public struct WelcomeGateView: View {
         self.secondaryCompletionAccessibilityIdentifier = secondaryCompletionAccessibilityIdentifier
         self.onSecondaryCompletion = onSecondaryCompletion
         self.onComplete = onComplete
+        _currentPage = State(initialValue: max(0, min(initialPage, Self.pageCount - 1)))
         _permissionGranted = State(initialValue: self.permissionConfig.initiallyGranted)
     }
 
@@ -840,6 +855,11 @@ public struct WelcomeGateView: View {
     }
 
     private var selectionView: some View {
+        let resolvedProTitle = proTierTitleOverride
+            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+        let resolvedProPrice = proTierPriceOverride
+            ?? (licenseService.usesSetappPurchase ? "Included with your Setapp install" : "One-time — yours forever")
+
         VStack(spacing: 10) {
             (Text("Choose").foregroundStyle(saneAccentGradient) + Text(" Your Plan"))
                 .font(.system(size: 28, weight: .bold, design: .serif))
@@ -848,8 +868,8 @@ public struct WelcomeGateView: View {
             HStack(alignment: .top, spacing: 14) {
                 selectableTierCard(
                     tier: .pro,
-                    title: licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")",
-                    price: licenseService.usesSetappPurchase ? "Included with your Setapp install" : "One-time — yours forever",
+                    title: resolvedProTitle,
+                    price: resolvedProPrice,
                     features: proFeatures,
                     actions: {
                         AnyView(VStack(spacing: 6) {
@@ -898,8 +918,8 @@ public struct WelcomeGateView: View {
 
                 selectableTierCard(
                     tier: .free,
-                    title: "Basic",
-                    price: "$0 forever",
+                    title: freeTierTitle,
+                    price: freeTierPrice,
                     features: freeFeatures
                 )
             }
