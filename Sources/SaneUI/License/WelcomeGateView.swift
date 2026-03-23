@@ -149,6 +149,31 @@ private struct OnboardingPrimaryButtonStyle: ButtonStyle {
     }
 }
 
+private struct OnboardingSecondaryButtonStyle: ButtonStyle {
+    let cornerRadius: CGFloat
+
+    init(cornerRadius: CGFloat = 9) {
+        self.cornerRadius = cornerRadius
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.14 : 0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.white.opacity(0.22), lineWidth: 0.9)
+            )
+            .scaleEffect(configuration.isPressed ? 0.99 : 1.0)
+            .animation(.easeInOut(duration: 0.14), value: configuration.isPressed)
+    }
+}
+
 /// First-install onboarding flow with Free vs Pro comparison.
 /// Shown once on first launch.
 public struct WelcomeGateView: View {
@@ -898,13 +923,12 @@ public struct WelcomeGateView: View {
                             .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
 
                             if licenseService.usesAppStorePurchase {
-                                Button("Restore Purchases") {
-                                    Task { await licenseService.restorePurchases() }
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .font(.system(size: 13))
-                                .disabled(licenseService.isPurchasing)
+                            Button("Restore Purchases") {
+                                Task { await licenseService.restorePurchases() }
+                            }
+                            .buttonStyle(OnboardingSecondaryButtonStyle())
+                            .font(.system(size: 13))
+                            .disabled(licenseService.isPurchasing)
                             } else if licenseService.usesSetappPurchase {
                                 Text("Managed by Setapp")
                                     .font(.system(size: 13))
@@ -913,8 +937,7 @@ public struct WelcomeGateView: View {
                                 Button(licenseService.alternateUnlockLabel) {
                                     showingLicenseEntry = true
                                 }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
+                                .buttonStyle(OnboardingSecondaryButtonStyle())
                                     .font(.system(size: 13))
                             }
                         })
