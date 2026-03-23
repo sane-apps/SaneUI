@@ -179,6 +179,16 @@ public struct WelcomeGateView: View {
     private static let pageCount = 7
     private let totalPages = Self.pageCount
 
+    private var resolvedProTierTitle: String {
+        proTierTitleOverride
+            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+    }
+
+    private var resolvedProTierPrice: String {
+        proTierPriceOverride
+            ?? (licenseService.usesSetappPurchase ? "Included with your Setapp install" : "One-time — yours forever")
+    }
+
     public init(
         appName: String,
         appIcon: String,
@@ -855,11 +865,6 @@ public struct WelcomeGateView: View {
     }
 
     private var selectionView: some View {
-        let resolvedProTitle = proTierTitleOverride
-            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
-        let resolvedProPrice = proTierPriceOverride
-            ?? (licenseService.usesSetappPurchase ? "Included with your Setapp install" : "One-time — yours forever")
-
         VStack(spacing: 10) {
             (Text("Choose").foregroundStyle(saneAccentGradient) + Text(" Your Plan"))
                 .font(.system(size: 28, weight: .bold, design: .serif))
@@ -868,8 +873,8 @@ public struct WelcomeGateView: View {
             HStack(alignment: .top, spacing: 14) {
                 selectableTierCard(
                     tier: .pro,
-                    title: resolvedProTitle,
-                    price: resolvedProPrice,
+                    title: resolvedProTierTitle,
+                    price: resolvedProTierPrice,
                     features: proFeatures,
                     actions: {
                         AnyView(VStack(spacing: 6) {
