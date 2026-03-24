@@ -82,29 +82,15 @@ public struct ActionButton: View {
     }
 
     public var body: some View {
-        Group {
-            switch style {
-            case .primary:
-                Button(action: action) {
-                    buttonContent
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.saneAccent)
-
-            case .secondary:
-                Button(action: action) {
-                    buttonContent
-                }
-                .buttonStyle(.bordered)
-
-            case .destructive:
-                Button(action: action) {
-                    buttonContent
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-            }
+        Button(action: action) {
+            buttonContent
         }
+        .buttonStyle(
+            SaneActionButtonStyle(
+                prominent: style == .primary,
+                destructive: style == .destructive
+            )
+        )
     }
 
     private var buttonContent: some View {
@@ -114,6 +100,132 @@ public struct ActionButton: View {
             }
             Text(title)
         }
+    }
+}
+
+public struct SaneActionButtonStyle: ButtonStyle {
+    var prominent: Bool
+    var destructive: Bool
+    var compact: Bool
+
+    public init(
+        prominent: Bool = false,
+        destructive: Bool = false,
+        compact: Bool = false
+    ) {
+        self.prominent = prominent
+        self.destructive = destructive
+        self.compact = compact
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        let tint: Color = if destructive {
+            Color(red: 0.86, green: 0.28, blue: 0.30)
+        } else if prominent {
+            SanePanelChrome.accentTeal
+        } else {
+            SanePanelChrome.controlNavyDeep
+        }
+
+        configuration.label
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Color.white.opacity(configuration.isPressed ? 0.94 : 0.98))
+            .padding(.horizontal, compact ? 9 : 12)
+            .padding(.vertical, compact ? 4 : 6)
+            .background(
+                SaneGlassCapsuleBackground(
+                    tint: tint,
+                    edgeTint: destructive ? Color(red: 0.98, green: 0.60, blue: 0.62) : (prominent ? SanePanelChrome.accentHighlight : SanePanelChrome.accentTeal),
+                    tintStrength: destructive
+                        ? (configuration.isPressed ? 0.28 : 0.24)
+                        : prominent
+                            ? (configuration.isPressed ? 0.48 : 0.58)
+                            : (configuration.isPressed ? 0.10 : 0.14),
+                    glowOpacity: destructive ? 0.10 : (prominent ? 0.22 : 0.08),
+                    shadowOpacity: configuration.isPressed ? 0.12 : 0.18,
+                    shadowRadius: configuration.isPressed ? 5 : 8,
+                    shadowY: configuration.isPressed ? 2 : 3
+                )
+            )
+            .overlay(
+                Capsule()
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.10 : 0))
+            )
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+public struct SaneSegmentedChoiceButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    public init(title: String, isSelected: Bool, action: @escaping () -> Void) {
+        self.title = title
+        self.isSelected = isSelected
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.92))
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .background(
+                    SaneGlassRoundedBackground(
+                        cornerRadius: 7,
+                        tint: isSelected ? SanePanelChrome.accentTeal : SanePanelChrome.controlNavyDeep,
+                        edgeTint: isSelected ? SanePanelChrome.accentHighlight : SanePanelChrome.accentTeal,
+                        tintStrength: isSelected ? 0.60 : 0.10,
+                        glowOpacity: isSelected ? 0.22 : 0.06,
+                        interactive: true,
+                        shadowOpacity: isSelected ? 0.18 : 0.12,
+                        shadowRadius: isSelected ? 7 : 5,
+                        shadowY: 3
+                    )
+                )
+        }
+        .buttonStyle(SanePressablePlainStyle())
+    }
+}
+
+public struct SaneAccentBadge: View {
+    let title: String
+    var systemImage: String?
+
+    public init(title: String, systemImage: String? = nil) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    public var body: some View {
+        HStack(spacing: 4) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 10))
+            }
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(SanePanelChrome.accentHighlight)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            SaneGlassCapsuleBackground(
+                tint: SanePanelChrome.accentTeal,
+                edgeTint: SanePanelChrome.accentHighlight,
+                tintStrength: 0.24,
+                glowOpacity: 0.10,
+                shadowOpacity: 0.10,
+                shadowRadius: 5,
+                shadowY: 2
+            )
+        )
     }
 }
 

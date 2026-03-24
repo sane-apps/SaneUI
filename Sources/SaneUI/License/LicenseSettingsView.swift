@@ -60,11 +60,11 @@ public struct LicenseSettingsView: View {
                 CompactRow(
                     "Status",
                     icon: licenseService.isPro ? "checkmark.seal.fill" : "lock.open",
-                    iconColor: licenseService.isPro ? .green : .secondary
+                    iconColor: licenseService.isPro ? .green : Color.white.opacity(0.75)
                 ) {
                     statusBadge(
                         title: licenseService.isPro ? "Pro" : "Basic",
-                        color: licenseService.isPro ? .green : .secondary
+                        color: licenseService.isPro ? .green : Color.white.opacity(0.75)
                     )
                 }
 
@@ -72,8 +72,8 @@ public struct LicenseSettingsView: View {
                     CompactDivider()
                     CompactRow("Activated For", icon: "envelope", iconColor: .blue) {
                         Text(email)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.9))
                             .textSelection(.enabled)
                     }
                 }
@@ -89,7 +89,7 @@ public struct LicenseSettingsView: View {
             if let error = licenseService.validationError ?? licenseService.purchaseError {
                 CompactSection("Status", icon: "exclamationmark.triangle.fill", iconColor: .red) {
                     Text(error)
-                        .font(.caption)
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
@@ -99,8 +99,8 @@ public struct LicenseSettingsView: View {
 
             CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
                 Text(licenseService.distributionChannel.unlockExplanation)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.88))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
@@ -122,7 +122,7 @@ public struct LicenseSettingsView: View {
             if let email = licenseService.licenseEmail {
                 Text(email)
                     .foregroundStyle(.white.opacity(0.9))
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .medium))
             }
         }
     }
@@ -131,20 +131,24 @@ public struct LicenseSettingsView: View {
     private var managementContent: some View {
         if let managementLabel = licenseService.distributionChannel.managementLabel {
             Text(managementLabel)
-                .font(.caption)
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.8))
 
             if licenseService.usesAppStorePurchase {
                 Button("Restore Purchases") {
                     Task { await licenseService.restorePurchases() }
                 }
+                .buttonStyle(SaneActionButtonStyle())
+                .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
             }
         } else {
             Button(licenseService.accessManagementLabel) {
                 licenseService.deactivate()
             }
-            .foregroundStyle(.red)
+            .buttonStyle(SaneActionButtonStyle())
+            .controlSize(.small)
+            .tint(.red)
         }
     }
 
@@ -157,55 +161,55 @@ public struct LicenseSettingsView: View {
                 Button("Restore Purchases") {
                     Task { await licenseService.restorePurchases() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
-                .font(.system(size: 12))
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text("Managed by Setapp")
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.82))
             } else {
                 Button(licenseService.alternateEntryLabel) {
                     showingLicenseEntry = true
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
-                .font(.system(size: 12))
             }
 
             if let error = licenseService.validationError ?? licenseService.purchaseError {
                 Text(error)
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.red)
             }
         }
     }
 
+    @ViewBuilder
     private var managementRow: some View {
         CompactRow("Actions", icon: "gearshape.2", iconColor: .secondary) {
             if licenseService.usesAppStorePurchase {
                 Button("Restore Purchases") {
                     Task { await licenseService.restorePurchases() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text("Managed by Setapp")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.82))
             } else {
                 Button(licenseService.accessManagementLabel) {
                     licenseService.deactivate()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
                 .tint(.red)
             }
         }
     }
 
+    @ViewBuilder
     private var unlockRow: some View {
         CompactRow("Actions", icon: "cart", iconColor: .saneAccent) {
             HStack(spacing: 8) {
@@ -215,18 +219,18 @@ public struct LicenseSettingsView: View {
                     Button("Restore Purchases") {
                         Task { await licenseService.restorePurchases() }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SaneActionButtonStyle())
                     .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
                 } else if licenseService.usesSetappPurchase {
                     Text("Managed by Setapp")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.82))
                 } else {
                     Button(licenseService.alternateEntryLabel) {
                         showingLicenseEntry = true
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SaneActionButtonStyle())
                     .controlSize(.small)
                 }
             }
@@ -242,7 +246,7 @@ public struct LicenseSettingsView: View {
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text("Included with Setapp")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -254,8 +258,7 @@ public struct LicenseSettingsView: View {
                 }
             }
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Color.saneAccent)
+        .buttonStyle(SaneActionButtonStyle(prominent: true))
         .controlSize(.small)
     }
 

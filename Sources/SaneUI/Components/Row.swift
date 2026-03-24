@@ -13,6 +13,8 @@ import SwiftUI
 /// }
 /// ```
 public struct CompactRow<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let label: String
     let icon: String?
     let iconColor: Color
@@ -44,6 +46,7 @@ public struct CompactRow<Content: View>: View {
                     .frame(width: 20)
             }
             Text(label)
+                .foregroundStyle(colorScheme == .dark ? .white : .primary)
             Spacer()
             content
         }
@@ -67,6 +70,8 @@ public struct CompactRow<Content: View>: View {
 /// )
 /// ```
 public struct CompactToggle: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let label: String
     let icon: String?
     let iconColor: Color
@@ -98,11 +103,13 @@ public struct CompactToggle: View {
                     .frame(width: 20)
             }
             Text(label)
+                .foregroundStyle(colorScheme == .dark ? .white : .primary)
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
+                .tint(SanePanelChrome.accentStart)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

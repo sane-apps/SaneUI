@@ -40,6 +40,27 @@ public extension Color {
     static let saneAccentSoft = Color(red: 0.36, green: 0.86, blue: 0.95)
 }
 
+// MARK: - Shared Panel Chrome
+
+/// Shared chrome tokens for compact utility surfaces across SaneApps.
+public enum SanePanelChrome {
+    public static let accentStart = Color(red: 0.22, green: 0.45, blue: 1.00)
+    public static let accentEnd = Color(red: 0.10, green: 0.24, blue: 0.78)
+    public static let accentHighlight = Color(red: 0.57, green: 0.76, blue: 1.00)
+    public static let accentTeal = Color(red: 0.32, green: 0.88, blue: 0.94)
+    public static let controlNavy = Color(red: 0.11, green: 0.20, blue: 0.46)
+    public static let controlNavyDeep = Color(red: 0.07, green: 0.14, blue: 0.32)
+    public static let panelTint = Color(red: 0.14, green: 0.26, blue: 0.56)
+
+    public static let activeControlFill = accentStart
+    public static let utilityFill = controlNavyDeep
+    public static let softSurfaceFill = panelTint.opacity(0.10)
+    public static let targetControlFill = accentTeal
+    public static let controlStroke = Color.white.opacity(0.20)
+    public static let rowStroke = Color.white.opacity(0.12)
+    public static let controlShadow = Color.black.opacity(0.20)
+}
+
 // MARK: - Adaptive Colors
 
 /// Colors that adapt to light/dark mode

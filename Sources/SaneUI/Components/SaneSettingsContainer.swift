@@ -47,8 +47,9 @@ public extension SaneSettingsTab {
 /// }
 /// ```
 public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
-    @State private var selectedTab: Tab?
+    @State private var internalSelectedTab: Tab?
     private let defaultTab: Tab
+    private let externalSelection: Binding<Tab?>?
     private let detail: (Tab) -> Detail
 
     public init(
@@ -56,13 +57,25 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
         @ViewBuilder detail: @escaping (Tab) -> Detail
     ) {
         self.defaultTab = defaultTab
-        _selectedTab = State(initialValue: defaultTab)
+        _internalSelectedTab = State(initialValue: defaultTab)
+        externalSelection = nil
+        self.detail = detail
+    }
+
+    public init(
+        defaultTab: Tab,
+        selection: Binding<Tab?>,
+        @ViewBuilder detail: @escaping (Tab) -> Detail
+    ) {
+        self.defaultTab = defaultTab
+        _internalSelectedTab = State(initialValue: defaultTab)
+        externalSelection = selection
         self.detail = detail
     }
 
     public var body: some View {
         NavigationSplitView {
-            List(Array(Tab.allCases), id: \.id, selection: $selectedTab) { tab in
+            List(Array(Tab.allCases), id: \.id, selection: selection) { tab in
                 NavigationLink(value: tab) {
                     Label {
                         Text(tab.rawValue)
@@ -76,12 +89,22 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
         } detail: {
             ZStack {
-                SaneGradientBackground()
+                SaneGradientBackground(style: .panel)
 
-                detail(selectedTab ?? defaultTab)
+                detail(selection.wrappedValue ?? defaultTab)
             }
         }
         .groupBoxStyle(GlassGroupBoxStyle())
+        .tint(SanePanelChrome.accentStart)
         .frame(minWidth: 700, minHeight: 450)
+        .onAppear {
+            if selection.wrappedValue == nil {
+                selection.wrappedValue = defaultTab
+            }
+        }
+    }
+
+    private var selection: Binding<Tab?> {
+        externalSelection ?? $internalSelectedTab
     }
 }

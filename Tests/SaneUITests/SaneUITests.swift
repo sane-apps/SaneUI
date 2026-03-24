@@ -506,4 +506,11 @@ struct SaneGradientBackgroundTests {
         #expect(SaneGradientBackground.meshOpacity(for: .panel) == 0.9)
         #expect(SaneGradientBackground.meshOpacity(for: .standard) == 1.0)
     }
+
+    @Test("Panel gradient stays static even when motion is allowed")
+    func panelGradientStaysStatic() {
+        #expect(!SaneGradientBackground.usesAnimatedMesh(style: .panel, reduceMotion: false))
+        #expect(SaneGradientBackground.usesAnimatedMesh(style: .standard, reduceMotion: false))
+        #expect(!SaneGradientBackground.usesAnimatedMesh(style: .standard, reduceMotion: true))
+    }
 }

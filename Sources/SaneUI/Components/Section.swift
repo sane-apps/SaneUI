@@ -16,8 +16,6 @@ import SwiftUI
 /// }
 /// ```
 public struct CompactSection<Content: View>: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let title: String
     let icon: String?
     let iconColor: Color
@@ -42,8 +40,7 @@ public struct CompactSection<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 if let icon = icon {
                     Image(systemName: icon)
@@ -51,36 +48,24 @@ public struct CompactSection<Content: View>: View {
                 }
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
             }
             .padding(.leading, 4)
 
-            // Content with glass background
             VStack(spacing: 0) {
                 content
             }
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(colorScheme == .dark ? Color.white.opacity(0.08) : Color.white)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
-                    )
+                SaneGlassRoundedBackground(
+                    cornerRadius: 10,
+                    tint: SanePanelChrome.panelTint,
+                    tintStrength: 0.10,
+                    shadowOpacity: 0.12,
+                    shadowRadius: 8,
+                    shadowY: 3
+                )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(
-                        colorScheme == .dark ? Color.white.opacity(0.12) : Color.saneAccent.opacity(0.15),
-                        lineWidth: 1
-                    )
-            )
-            .shadow(
-                color: colorScheme == .dark ? .black.opacity(0.15) : .teal.opacity(0.08),
-                radius: colorScheme == .dark ? 8 : 6,
-                x: 0,
-                y: 3
-            )
+            .padding(.horizontal, 2)
         }
     }
 }
