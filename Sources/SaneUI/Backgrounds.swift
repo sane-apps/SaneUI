@@ -374,23 +374,32 @@ public struct SaneGlassRoundedBackground: View {
     @ViewBuilder
     private var glassBase: some View {
         #if swift(>=6.2)
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
                 if interactive {
                     Color.clear.glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
                 } else {
                     Color.clear.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
                 }
             } else {
-                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+                legacyGlassBase
                     .opacity(colorScheme == .dark ? 0.88 : 0.74)
             }
         #else
-            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+            legacyGlassBase
                 .opacity(colorScheme == .dark ? 0.88 : 0.74)
         #endif
     }
 
     private var resolvedEdgeTint: Color { edgeTint ?? tint }
+
+    @ViewBuilder
+    private var legacyGlassBase: some View {
+        #if canImport(AppKit)
+            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+        #else
+            VisualEffectBlur()
+        #endif
+    }
 }
 
 /// A capsule glass surface used by shared controls.
@@ -486,23 +495,32 @@ public struct SaneGlassCapsuleBackground: View {
     @ViewBuilder
     private var glassBase: some View {
         #if swift(>=6.2)
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
                 if interactive {
                     Color.clear.glassEffect(.regular.interactive(), in: .capsule)
                 } else {
                     Color.clear.glassEffect(.regular, in: .capsule)
                 }
             } else {
-                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+                legacyGlassBase
                     .opacity(colorScheme == .dark ? 0.90 : 0.76)
             }
         #else
-            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+            legacyGlassBase
                 .opacity(colorScheme == .dark ? 0.90 : 0.76)
         #endif
     }
 
     private var resolvedEdgeTint: Color { edgeTint ?? tint }
+
+    @ViewBuilder
+    private var legacyGlassBase: some View {
+        #if canImport(AppKit)
+            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+        #else
+            VisualEffectBlur()
+        #endif
+    }
 }
 
 /// A circular glass surface used by compact icon controls.
@@ -589,23 +607,32 @@ public struct SaneGlassCircleBackground: View {
     @ViewBuilder
     private var glassBase: some View {
         #if swift(>=6.2)
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
                 if interactive {
                     Color.clear.glassEffect(.regular.interactive(), in: .rect(cornerRadius: 999))
                 } else {
                     Color.clear.glassEffect(.regular, in: .rect(cornerRadius: 999))
                 }
             } else {
-                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+                legacyGlassBase
                     .opacity(colorScheme == .dark ? 0.90 : 0.76)
             }
         #else
-            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+            legacyGlassBase
                 .opacity(colorScheme == .dark ? 0.90 : 0.76)
         #endif
     }
 
     private var resolvedEdgeTint: Color { edgeTint ?? tint }
+
+    @ViewBuilder
+    private var legacyGlassBase: some View {
+        #if canImport(AppKit)
+            VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+        #else
+            VisualEffectBlur()
+        #endif
+    }
 }
 
 public struct SanePressablePlainStyle: ButtonStyle {
