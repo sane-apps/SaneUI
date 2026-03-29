@@ -1,10 +1,15 @@
 # SaneUI Architecture
 
-Last updated: 2026-02-02
+Last updated: 2026-03-28
 
 ## Purpose
 
-SaneUI is a Swift Package that provides shared visual primitives for Sane apps: backgrounds, colors, and icon constants.
+SaneUI is a Swift Package that provides the shared source of truth for SaneApps UI. It now covers:
+
+- visual primitives: backgrounds, colors, icons
+- shared settings shell: tabs, sections, rows, toggles
+- shared settings surfaces: About, license, updater
+- a standalone visual catalog used to inspect the current design system
 
 ## System Context
 
@@ -22,10 +27,20 @@ SaneUI is a Swift Package that provides shared visual primitives for Sane apps: 
 | SaneColors | Semantic color palette | `Sources/SaneUI/Colors.swift` |
 | AdaptiveColors | Light/dark adaptive tokens | `Sources/SaneUI/Colors.swift` |
 | SaneIcons | SF Symbol constants | `Sources/SaneUI/Icons.swift` |
+| SaneSettingsContainer | Shared settings tab shell | `Sources/SaneUI/Components/SaneSettingsContainer.swift` |
+| CompactSection / CompactRow | Shared settings layout primitives | `Sources/SaneUI/Components/Section.swift`, `Sources/SaneUI/Components/Row.swift` |
+| SaneAboutView | Shared About/support surface | `Sources/SaneUI/Components/SaneAboutView.swift` |
+| LicenseSettingsView | Shared license surface | `Sources/SaneUI/License/LicenseSettingsView.swift` |
+| SaneSparkleRow | Shared direct-update surface | `Sources/SaneUI/Components/SaneSparkleRow.swift` |
+| SaneUICatalog | Standalone visual source-of-truth app | `Sources/SaneUICatalog/SaneUICatalogApp.swift` |
 
 ## Data and Persistence
 
-None. SaneUI provides view components and constants only.
+SaneUI stays mostly view-driven. It has light app-facing state only where shared surfaces need it, such as:
+
+- license state via `LicenseService`
+- updater preferences via `SaneSparkleRow`
+- diagnostics export via `SaneDiagnosticsService`
 
 ## State Machines
 
@@ -49,6 +64,7 @@ stateDiagram-v2
 - **Build**: `swift build`
 - **Test**: `swift test`
 - **Distribution**: Swift Package (local path or GitHub)
+- **Visual inspection**: `swift run SaneUICatalog`
 
 ## Testing Strategy
 
@@ -56,5 +72,6 @@ stateDiagram-v2
 
 ## Risks and Tradeoffs
 
-- Visual consistency depends on apps adopting these primitives.
+- Visual consistency still depends on app repos actually adopting shared surfaces.
 - Changes affect all consuming apps; versioning must be handled carefully.
+- If app repos redefine shared settings surfaces locally, design drift returns. The intended mitigation is to extend SaneUI, inspect the catalog first, and let SaneProcess drift checks block known clone patterns.

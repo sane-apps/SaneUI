@@ -96,7 +96,7 @@ public struct LicenseGateView: View {
 
                 Text("To continue using \(licenseService.appName), please purchase a license.")
                     .font(.body)
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.white)
                     .padding(.top, 4)
             }
             .multilineTextAlignment(.center)
@@ -128,8 +128,7 @@ public struct LicenseGateView: View {
                             .padding(.vertical, 10)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.saneAccent)
+                .buttonStyle(SaneActionButtonStyle(prominent: true))
                 .controlSize(.large)
                 .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
 
@@ -138,14 +137,15 @@ public struct LicenseGateView: View {
                         Task { await licenseService.restorePurchases() }
                     } label: {
                         Text("Restore Purchases")
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(.white)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
                 } else if licenseService.usesSetappPurchase {
                     Text(licenseService.distributionChannel.purchaseManagementMessage)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.9))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -155,15 +155,16 @@ public struct LicenseGateView: View {
                         }
                     } label: {
                         Text(licenseService.alternateUnlockLabel)
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(.white)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
                 }
 
                 if let error = licenseService.purchaseError {
                     Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -175,8 +176,8 @@ public struct LicenseGateView: View {
                  : (licenseService.usesAppStorePurchase
                      ? "Unlock Pro in-app to continue"
                      : "$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.9))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white)
 
             Spacer()
         }
@@ -199,7 +200,7 @@ public struct LicenseGateView: View {
 
             Text(licenseService.alternateEntryInstruction)
                 .font(.body)
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 12) {
@@ -213,8 +214,8 @@ public struct LicenseGateView: View {
 
                 if let error = licenseService.validationError {
                     Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                 }
             }
 
@@ -225,7 +226,7 @@ public struct LicenseGateView: View {
                         licenseService.validationError = nil
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SaneActionButtonStyle())
 
                 Button {
                     activateKey()
@@ -239,8 +240,7 @@ public struct LicenseGateView: View {
                             .frame(width: 60)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.saneAccent)
+                .buttonStyle(SaneActionButtonStyle(prominent: true))
                 .disabled(licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || licenseService.isValidating)
             }
 
@@ -267,12 +267,12 @@ public struct LicenseGateView: View {
             if let email = licenseService.licenseEmail {
                 Text(email)
                     .font(.body)
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.white)
             }
 
             Text("Thank you for supporting \(licenseService.appName).")
                 .font(.body)
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
 
             Spacer()
         }

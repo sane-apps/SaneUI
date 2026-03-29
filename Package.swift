@@ -14,10 +14,21 @@ let package = Package(
             name: "SaneUI",
             targets: ["SaneUI"]
         ),
+        .executable(
+            name: "SaneUICatalog",
+            targets: ["SaneUICatalog"]
+        ),
     ],
     targets: [
         .target(
             name: "SaneUI",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
+        .executableTarget(
+            name: "SaneUICatalog",
+            dependencies: ["SaneUI"],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

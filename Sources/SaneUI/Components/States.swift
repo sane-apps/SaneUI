@@ -48,21 +48,21 @@ public struct SaneEmptyState: View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.white.opacity(0.34))
 
             VStack(spacing: 4) {
                 Text(title)
                     .font(.headline)
+                    .foregroundStyle(.white)
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
 
             if let actionTitle = actionTitle, let action = action {
                 Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.saneAccent)
+                    .buttonStyle(SaneActionButtonStyle(prominent: true))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,8 +102,8 @@ public struct LoadingOverlay: View {
                     .scaleEffect(1.2)
                 if let message = message {
                     Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                 }
             }
             .padding(24)
@@ -152,13 +152,13 @@ public struct SaneErrorState: View {
                 .foregroundStyle(.red)
 
             Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
             if let retryTitle = retryTitle, let retry = retry {
                 Button(retryTitle, action: retry)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SaneActionButtonStyle(prominent: true))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

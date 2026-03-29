@@ -124,6 +124,20 @@ struct WelcomeGateFlowPolicyTests {
 
 @Suite("License Service")
 struct SaneLicenseServiceTests {
+    @Test("Direct defaults use simple access labels")
+    @MainActor
+    func directDefaultsUseSimpleAccessLabels() {
+        let service = LicenseService(
+            appName: "SaneHosts",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
+            keychain: MockKeychainService()
+        )
+
+        #expect(service.alternateUnlockLabel == "Unlock Pro")
+        #expect(service.alternateEntryLabel == "Enter License Key")
+        #expect(service.accessManagementLabel == "Deactivate Pro")
+    }
+
     @Test("Direct copy uses app-provided labels")
     @MainActor
     func directCopyUsesAppProvidedLabels() {
@@ -478,6 +492,62 @@ struct SaneAboutViewPolicyTests {
     @Test("Setapp builds hide support section")
     func setappBuildHidesSupportSection() {
         #expect(!SaneAboutViewPolicy.showsSupportSection(channel: .setapp))
+    }
+
+    @Test("Version line respects explicit override")
+    func versionLineUsesOverride() {
+        #expect(SaneAboutViewPolicy.versionLine(override: "Shared Source of Truth") == "Shared Source of Truth")
+    }
+
+    @Test("Version line falls back to bundle version")
+    func versionLineUsesBundleVersion() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("bundle")
+        let contentsURL = bundleURL.appendingPathComponent("Contents", isDirectory: true)
+        let infoURL = contentsURL.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: contentsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundleURL) }
+
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.saneapps.testbundle",
+            "CFBundleShortVersionString": "9.9.9"
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: info,
+            format: .xml,
+            options: 0
+        )
+        try data.write(to: infoURL)
+
+        let bundle = try #require(Bundle(url: bundleURL))
+        #expect(SaneAboutViewPolicy.versionLine(bundle: bundle) == "Version 9.9.9")
+    }
+
+    @Test("About trust copy matches shared standard")
+    func aboutTrustCopyMatchesStandard() {
+        #expect(SaneAboutViewPolicy.primaryTrustPrefix == "Made with")
+        #expect(SaneAboutViewPolicy.primaryTrustSuffix == "in the USA")
+        #expect(SaneAboutViewPolicy.secondaryTrustLine == "On-Device by Default · No Personal Data")
+    }
+
+    @Test("Repository URL stays on sane-apps org")
+    func repositoryURLUsesSaneAppsOrg() {
+        #expect(SaneAboutViewPolicy.repositoryURL(githubRepo: "SaneUI")?.absoluteString == "https://github.com/sane-apps/SaneUI")
+    }
+
+    @Test("Issues URL stays on the shared issues route")
+    func issuesURLUsesIssuesRoute() {
+        #expect(SaneAboutViewPolicy.issuesURL(githubRepo: "SaneUI")?.absoluteString == "https://github.com/sane-apps/SaneUI/issues")
+    }
+}
+
+@Suite("Feedback Copy")
+struct SaneFeedbackCopyTests {
+    @Test("Privacy line matches shared standard")
+    func privacyLineMatchesSharedStandard() {
+        #expect(SaneFeedbackCopy.privacyLine == "No personal information is collected.")
     }
 }
 

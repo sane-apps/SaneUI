@@ -120,11 +120,11 @@ public final class LicenseService {
     }
 
     public var alternateEntryLabel: String {
-        directCopy?.alternateEntryLabel ?? "Manage Access"
+        directCopy?.alternateEntryLabel ?? "Enter License Key"
     }
 
     public var accessManagementLabel: String {
-        directCopy?.accessManagementLabel ?? "Manage Access"
+        directCopy?.accessManagementLabel ?? "Deactivate Pro"
     }
 
     public var alternateEntryInstruction: String {
@@ -511,6 +511,26 @@ public final class LicenseService {
         licenseEmail = nil
         validationError = nil
         logger.info("License deactivated")
+    }
+
+    /// Deterministic package-scoped demo state for the catalog and previews.
+    @MainActor
+    package func applyDemoState(
+        isLicensed: Bool,
+        licenseEmail: String? = nil,
+        appStoreDisplayPrice: String? = nil,
+        validationError: String? = nil,
+        purchaseError: String? = nil,
+        isPurchasing: Bool = false,
+        isValidating: Bool = false
+    ) {
+        self.isLicensed = isLicensed
+        self.licenseEmail = licenseEmail
+        self.appStoreDisplayPrice = appStoreDisplayPrice
+        self.validationError = validationError
+        self.purchaseError = purchaseError
+        self.isPurchasing = isPurchasing
+        self.isValidating = isValidating
     }
 
     // MARK: - Private
