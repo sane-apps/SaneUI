@@ -118,6 +118,26 @@ private struct FoundationsCatalogView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
         }
+
+        CompactSection("Settings Sidebar Semantics", icon: "sidebar.left", iconColor: .orange) {
+            semanticRow("General", icon: "gearshape", semantic: .general)
+            CompactDivider()
+            semanticRow("Rules", icon: "wand.and.stars", semantic: .rules)
+            CompactDivider()
+            semanticRow("Appearance", icon: "paintpalette", semantic: .appearance)
+            CompactDivider()
+            semanticRow("Shortcuts", icon: "keyboard", semantic: .shortcuts)
+            CompactDivider()
+            semanticRow("Content", icon: "text.quote", semantic: .content)
+            CompactDivider()
+            semanticRow("Sync", icon: "arrow.triangle.2.circlepath.icloud", semantic: .sync)
+            CompactDivider()
+            semanticRow("Storage", icon: "chart.pie", semantic: .storage)
+            CompactDivider()
+            semanticRow("License", icon: "key.fill", semantic: .license)
+            CompactDivider()
+            semanticRow("About", icon: "info.circle", semantic: .about)
+        }
     }
 
     private func swatch(_ color: Color) -> some View {
@@ -129,6 +149,13 @@ private struct FoundationsCatalogView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
+        }
+    }
+
+    @ViewBuilder
+    private func semanticRow(_ label: String, icon: String, semantic: SaneSettingsIconSemantic) -> some View {
+        CompactRow(label, icon: icon, iconColor: semantic.color) {
+            swatch(semantic.color)
         }
     }
 }

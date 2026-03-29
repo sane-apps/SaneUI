@@ -1,6 +1,9 @@
 import Foundation
 import Testing
 @testable import SaneUI
+#if canImport(AppKit)
+import AppKit
+#endif
 
 private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sendable {
     private var bools: [String: Bool] = [:]
@@ -177,6 +180,52 @@ struct SaneLicenseServiceTests {
         #expect(service.purchaseError == nil)
     }
 }
+
+#if canImport(AppKit)
+@Suite("Settings Icon Semantics")
+struct SaneSettingsIconSemanticTests {
+    @Test("Shared settings semantics keep stable colors")
+    func sharedSettingsSemanticsKeepStableColors() {
+        #expect(hex(SaneSettingsIconSemantic.general.color) == "AEB8C7")
+        #expect(hex(SaneSettingsIconSemantic.rules.color) == "FFB042")
+        #expect(hex(SaneSettingsIconSemantic.appearance.color) == "C793FA")
+        #expect(hex(SaneSettingsIconSemantic.shortcuts.color) == "61B8FF")
+        #expect(hex(SaneSettingsIconSemantic.content.color) == "61D98F")
+        #expect(hex(SaneSettingsIconSemantic.sync.color) == "52E0F0")
+        #expect(hex(SaneSettingsIconSemantic.storage.color) == "F58A3D")
+        #expect(hex(SaneSettingsIconSemantic.license.color) == "FFD62E")
+        #expect(hex(SaneSettingsIconSemantic.about.color) == "CAD9EB")
+    }
+
+    @Test("Core settings tabs stay visually distinct")
+    func coreSettingsTabsStayVisuallyDistinct() {
+        let coreHexes = [
+            hex(SaneSettingsIconSemantic.general.color),
+            hex(SaneSettingsIconSemantic.shortcuts.color),
+            hex(SaneSettingsIconSemantic.license.color),
+            hex(SaneSettingsIconSemantic.about.color)
+        ]
+
+        #expect(Set(coreHexes).count == coreHexes.count)
+    }
+
+    private func hex(_ color: Color) -> String {
+        let resolved = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+        return String(
+            format: "%02X%02X%02X",
+            Int(round(red * 255)),
+            Int(round(green * 255)),
+            Int(round(blue * 255))
+        )
+    }
+}
+#endif
 
 @Suite("Event Tracker")
 struct SaneEventTrackerTests {
