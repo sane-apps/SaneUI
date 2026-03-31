@@ -5,6 +5,13 @@ import Testing
 import AppKit
 #endif
 
+private func saneUIPackageRootURL(filePath: StaticString = #filePath) -> URL {
+    URL(fileURLWithPath: "\(filePath)")
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+}
+
 private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sendable {
     private var bools: [String: Bool] = [:]
     private var strings: [String: String] = [:]
@@ -16,6 +23,102 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
     func delete(_ key: String) throws {
         bools.removeValue(forKey: key)
         strings.removeValue(forKey: key)
+    }
+}
+
+@Suite("Runtime Environment Policy")
+struct RuntimeEnvironmentPolicyTests {
+    @Test("Normal app launch is not treated as a test run")
+    func normalAppLaunch() {
+        let result = SaneRuntimeEnvironment.isTestRun(
+            environment: [:],
+            processName: "SaneClip",
+            bundleIdentifier: "com.saneclip.app",
+            bundlePath: "/Applications/SaneClip.app"
+        )
+
+        #expect(result == false)
+    }
+
+    @Test("XCTest env vars mark a test run")
+    func xctestEnvironment() {
+        let result = SaneRuntimeEnvironment.isTestRun(
+            environment: ["XCTestConfigurationFilePath": "/tmp/test.xctestconfiguration"],
+            processName: "SaneClip",
+            bundleIdentifier: "com.saneclip.app",
+            bundlePath: "/Applications/SaneClip.app"
+        )
+
+        #expect(result == true)
+    }
+
+    @Test("xctest process marks a test run")
+    func xctestProcess() {
+        let result = SaneRuntimeEnvironment.isTestRun(
+            environment: [:],
+            processName: "xctest",
+            bundleIdentifier: "com.saneclip.appTests",
+            bundlePath: "/tmp/SaneClipTests.xctest"
+        )
+
+        #expect(result == true)
+    }
+
+    @Test("No-keychain fallback stays in the app defaults domain")
+    func noKeychainFallbackUsesStandardDefaults() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/KeychainService.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("fallbackDefaults = .standard"))
+    }
+}
+
+@Suite("Settings Localization")
+struct SettingsLocalizationTests {
+    private enum DemoSettingsTab: String, SaneSettingsTab {
+        case general = "General"
+
+        var icon: String { "gearshape" }
+        var iconColor: Color { .white }
+    }
+
+    @Test("Settings tabs default to their raw title")
+    func defaultTabTitleUsesRawValue() {
+        #expect(DemoSettingsTab.general.title == "General")
+    }
+
+    @Test("Supported language codes drop Base and duplicates")
+    func supportedLanguageCodesDropBaseAndDuplicates() {
+        let codes = SaneAppLanguageSupport.supportedLanguageCodes(
+            localizations: ["Base", "en", "ja", "ja-JP", "de"]
+        )
+
+        #expect(codes == ["en", "ja", "de"])
+    }
+
+    @Test("Current language prefers the first supported preferred language")
+    func selectedLanguagePrefersSupportedPreferredLanguage() {
+        let code = SaneAppLanguageSupport.selectedLanguageCode(
+            supportedLanguageCodes: ["en", "ja", "de"],
+            preferredLanguageCodes: ["fr-CA", "ja-JP", "de-DE"],
+            developmentLocalization: "en"
+        )
+
+        #expect(code == "ja")
+    }
+
+    @Test("Current language falls back to development localization")
+    func selectedLanguageFallsBackToDevelopmentLocalization() {
+        let code = SaneAppLanguageSupport.selectedLanguageCode(
+            supportedLanguageCodes: ["en", "ja"],
+            preferredLanguageCodes: ["fr-CA"],
+            developmentLocalization: "en"
+        )
+
+        #expect(code == "en")
     }
 }
 
@@ -169,6 +272,26 @@ struct SaneLicenseServiceTests {
         let service = LicenseService(
             appName: "SaneClip",
             purchaseBackend: .setapp,
+            keychain: MockKeychainService()
+        )
+
+        service.checkCachedLicense()
+
+        #expect(service.isLicensed)
+        #expect(service.isPro)
+        #expect(service.validationError == nil)
+        #expect(service.purchaseError == nil)
+    }
+
+    @Test("Debug force-pro override unlocks App Store builds deterministically")
+    @MainActor
+    func debugForceProOverrideUnlocksAppStoreBuildsDeterministically() {
+        setenv("SANEAPPS_FORCE_PRO_MODE", "1", 1)
+        defer { unsetenv("SANEAPPS_FORCE_PRO_MODE") }
+
+        let service = LicenseService(
+            appName: "SaneSales",
+            purchaseBackend: .appStore(productID: "com.sanesales.app.pro.unlock.v2"),
             keychain: MockKeychainService()
         )
 
@@ -524,6 +647,92 @@ struct PurchaseBackendInferenceTests {
             Issue.record("Direct bundle unexpectedly inferred App Store purchase backend")
         }
     }
+
+    @Test("Bundle with AppStoreProductID and Sparkle framework stays direct")
+    @MainActor
+    func directBundleWithSparkleFrameworkStaysDirect() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("app")
+        let contentsURL = bundleURL.appendingPathComponent("Contents", isDirectory: true)
+        let frameworksURL = contentsURL.appendingPathComponent("Frameworks", isDirectory: true)
+        let sparkleURL = frameworksURL.appendingPathComponent("Sparkle.framework", isDirectory: true)
+        let infoURL = contentsURL.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: sparkleURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundleURL) }
+
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.saneapps.directbundle",
+            "AppStoreProductID": "com.saneapps.direct.pro"
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: info,
+            format: .xml,
+            options: 0
+        )
+        try data.write(to: infoURL)
+
+        guard let bundle = Bundle(url: bundleURL) else {
+            Issue.record("Expected temporary app bundle to load")
+            return
+        }
+
+        let backend = LicenseService.inferredPurchaseBackend(
+            appName: "SaneSales",
+            directCheckoutURL: LicenseService.directCheckoutURL(appSlug: "sanesales"),
+            bundle: bundle
+        )
+
+        switch backend {
+        case .direct(let checkoutURL):
+            #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanesales"))
+        case .appStore, .setapp:
+            Issue.record("Direct bundle with Sparkle unexpectedly inferred App Store purchase backend")
+        }
+    }
+
+    @Test("Bundle with AppStoreProductID and no Sparkle stays App Store")
+    @MainActor
+    func appStoreBundleWithoutSparkleStaysAppStore() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("app")
+        let contentsURL = bundleURL.appendingPathComponent("Contents", isDirectory: true)
+        let infoURL = contentsURL.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: contentsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundleURL) }
+
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.saneapps.appstorebundle",
+            "AppStoreProductID": "com.saneapps.sales.pro"
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: info,
+            format: .xml,
+            options: 0
+        )
+        try data.write(to: infoURL)
+
+        guard let bundle = Bundle(url: bundleURL) else {
+            Issue.record("Expected temporary app bundle to load")
+            return
+        }
+
+        let backend = LicenseService.inferredPurchaseBackend(
+            appName: "SaneSales",
+            directCheckoutURL: LicenseService.directCheckoutURL(appSlug: "sanesales"),
+            bundle: bundle
+        )
+
+        switch backend {
+        case .appStore(let productID):
+            #expect(productID == "com.saneapps.sales.pro")
+        case .direct, .setapp:
+            Issue.record("App Store bundle unexpectedly inferred direct purchase backend")
+        }
+    }
 }
 
 @Suite("About View Policy")
@@ -597,6 +806,22 @@ struct SaneFeedbackCopyTests {
     @Test("Privacy line matches shared standard")
     func privacyLineMatchesSharedStandard() {
         #expect(SaneFeedbackCopy.privacyLine == "No personal information is collected.")
+    }
+}
+
+@Suite("License Settings Layout")
+struct LicenseSettingsLayoutTests {
+    @Test("Panel actions use adaptive fitted labels")
+    func panelActionsUseAdaptiveFittedLabels() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseSettingsView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("ViewThatFits(in: .horizontal)"))
+        #expect(source.contains("fittedActionLabel"))
+        #expect(source.contains(".minimumScaleFactor(0.84)"))
     }
 }
 

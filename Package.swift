@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "SaneUI",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
         .iOS(.v17)
@@ -22,6 +23,9 @@ let package = Package(
     targets: [
         .target(
             name: "SaneUI",
+            resources: [
+                .process("Resources")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

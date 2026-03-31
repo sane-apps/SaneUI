@@ -189,8 +189,18 @@ public final class LicenseService {
         infoPlistString(appStoreProductIDInfoPlistKey, bundle: bundle)
     }
 
+    private nonisolated static func hasSparkleFramework(bundle: Bundle = .main) -> Bool {
+        let candidatePaths = [
+            bundle.privateFrameworksPath.map { "\($0)/Sparkle.framework" },
+            bundle.bundleURL.appendingPathComponent("Contents/Frameworks/Sparkle.framework").path
+        ].compactMap { $0 }
+
+        return candidatePaths.contains { FileManager.default.fileExists(atPath: $0) }
+    }
+
     public nonisolated static func isRuntimeAppStoreBuild(bundle: Bundle = .main) -> Bool {
         guard runtimeAppStoreProductID(bundle: bundle) != nil else { return false }
+        if hasSparkleFramework(bundle: bundle) { return false }
         let sparkleFeedURL = infoPlistString(sparkleFeedURLInfoPlistKey, bundle: bundle)
         return sparkleFeedURL == nil
     }
@@ -273,15 +283,35 @@ public final class LicenseService {
 
     /// Check cached purchase on launch. Call from `applicationDidFinishLaunching` or app init.
     public func checkCachedLicense() {
+        let environment = ProcessInfo.processInfo.environment
+        let arguments = ProcessInfo.processInfo.arguments
+        debugLog(
+            "checkCachedLicense backend=\(String(describing: distributionChannel)) " +
+                "forceFree=\(environment["SANEAPPS_FORCE_FREE_MODE"] == "1" || arguments.contains("--force-free-mode")) " +
+                "forcePro=\(environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode"))"
+        )
         // Review override: force free mode regardless of build type or stored license.
-        if ProcessInfo.processInfo.environment["SANEAPPS_FORCE_FREE_MODE"] == "1" {
+        if environment["SANEAPPS_FORCE_FREE_MODE"] == "1" || arguments.contains("--force-free-mode") {
             isLicensed = false
             licenseEmail = nil
             validationError = nil
             purchaseError = nil
+            debugLog("forced free mode")
             logger.info("License forced to free mode via SANEAPPS_FORCE_FREE_MODE")
             return
         }
+
+        #if DEBUG
+            if environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode") {
+                isLicensed = true
+                licenseEmail = nil
+                validationError = nil
+                purchaseError = nil
+                debugLog("forced pro mode")
+                logger.info("License forced to pro mode via debug override")
+                return
+            }
+        #endif
 
         if usesAppStorePurchase {
             Task {
@@ -304,8 +334,7 @@ public final class LicenseService {
             // Debug builds: auto-grant so dev builds aren't blocked by license checks.
             // Skip when running under test host to preserve test expectations.
             // Set SANEAPPS_FORCE_LICENSE_CHECK=1 to test the gate in Debug builds.
-            if NSClassFromString("XCTestCase") == nil,
-               ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+            if !SaneRuntimeEnvironment.isTestRun(),
                ProcessInfo.processInfo.environment["SANEAPPS_FORCE_LICENSE_CHECK"] != "1" {
                 isLicensed = true
                 licenseEmail = nil
@@ -319,11 +348,13 @@ public final class LicenseService {
         else {
             isLicensed = false
             licenseEmail = nil
+            debugLog("no cached key")
             logger.info("No cached unlock credential — locked")
             return
         }
 
         licenseEmail = try? keychain.string(forKey: Keys.licenseEmail)
+        debugLog("cached key found email=\(licenseEmail ?? "nil")")
 
         // Check offline grace
         if let lastDateString = try? keychain.string(forKey: Keys.lastValidation),
@@ -331,6 +362,7 @@ public final class LicenseService {
             let daysSince = Date().timeIntervalSince(lastDate) / 86400
             if daysSince <= offlineGraceDays {
                 isLicensed = true
+                debugLog("offline grace hit daysSince=\(Int(daysSince))")
                 logger.info("License valid (offline grace, \(Int(daysSince))d since check)")
                 return
             }
@@ -341,6 +373,22 @@ public final class LicenseService {
         Task {
             await revalidate(key: storedKey)
         }
+    }
+
+    private func debugLog(_ message: String) {
+        guard ProcessInfo.processInfo.environment["SANEAPPS_DEBUG_LICENSE"] == "1" else { return }
+        let line = "[LicenseService] \(message)\n"
+        let url = URL(fileURLWithPath: "/tmp/saneapps-license-debug.log")
+        let data = Data(line.utf8)
+        if FileManager.default.fileExists(atPath: url.path) {
+            if let handle = try? FileHandle(forWritingTo: url) {
+                defer { try? handle.close() }
+                _ = try? handle.seekToEnd()
+                try? handle.write(contentsOf: data)
+                return
+            }
+        }
+        try? data.write(to: url)
     }
 
     public func preloadAppStoreProduct() async {

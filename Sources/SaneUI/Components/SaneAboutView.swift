@@ -19,11 +19,66 @@ import SwiftUI
 /// )
 /// ```
 public struct SaneAboutView: View {
+    public struct Labels: Sendable {
+        public let githubButtonTitle: String
+        public let licensesButtonTitle: String
+        public let reportBugButtonTitle: String
+        public let viewIssuesButtonTitle: String
+        public let trustPrefix: String
+        public let trustSuffix: String
+        public let secondaryTrustLine: String
+        public let licenseSourceLabel: String
+        public let openSourceButtonTitle: String
+        public let licensesSheetTitle: String
+        public let doneButtonTitle: String
+
+        public init(
+            githubButtonTitle: String,
+            licensesButtonTitle: String,
+            reportBugButtonTitle: String,
+            viewIssuesButtonTitle: String,
+            trustPrefix: String,
+            trustSuffix: String,
+            secondaryTrustLine: String,
+            licenseSourceLabel: String,
+            openSourceButtonTitle: String,
+            licensesSheetTitle: String,
+            doneButtonTitle: String
+        ) {
+            self.githubButtonTitle = githubButtonTitle
+            self.licensesButtonTitle = licensesButtonTitle
+            self.reportBugButtonTitle = reportBugButtonTitle
+            self.viewIssuesButtonTitle = viewIssuesButtonTitle
+            self.trustPrefix = trustPrefix
+            self.trustSuffix = trustSuffix
+            self.secondaryTrustLine = secondaryTrustLine
+            self.licenseSourceLabel = licenseSourceLabel
+            self.openSourceButtonTitle = openSourceButtonTitle
+            self.licensesSheetTitle = licensesSheetTitle
+            self.doneButtonTitle = doneButtonTitle
+        }
+
+        public static let `default` = Labels(
+            githubButtonTitle: String(localized: "saneui.about.github_button_title", defaultValue: "GitHub", bundle: .module),
+            licensesButtonTitle: String(localized: "saneui.about.licenses_button_title", defaultValue: "Licenses", bundle: .module),
+            reportBugButtonTitle: String(localized: "saneui.about.report_bug_button_title", defaultValue: "Report a Bug", bundle: .module),
+            viewIssuesButtonTitle: String(localized: "saneui.about.view_issues_button_title", defaultValue: "View Issues", bundle: .module),
+            trustPrefix: SaneAboutViewPolicy.primaryTrustPrefix,
+            trustSuffix: SaneAboutViewPolicy.primaryTrustSuffix,
+            secondaryTrustLine: SaneAboutViewPolicy.secondaryTrustLine,
+            licenseSourceLabel: String(localized: "saneui.about.license_source_label", defaultValue: "Source", bundle: .module),
+            openSourceButtonTitle: String(localized: "saneui.about.open_source_button_title", defaultValue: "Open Source", bundle: .module),
+            licensesSheetTitle: String(localized: "saneui.about.licenses_sheet_title", defaultValue: "Third-Party Licenses", bundle: .module),
+            doneButtonTitle: String(localized: "saneui.about.done_button_title", defaultValue: "Done", bundle: .module)
+        )
+    }
+
     private let appName: String
     private let githubRepo: String
     private let diagnosticsService: SaneDiagnosticsService?
     private let licenses: [LicenseEntry]
     private let feedbackExtraAttachments: [(icon: String, label: String)]
+    private let labels: Labels
     private let versionLineText: String?
     private let identitySymbolName: String?
     private let identitySymbolColor: Color
@@ -65,6 +120,7 @@ public struct SaneAboutView: View {
         diagnosticsService: SaneDiagnosticsService? = nil,
         licenses: [LicenseEntry] = [],
         feedbackExtraAttachments: [(icon: String, label: String)] = [],
+        labels: Labels = .default,
         versionLineText: String? = nil,
         identitySymbolName: String? = nil,
         identitySymbolColor: Color = .saneAccent
@@ -74,6 +130,7 @@ public struct SaneAboutView: View {
         self.diagnosticsService = diagnosticsService
         self.licenses = licenses
         self.feedbackExtraAttachments = feedbackExtraAttachments
+        self.labels = labels
         self.versionLineText = versionLineText
         self.identitySymbolName = identitySymbolName
         self.identitySymbolColor = identitySymbolColor
@@ -97,15 +154,15 @@ public struct SaneAboutView: View {
 
                 VStack(spacing: 4) {
                     (
-                        Text("\(SaneAboutViewPolicy.primaryTrustPrefix) ")
+                        Text("\(labels.trustPrefix) ")
                             .fontWeight(.medium) +
                         Text(Image(systemName: "heart.fill"))
                             .foregroundStyle(.pink)
                             .fontWeight(.medium) +
-                        Text(" \(SaneAboutViewPolicy.primaryTrustSuffix)")
+                        Text(" \(labels.trustSuffix)")
                             .fontWeight(.medium)
                     )
-                    Text(SaneAboutViewPolicy.secondaryTrustLine)
+                    Text(labels.secondaryTrustLine)
                 }
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
@@ -118,21 +175,21 @@ public struct SaneAboutView: View {
                     ],
                     spacing: 10
                 ) {
-                    aboutActionButton(title: "GitHub", icon: "link") {
+                    aboutActionButton(title: labels.githubButtonTitle, icon: "link") {
                         openURL(SaneAboutViewPolicy.repositoryURL(githubRepo: githubRepo))
                     }
 
                     if !licenses.isEmpty {
-                        aboutActionButton(title: "Licenses", icon: "doc.text") {
+                        aboutActionButton(title: labels.licensesButtonTitle, icon: "doc.text") {
                             activeSheet = .licenses
                         }
                     }
 
-                    aboutActionButton(title: "Report a Bug", icon: "ladybug") {
+                    aboutActionButton(title: labels.reportBugButtonTitle, icon: "ladybug") {
                         openBugReporter()
                     }
 
-                    aboutActionButton(title: "View Issues", icon: "arrow.up.right.square") {
+                    aboutActionButton(title: labels.viewIssuesButtonTitle, icon: "arrow.up.right.square") {
                         openURL(SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
                     }
                 }
@@ -238,11 +295,11 @@ public struct SaneAboutView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Text("Third-Party Licenses")
+                    Text(labels.licensesSheetTitle)
                         .font(.headline)
                         .foregroundStyle(.white)
                     Spacer()
-                    Button("Done") {
+                    Button(labels.doneButtonTitle) {
                         activeSheet = nil
                     }
                     .buttonStyle(SaneActionButtonStyle())
@@ -257,8 +314,8 @@ public struct SaneAboutView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         ForEach(licenses) { license in
                             CompactSection(license.name, icon: "doc.text", iconColor: .cyan) {
-                                CompactRow("Source") {
-                                    Button("Open Source") {
+                                CompactRow(labels.licenseSourceLabel) {
+                                    Button(labels.openSourceButtonTitle) {
                                         openURL(URL(string: license.url))
                                     }
                                     .buttonStyle(SaneActionButtonStyle())
@@ -284,9 +341,9 @@ public struct SaneAboutView: View {
 }
 
 enum SaneAboutViewPolicy {
-    static let primaryTrustPrefix = "Made with"
-    static let primaryTrustSuffix = "in the USA"
-    static let secondaryTrustLine = "On-Device by Default · No Personal Data"
+    static let primaryTrustPrefix = String(localized: "saneui.about.trust_prefix", defaultValue: "Made with", bundle: .module)
+    static let primaryTrustSuffix = String(localized: "saneui.about.trust_suffix", defaultValue: "in the USA", bundle: .module)
+    static let secondaryTrustLine = String(localized: "saneui.about.secondary_trust_line", defaultValue: "On-Device by Default · No Personal Data", bundle: .module)
 
     static func repositoryURL(githubRepo: String) -> URL? {
         URL(string: "https://github.com/sane-apps/\(githubRepo)")
@@ -311,10 +368,11 @@ enum SaneAboutViewPolicy {
 
         if let version = bundle.infoDictionary?["CFBundleShortVersionString"] as? String,
            !version.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Version \(version)"
+            let format = String(localized: "saneui.about.version_line_format", defaultValue: "Version %@", bundle: .module)
+            return String(format: format, version)
         }
 
-        return "Shared Source of Truth"
+        return String(localized: "saneui.about.shared_source_fallback", defaultValue: "Shared Source of Truth", bundle: .module)
     }
 }
 #endif

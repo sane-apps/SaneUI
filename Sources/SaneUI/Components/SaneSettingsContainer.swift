@@ -38,12 +38,14 @@ private enum SaneSettingsWindowMetrics {
 /// ```
 public protocol SaneSettingsTab: RawRepresentable, CaseIterable, Identifiable, Hashable
     where RawValue == String, AllCases: RandomAccessCollection {
+    var title: String { get }
     var icon: String { get }
     var iconColor: Color { get }
 }
 
 public extension SaneSettingsTab {
     var id: String { rawValue }
+    var title: String { rawValue }
 }
 
 public enum SaneSettingsWindowDefaults {
@@ -51,6 +53,11 @@ public enum SaneSettingsWindowDefaults {
     public static let idealWidth: CGFloat = SaneSettingsWindowMetrics.idealWidth
     public static let minHeight: CGFloat = SaneSettingsWindowMetrics.minHeight
     public static let idealHeight: CGFloat = SaneSettingsWindowMetrics.idealHeight
+}
+
+public enum SaneSettingsWindowSizingBehavior {
+    case standalone
+    case embedded
 }
 
 /// Standardized settings window container with sidebar navigation.
@@ -70,26 +77,31 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     @State private var internalSelectedTab: Tab?
     private let defaultTab: Tab
     private let externalSelection: Binding<Tab?>?
+    private let windowSizing: SaneSettingsWindowSizingBehavior
     private let detail: (Tab) -> Detail
 
     public init(
         defaultTab: Tab,
+        windowSizing: SaneSettingsWindowSizingBehavior = .standalone,
         @ViewBuilder detail: @escaping (Tab) -> Detail
     ) {
         self.defaultTab = defaultTab
         _internalSelectedTab = State(initialValue: defaultTab)
         externalSelection = nil
+        self.windowSizing = windowSizing
         self.detail = detail
     }
 
     public init(
         defaultTab: Tab,
         selection: Binding<Tab?>,
+        windowSizing: SaneSettingsWindowSizingBehavior = .standalone,
         @ViewBuilder detail: @escaping (Tab) -> Detail
     ) {
         self.defaultTab = defaultTab
         _internalSelectedTab = State(initialValue: defaultTab)
         externalSelection = selection
+        self.windowSizing = windowSizing
         self.detail = detail
     }
 
@@ -98,7 +110,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
             List(Array(Tab.allCases), id: \.id, selection: selection) { tab in
                 NavigationLink(value: tab) {
                     Label {
-                        Text(tab.rawValue)
+                        Text(tab.title)
                     } icon: {
                         Image(systemName: tab.icon)
                             .foregroundStyle(tab.iconColor)
@@ -120,25 +132,9 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
         }
         .groupBoxStyle(GlassGroupBoxStyle())
         .tint(SanePanelChrome.accentStart)
-        .frame(
-            minWidth: SaneSettingsWindowMetrics.minWidth,
-            idealWidth: SaneSettingsWindowMetrics.idealWidth,
-            minHeight: SaneSettingsWindowMetrics.minHeight,
-            idealHeight: SaneSettingsWindowMetrics.idealHeight
-        )
+        .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
         #if os(macOS)
-        .background(
-            SaneSettingsWindowConfigurator(
-                minContentSize: NSSize(
-                    width: SaneSettingsWindowMetrics.minWidth,
-                    height: SaneSettingsWindowMetrics.minHeight
-                ),
-                idealContentSize: NSSize(
-                    width: SaneSettingsWindowMetrics.idealWidth,
-                    height: SaneSettingsWindowMetrics.idealHeight
-                )
-            )
-        )
+        .background(windowSizingBackground)
         #endif
         .onAppear {
             if selection.wrappedValue == nil {
@@ -149,6 +145,42 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
 
     private var selection: Binding<Tab?> {
         externalSelection ?? $internalSelectedTab
+    }
+
+    #if os(macOS)
+    @ViewBuilder
+    private var windowSizingBackground: some View {
+        if windowSizing == .standalone {
+            SaneSettingsWindowConfigurator(
+                minContentSize: NSSize(
+                    width: SaneSettingsWindowMetrics.minWidth,
+                    height: SaneSettingsWindowMetrics.minHeight
+                ),
+                idealContentSize: NSSize(
+                    width: SaneSettingsWindowMetrics.idealWidth,
+                    height: SaneSettingsWindowMetrics.idealHeight
+                )
+            )
+        }
+    }
+    #endif
+}
+
+private struct SaneSettingsWindowSizingModifier: ViewModifier {
+    let windowSizing: SaneSettingsWindowSizingBehavior
+
+    func body(content: Content) -> some View {
+        switch windowSizing {
+        case .standalone:
+            content.frame(
+                minWidth: SaneSettingsWindowMetrics.minWidth,
+                idealWidth: SaneSettingsWindowMetrics.idealWidth,
+                minHeight: SaneSettingsWindowMetrics.minHeight,
+                idealHeight: SaneSettingsWindowMetrics.idealHeight
+            )
+        case .embedded:
+            content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
     }
 }
 
@@ -185,6 +217,15 @@ private struct SaneSettingsWindowConfigurator: NSViewRepresentable {
             let windowNumber = window.windowNumber
             let attempts = resizeAttemptsByWindow[windowNumber, default: 0]
 
+            if !window.styleMask.contains(.fullSizeContentView) {
+                window.styleMask.insert(.fullSizeContentView)
+            }
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.isMovableByWindowBackground = true
+            if #available(macOS 13.0, *) {
+                window.toolbarStyle = .unifiedCompact
+            }
             window.contentMinSize = minContentSize
 
             let currentContentSize = window.contentRect(forFrameRect: window.frame).size

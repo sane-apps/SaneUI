@@ -1,0 +1,456 @@
+{
+  "sourceLanguage" : "en",
+  "version" : "1.0",
+  "strings" : {
+    "saneui.language.change_button_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Ändern" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Change" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Cambiar" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Modifier" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Cambia" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変更" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변경" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Wijzig" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Alterar" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "更改" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "更改" } }
+      }
+    },
+    "saneui.language.current_language_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "App-Sprache" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "App Language" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Idioma de la app" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Langue de l’app" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Lingua dell’app" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アプリの言語" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱 언어" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "App-taal" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Idioma do app" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "App 语言" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "App 語言" } }
+      }
+    },
+    "saneui.language.helper_text" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Ändere die App-Sprache in den Systemeinstellungen. Starte die App neu, falls macOS die Oberfläche noch nicht aktualisiert hat." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Change the app language in System Settings. Restart the app if macOS has not refreshed the UI yet." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Cambia el idioma de la app en Configuración del Sistema. Reinicia la app si macOS aún no actualizó la interfaz." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Modifiez la langue de l’app dans Réglages Système. Redémarrez l’app si macOS n’a pas encore actualisé l’interface." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Cambia la lingua dell’app nelle Impostazioni di Sistema. Riavvia l’app se macOS non ha ancora aggiornato l’interfaccia." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "システム設定でアプリの言語を変更します。macOS がまだ UI を更新していない場合は、アプリを再起動してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시스템 설정에서 앱 언어를 변경하세요. macOS가 아직 UI를 새로 고치지 않았다면 앱을 다시 시작하세요." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Wijzig de app-taal in Systeeminstellingen. Start de app opnieuw als macOS de interface nog niet heeft bijgewerkt." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Altere o idioma do app nos Ajustes do Sistema. Reinicie o app se o macOS ainda não atualizou a interface." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请在系统设置中更改 App 语言。如果 macOS 尚未刷新界面，请重新启动 App。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請在系統設定中更改 App 語言。如果 macOS 尚未更新介面，請重新啟動 App。" } }
+      }
+    },
+    "saneui.language.section_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sprache" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Idioma" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Langue" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Lingua" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "言語" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "언어" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Taal" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Idioma" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "语言" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "語言" } }
+      }
+    },
+    "saneui.language.single_language_helper_text" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Füge weitere App-Sprachen hinzu, um die sprachspezifische App-Auswahl in den Systemeinstellungen zu aktivieren." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add more app localizations to enable per-app language switching in System Settings." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Agrega más localizaciones de la app para habilitar el cambio de idioma por app en Configuración del Sistema." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajoutez d’autres localisations de l’app pour activer le changement de langue par app dans Réglages Système." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi altre localizzazioni dell’app per abilitare il cambio lingua per app nelle Impostazioni di Sistema." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "システム設定でアプリごとの言語切り替えを有効にするには、アプリのローカライズを追加してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시스템 설정에서 앱별 언어 전환을 사용하려면 앱 현지화를 더 추가하세요." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Voeg meer app-localisaties toe om per-app taalkeuze in Systeeminstellingen mogelijk te maken." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Adicione mais localizações do app para permitir a troca de idioma por app nos Ajustes do Sistema." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加更多 App 本地化后，才能在系统设置中启用按 App 切换语言。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新增更多 App 在地化後，才能在系統設定中啟用每個 App 的語言切換。" } }
+      }
+    },
+    "saneui.settings.row.actions" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktionen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Actions" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Acciones" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Actions" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Azioni" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アクション" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동작" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Acties" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ações" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "操作" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "操作" } }
+      }
+    },
+    "saneui.settings.row.status" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Status" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Status" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Estado" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "État" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Stato" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "状態" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "상태" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Status" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Status" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "状态" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "狀態" } }
+      }
+    },
+    "saneui.settings.section.software_updates" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Software-Updates" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Software Updates" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Actualizaciones de software" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Mises à jour logicielles" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiornamenti software" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ソフトウェアアップデート" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소프트웨어 업데이트" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Software-updates" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Atualizações de software" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "软件更新" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "軟體更新" } }
+      }
+    },
+    "saneui.settings.section.startup" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Start" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Startup" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Inicio" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Démarrage" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Avvio" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "起動" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시동" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Opstarten" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Inicialização" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启动" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "啟動" } }
+      }
+    },
+    "saneui.settings.tab.about" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Über" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Acerca de" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "À propos" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Informazioni" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "情報" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정보" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Info" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Sobre" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关于" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關於" } }
+      }
+    },
+    "saneui.settings.tab.appearance" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Darstellung" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Appearance" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Apariencia" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Apparence" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aspetto" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "外観" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모양" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Weergave" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Aparência" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "外观" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "外觀" } }
+      }
+    },
+    "saneui.settings.tab.data" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Daten" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Data" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Datos" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Données" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Dati" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "データ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "데이터" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Gegevens" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Dados" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "数据" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "資料" } }
+      }
+    },
+    "saneui.settings.tab.general" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Allgemein" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Général" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Generale" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "一般" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "일반" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Algemeen" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Geral" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通用" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "一般" } }
+      }
+    },
+    "saneui.settings.tab.license" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Lizenz" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "License" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Licencia" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Licence" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Licenza" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ライセンス" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라이선스" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Licentie" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Licença" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "许可" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "授權" } }
+      }
+    },
+    "saneui.settings.tab.providers" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Anbieter" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Providers" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Proveedores" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Fournisseurs" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Provider" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プロバイダ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공급자" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Providers" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Provedores" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提供商" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "供應商" } }
+      }
+    },
+    "saneui.settings.tab.rules" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Regeln" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rules" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Reglas" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Règles" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Regole" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ルール" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "규칙" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Regels" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Regras" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "规则" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "規則" } }
+      }
+    },
+    "saneui.settings.tab.shortcuts" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Kurzbefehle" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shortcuts" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Atajos" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Raccourcis" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scorciatoie" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ショートカット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "단축키" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Sneltoetsen" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Atalhos" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "捷徑" } }
+      }
+    },
+    "saneui.settings.tab.snippets" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Snippets" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snippets" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Fragmentos" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Extraits" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Snippet" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スニペット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스니펫" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Snippets" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Trechos" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "片段" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "片段" } }
+      }
+    },
+    "saneui.settings.tab.storage" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Speicher" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Storage" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Almacenamiento" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Stockage" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Archiviazione" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストレージ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장 공간" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Opslag" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Armazenamento" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "存储" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "儲存" } }
+      }
+    },
+    "saneui.settings.tab.sync" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sync" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Sincronización" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Synchronisation" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sync" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同期" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동기화" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Synchronisatie" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Sincronização" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "同步" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "同步" } }
+      }
+    },
+    "saneui.sparkle.actions_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktionen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Actions" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Acciones" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Actions" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Azioni" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アクション" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동작" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Acties" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ações" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "操作" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "操作" } }
+      }
+    },
+    "saneui.sparkle.automatic_check_help" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Regelmäßig nach neuen Versionen suchen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Periodically check for new versions" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Buscar nuevas versiones periódicamente" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Rechercher régulièrement les nouvelles versions" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Controlla periodicamente la presenza di nuove versioni" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "定期的に新しいバージョンを確認します" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 버전을 주기적으로 확인합니다" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Controleer periodiek op nieuwe versies" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificar periodicamente novas versões" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "定期检查新版本" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "定期檢查新版本" } }
+      }
+    },
+    "saneui.sparkle.automatic_check_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Automatisch nach Updates suchen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check for updates automatically" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Buscar actualizaciones automáticamente" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Vérifier automatiquement les mises à jour" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Controlla automaticamente gli aggiornamenti" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動でアップデートを確認" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동으로 업데이트 확인" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Automatisch op updates controleren" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificar atualizações automaticamente" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "自动检查更新" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "自動檢查更新" } }
+      }
+    },
+    "saneui.sparkle.check_frequency_help" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wähle, wie oft automatische Update-Prüfungen laufen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose how often automatic update checks run" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Elige con qué frecuencia se ejecutan las verificaciones automáticas" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Choisissez la fréquence des vérifications automatiques" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scegli con quale frequenza eseguire i controlli automatici" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動アップデート確認の頻度を選びます" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 업데이트 확인 빈도를 선택하세요" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Kies hoe vaak automatische updatecontroles plaatsvinden" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Escolha com que frequência as verificações automáticas serão executadas" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择自动检查更新的频率" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "選擇自動檢查更新的頻率" } }
+      }
+    },
+    "saneui.sparkle.check_frequency_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Prüfhäufigkeit" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check frequency" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Frecuencia de verificación" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Fréquence de vérification" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza di controllo" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "確認頻度" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인 빈도" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Controlefrequentie" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Frequência de verificação" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查频率" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "檢查頻率" } }
+      }
+    },
+    "saneui.sparkle.check_now_help" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Jetzt nach Updates suchen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check for updates right now" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Buscar actualizaciones ahora mismo" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Vérifier les mises à jour maintenant" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Controlla subito gli aggiornamenti" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今すぐアップデートを確認" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 바로 업데이트 확인" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Nu op updates controleren" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificar atualizações agora" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "立即检查更新" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "立即檢查更新" } }
+      }
+    },
+    "saneui.sparkle.check_now_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Jetzt prüfen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check Now" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Buscar ahora" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Vérifier maintenant" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Controlla ora" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今すぐ確認" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 확인" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Nu controleren" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificar agora" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "立即检查" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "立即檢查" } }
+      }
+    },
+    "saneui.sparkle.checking_label" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Prüfe..." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking..." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Buscando..." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Vérification..." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Controllo..." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "確認中..." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인 중..." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Controleren..." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificando..." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在检查..." } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "正在檢查..." } }
+      }
+    },
+    "saneui.sparkle.daily_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Täglich" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Daily" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Diario" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Quotidien" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ogni giorno" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "毎日" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매일" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Dagelijks" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Diariamente" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "每天" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "每天" } }
+      }
+    },
+    "saneui.sparkle.weekly_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wöchentlich" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekly" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Semanal" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Hebdomadaire" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Settimanale" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "毎週" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매주" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Wekelijks" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Semanal" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "每周" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "每週" } }
+      }
+    }
+  }
+}

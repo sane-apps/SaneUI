@@ -7,9 +7,13 @@ public enum SaneSparkleCheckFrequency: String, CaseIterable, Identifiable, Senda
     public var id: String { rawValue }
 
     public var title: String {
+        title(labels: .default)
+    }
+
+    public func title(labels: SaneSparkleRow.Labels) -> String {
         switch self {
-        case .daily: "Daily"
-        case .weekly: "Weekly"
+        case .daily: labels.dailyTitle
+        case .weekly: labels.weeklyTitle
         }
     }
 
@@ -40,6 +44,8 @@ public struct SaneSparkleRow: View {
         public let checkingLabel: String
         public let checkNowLabel: String
         public let checkNowHelp: String
+        public let dailyTitle: String
+        public let weeklyTitle: String
 
         public init(
             automaticCheckLabel: String,
@@ -49,7 +55,9 @@ public struct SaneSparkleRow: View {
             actionsLabel: String,
             checkingLabel: String,
             checkNowLabel: String,
-            checkNowHelp: String
+            checkNowHelp: String,
+            dailyTitle: String,
+            weeklyTitle: String
         ) {
             self.automaticCheckLabel = automaticCheckLabel
             self.automaticCheckHelp = automaticCheckHelp
@@ -59,17 +67,21 @@ public struct SaneSparkleRow: View {
             self.checkingLabel = checkingLabel
             self.checkNowLabel = checkNowLabel
             self.checkNowHelp = checkNowHelp
+            self.dailyTitle = dailyTitle
+            self.weeklyTitle = weeklyTitle
         }
 
         public static let `default` = Labels(
-            automaticCheckLabel: "Check for updates automatically",
-            automaticCheckHelp: "Periodically check for new versions",
-            checkFrequencyLabel: "Check frequency",
-            checkFrequencyHelp: "Choose how often automatic update checks run",
-            actionsLabel: "Actions",
-            checkingLabel: "Checking...",
-            checkNowLabel: "Check Now",
-            checkNowHelp: "Check for updates right now"
+            automaticCheckLabel: String(localized: "saneui.sparkle.automatic_check_label", defaultValue: "Check for updates automatically", bundle: .module),
+            automaticCheckHelp: String(localized: "saneui.sparkle.automatic_check_help", defaultValue: "Periodically check for new versions", bundle: .module),
+            checkFrequencyLabel: String(localized: "saneui.sparkle.check_frequency_label", defaultValue: "Check frequency", bundle: .module),
+            checkFrequencyHelp: String(localized: "saneui.sparkle.check_frequency_help", defaultValue: "Choose how often automatic update checks run", bundle: .module),
+            actionsLabel: String(localized: "saneui.sparkle.actions_label", defaultValue: "Actions", bundle: .module),
+            checkingLabel: String(localized: "saneui.sparkle.checking_label", defaultValue: "Checking...", bundle: .module),
+            checkNowLabel: String(localized: "saneui.sparkle.check_now_label", defaultValue: "Check Now", bundle: .module),
+            checkNowHelp: String(localized: "saneui.sparkle.check_now_help", defaultValue: "Check for updates right now", bundle: .module),
+            dailyTitle: String(localized: "saneui.sparkle.daily_title", defaultValue: "Daily", bundle: .module),
+            weeklyTitle: String(localized: "saneui.sparkle.weekly_title", defaultValue: "Weekly", bundle: .module)
         )
     }
 
@@ -113,7 +125,7 @@ public struct SaneSparkleRow: View {
         CompactRow(labels.checkFrequencyLabel) {
             Picker("", selection: $checkFrequency) {
                 ForEach(SaneSparkleCheckFrequency.allCases) { frequency in
-                    Text(frequency.title).tag(frequency)
+                    Text(frequency.title(labels: labels)).tag(frequency)
                 }
             }
             .pickerStyle(.segmented)
