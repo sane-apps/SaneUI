@@ -52,7 +52,7 @@ public struct LicenseEntryView: View {
             if let email = licenseService.licenseEmail {
                 Text(email)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.white)
             }
         }
     }
@@ -66,7 +66,7 @@ public struct LicenseEntryView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -78,7 +78,7 @@ public struct LicenseEntryView: View {
 
             Text(licenseService.distributionChannel.purchaseManagementMessage)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -91,7 +91,7 @@ public struct LicenseEntryView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -103,27 +103,26 @@ public struct LicenseEntryView: View {
 
             Text(licenseService.distributionChannel.purchaseManagementMessage)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             Button(licenseService.isPurchasing ? "Processing..." : "Unlock Pro") {
                 Task { await licenseService.purchasePro() }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.saneAccent)
+            .buttonStyle(SaneActionButtonStyle(prominent: true))
             .disabled(licenseService.isPurchasing)
 
             Button("Restore Purchases") {
                 Task { await licenseService.restorePurchases() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(SaneActionButtonStyle())
             .disabled(licenseService.isPurchasing)
 
             if let error = licenseService.purchaseError {
                 Text(error)
                     .font(.system(size: 13))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -140,19 +139,19 @@ public struct LicenseEntryView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
                 .help("Close")
             }
 
-            Text(licenseService.alternateUnlockLabel)
+            Text(licenseService.alternateEntryLabel)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
             Text(licenseService.alternateEntryInstruction)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -164,7 +163,7 @@ public struct LicenseEntryView: View {
             if let error = licenseService.validationError {
                 Text(error)
                     .font(.system(size: 13))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -173,8 +172,8 @@ public struct LicenseEntryView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .buttonStyle(SaneActionButtonStyle())
                 .keyboardShortcut(.cancelAction)
-                .font(.system(size: 13))
                 .accessibilityIdentifier("saneui-license-cancel")
 
                 Button("Activate") {
@@ -182,8 +181,8 @@ public struct LicenseEntryView: View {
                         await licenseService.activate(key: licenseKey)
                     }
                 }
+                .buttonStyle(SaneActionButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
-                .font(.system(size: 13))
                 .disabled(licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || licenseService.isValidating)
                 .accessibilityIdentifier("saneui-license-activate")
 

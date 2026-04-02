@@ -103,10 +103,7 @@ public enum SaneActivationPolicy {
     private static func isHeadlessEnvironment() -> Bool {
         let env = ProcessInfo.processInfo.environment
         if env["CI"] != nil || env["GITHUB_ACTIONS"] != nil { return true }
-        if let bundleID = Bundle.main.bundleIdentifier,
-           bundleID.hasSuffix("Tests") || bundleID.contains("xctest") { return true }
-        if NSClassFromString("XCTestCase") != nil { return true }
-        return false
+        return SaneRuntimeEnvironment.isTestRun()
     }
 }
 #endif

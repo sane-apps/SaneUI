@@ -28,16 +28,15 @@ public struct StatusBadge: View {
         HStack(spacing: 4) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.caption2)
+                    .font(.system(size: 13, weight: .semibold))
             }
             Text(text)
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.system(size: 13, weight: .semibold))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(color.opacity(0.15))
-        .foregroundStyle(color)
+        .background(color.opacity(0.28))
+        .foregroundStyle(.white)
         .clipShape(Capsule())
     }
 }
@@ -119,40 +118,101 @@ public struct SaneActionButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        let tint: Color = if destructive {
-            Color(red: 0.86, green: 0.28, blue: 0.30)
-        } else if prominent {
-            SanePanelChrome.accentTeal
-        } else {
-            SanePanelChrome.controlNavyDeep
+        StyledBody(
+            configuration: configuration,
+            prominent: prominent,
+            destructive: destructive,
+            compact: compact
+        )
+    }
+
+    private struct StyledBody: View {
+        let configuration: Configuration
+        let prominent: Bool
+        let destructive: Bool
+        let compact: Bool
+
+        @Environment(\.isEnabled) private var isEnabled
+
+        private var tint: Color {
+            if destructive {
+                return Color(red: 0.86, green: 0.28, blue: 0.30)
+            } else if prominent {
+                return SanePanelChrome.accentTeal
+            } else {
+                return SanePanelChrome.controlNavyDeep
+            }
         }
 
-        configuration.label
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Color.white.opacity(configuration.isPressed ? 0.94 : 0.98))
-            .padding(.horizontal, compact ? 9 : 12)
-            .padding(.vertical, compact ? 4 : 6)
-            .background(
-                SaneGlassCapsuleBackground(
-                    tint: tint,
-                    edgeTint: destructive ? Color(red: 0.98, green: 0.60, blue: 0.62) : (prominent ? SanePanelChrome.accentHighlight : SanePanelChrome.accentTeal),
-                    tintStrength: destructive
-                        ? (configuration.isPressed ? 0.28 : 0.24)
-                        : prominent
-                            ? (configuration.isPressed ? 0.48 : 0.58)
-                            : (configuration.isPressed ? 0.10 : 0.14),
-                    glowOpacity: destructive ? 0.10 : (prominent ? 0.22 : 0.08),
-                    shadowOpacity: configuration.isPressed ? 0.12 : 0.18,
-                    shadowRadius: configuration.isPressed ? 5 : 8,
-                    shadowY: configuration.isPressed ? 2 : 3
+        private var edgeTint: Color {
+            if destructive {
+                return Color(red: 0.98, green: 0.60, blue: 0.62)
+            } else if prominent {
+                return SanePanelChrome.accentHighlight
+            } else {
+                return SanePanelChrome.accentTeal
+            }
+        }
+
+        private var tintStrength: Double {
+            guard isEnabled else { return prominent ? 0.18 : 0.06 }
+            if destructive {
+                return configuration.isPressed ? 0.28 : 0.24
+            }
+            if prominent {
+                return configuration.isPressed ? 0.48 : 0.58
+            }
+            return configuration.isPressed ? 0.10 : 0.14
+        }
+
+        private var glowOpacity: Double {
+            guard isEnabled else { return 0.02 }
+            if destructive { return 0.10 }
+            if prominent { return 0.22 }
+            return 0.08
+        }
+
+        private var shadowOpacity: Double {
+            guard isEnabled else { return 0.04 }
+            return configuration.isPressed ? 0.12 : 0.18
+        }
+
+        private var shadowRadius: Double {
+            guard isEnabled else { return 2 }
+            return configuration.isPressed ? 5 : 8
+        }
+
+        private var shadowY: Double {
+            guard isEnabled else { return 1 }
+            return configuration.isPressed ? 2 : 3
+        }
+
+        var body: some View {
+            configuration.label
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.62))
+                .padding(.horizontal, compact ? 9 : 12)
+                .padding(.vertical, compact ? 4 : 6)
+                .background(
+                    SaneGlassCapsuleBackground(
+                        tint: tint,
+                        edgeTint: edgeTint.opacity(isEnabled ? 1 : 0.5),
+                        tintStrength: tintStrength,
+                        glowOpacity: glowOpacity,
+                        shadowOpacity: shadowOpacity,
+                        shadowRadius: shadowRadius,
+                        shadowY: shadowY
+                    )
                 )
-            )
-            .overlay(
-                Capsule()
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.10 : 0))
-            )
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+                .overlay(
+                    Capsule()
+                        .fill(Color.white.opacity(isEnabled && configuration.isPressed ? 0.10 : 0))
+                )
+                .opacity(isEnabled ? 1 : 0.78)
+                .scaleEffect(isEnabled && configuration.isPressed ? 0.985 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+                .animation(.easeOut(duration: 0.12), value: isEnabled)
+        }
     }
 }
 
@@ -171,7 +231,7 @@ public struct SaneSegmentedChoiceButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.92))
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.9)
                 .frame(maxWidth: .infinity)
@@ -207,12 +267,12 @@ public struct SaneAccentBadge: View {
         HStack(spacing: 4) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: 10))
+                    .font(.system(size: 13, weight: .semibold))
             }
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
         }
-        .foregroundStyle(SanePanelChrome.accentHighlight)
+        .foregroundStyle(.white)
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(
@@ -285,16 +345,9 @@ public struct ColorDot: View {
 
         // Buttons
         HStack(spacing: 12) {
-            Button("Primary") {}
-                .buttonStyle(.borderedProminent)
-                .tint(Color.saneAccent)
-
-            Button("Secondary") {}
-                .buttonStyle(.bordered)
-
-            Button("Destructive") {}
-                .buttonStyle(.bordered)
-                .tint(.red)
+            ActionButton("Primary", icon: "checkmark", style: .primary) {}
+            ActionButton("Secondary", icon: "xmark", style: .secondary) {}
+            ActionButton("Destructive", icon: "trash", style: .destructive) {}
         }
     }
     .padding(20)

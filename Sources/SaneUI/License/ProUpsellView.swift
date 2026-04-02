@@ -35,7 +35,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                 Button { closeView() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -55,7 +55,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
                 Text(feature.featureDescription)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -81,7 +81,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
                     Text("Included with your Setapp install")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.white)
                 } else {
                     Text(licenseService.appStoreDisplayPrice ?? "$6.99")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -89,7 +89,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
                     Text("One-time purchase")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.white)
                 }
 
                 if licenseService.usesAppStorePurchase {
@@ -102,15 +102,14 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.saneAccent)
+                    .buttonStyle(SaneActionButtonStyle(prominent: true))
                     .controlSize(.large)
                     .disabled(licenseService.isPurchasing)
 
                     Button("Restore Purchases") {
                         Task { await licenseService.restorePurchases() }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SaneActionButtonStyle())
                     .controlSize(.small)
                     .disabled(licenseService.isPurchasing)
                 } else if licenseService.usesSetappPurchase {
@@ -120,8 +119,8 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         .padding(.vertical, 4)
 
                     Text(licenseService.distributionChannel.purchaseManagementMessage)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.82))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -140,22 +139,20 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.saneAccent)
+                    .buttonStyle(SaneActionButtonStyle(prominent: true))
                     .controlSize(.large)
 
                     Button(licenseService.alternateUnlockLabel) {
                         showingLicenseEntry = true
                     }
-                    .buttonStyle(.plain)
-                        .foregroundStyle(Color.saneAccent)
-                        .font(.system(size: 13))
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
                 }
 
                 if let purchaseError = licenseService.purchaseError {
                     Text(purchaseError)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.red)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }

@@ -9,12 +9,10 @@ import SwiftUI
 /// ```swift
 /// CompactRow("Storage", icon: "externaldrive", iconColor: .orange) {
 ///     Text("256 GB")
-///         .foregroundStyle(.secondary)
+///         .foregroundStyle(.white)
 /// }
 /// ```
 public struct CompactRow<Content: View>: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let label: String
     let icon: String?
     let iconColor: Color
@@ -29,7 +27,7 @@ public struct CompactRow<Content: View>: View {
     public init(
         _ label: String,
         icon: String? = nil,
-        iconColor: Color = .secondary,
+        iconColor: Color = .white,
         @ViewBuilder content: () -> Content
     ) {
         self.label = label
@@ -46,7 +44,7 @@ public struct CompactRow<Content: View>: View {
                     .frame(width: 20)
             }
             Text(label)
-                .foregroundStyle(colorScheme == .dark ? .white : .primary)
+                .foregroundStyle(.white)
             Spacer()
             content
         }
@@ -70,8 +68,6 @@ public struct CompactRow<Content: View>: View {
 /// )
 /// ```
 public struct CompactToggle: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let label: String
     let icon: String?
     let iconColor: Color
@@ -86,7 +82,7 @@ public struct CompactToggle: View {
     public init(
         label: String,
         icon: String? = nil,
-        iconColor: Color = .secondary,
+        iconColor: Color = .white,
         isOn: Binding<Bool>
     ) {
         self.label = label
@@ -103,7 +99,7 @@ public struct CompactToggle: View {
                     .frame(width: 20)
             }
             Text(label)
-                .foregroundStyle(colorScheme == .dark ? .white : .primary)
+                .foregroundStyle(.white)
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
@@ -142,12 +138,12 @@ public struct CompactDivider: View {
         CompactSection("Rows", icon: "list.bullet", iconColor: .blue) {
             CompactRow("Simple Row", icon: "star", iconColor: .yellow) {
                 Text("Value")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white)
             }
             CompactDivider()
             CompactRow("Another Row", icon: "heart", iconColor: .red) {
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.white)
             }
         }
 

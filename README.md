@@ -1,12 +1,15 @@
 # SaneUI
 
-A shared SwiftUI design system for Sane Apps. Currently used by SaneBar.
+A shared SwiftUI design system for SaneApps. This is the source of truth for shared settings, About, license, updater, colors, and button styling.
 
 ## Features
 
 - Glass morphism backgrounds with adaptive light/dark mode
 - Semantic color system with adaptive tokens
 - Shared SF Symbol constants
+- Shared settings shell (`SaneSettingsContainer`, `CompactSection`, `CompactRow`)
+- Shared settings surfaces (`SaneAboutView`, `LicenseSettingsView`, `SaneSparkleRow`)
+- Standalone visual catalog app (`SaneUICatalog`)
 - macOS 14+ optimized
 - Swift 6 concurrency safe
 
@@ -53,6 +56,16 @@ struct SettingsView: View {
     }
 }
 ```
+
+## Visual Catalog
+
+Use the catalog before touching app-local settings UI:
+
+```bash
+swift run SaneUICatalog
+```
+
+The catalog is the fastest way to inspect the current source-of-truth layout, colors, button styles, About pane, license pane, and shared empty/error states.
 
 ## Components
 
@@ -110,11 +123,21 @@ Image(systemName: SaneIcons.settings)   // gear
 
 ## Apps Using SaneUI
 
-- **SaneBar** - Menu bar manager
+- **SaneBar**
+- **SaneClick**
+- **SaneClip**
+- **SaneHosts**
+- **SaneSales**
+
+## Shared UI Rules
+
+- Shared settings text should be bright white and at least `13pt`.
+- App repos should extend SaneUI instead of redefining `SaneSparkleRow`, About panes, or license panes locally.
+- Bug reporting in shared settings surfaces should route through GitHub-backed diagnostics, not `mailto:` links.
 
 ## License
 
-MIT License - See LICENSE file for details.
+[PolyForm Shield 1.0.0](https://polyformproject.org/licenses/shield/1.0.0) — free for personal use and experimentation. See [LICENSE](LICENSE) for full terms.
 
 <!-- SANEAPPS_AI_CONTRIB_START -->
 ### Become a Contributor (Even if You Don't Code)

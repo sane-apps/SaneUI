@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum SaneFeedbackCopy {
+    static let title = "Report an Issue"
+    static let subtitle = "Describe the problem and diagnostics will be attached before GitHub opens in your browser."
+    static let privacyLine = "No personal information is collected."
+}
+
 /// In-app issue reporting view with diagnostic log collection.
 /// Shared across all SaneApps — each app provides its own `SaneDiagnosticsService`.
 ///
@@ -43,15 +49,15 @@ public struct SaneFeedbackView: View {
             SaneGradientBackground()
                 .ignoresSafeArea()
 
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 header
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 12) {
                         CompactSection("What happened?", icon: "ladybug.fill", iconColor: .orange) {
                             TextEditor(text: $issueDescription)
                                 .font(.body)
-                                .frame(minHeight: 160)
+                                .frame(minHeight: 128)
                                 .padding(10)
                                 .background(editorBackground)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -84,34 +90,34 @@ public struct SaneFeedbackView: View {
 
                         CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
                             CompactRow(
-                                "Nothing is sent until GitHub opens in your browser.",
+                                SaneFeedbackCopy.privacyLine,
                                 icon: "checkmark.shield",
                                 iconColor: .green
                             ) { EmptyView() }
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                 }
 
                 footer
             }
-            .padding(.vertical, 20)
+            .padding(.vertical, 16)
         }
         #if os(macOS)
-            .frame(width: 540, height: 520)
+            .frame(width: 540, height: 660)
         #endif
     }
 
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Report an Issue")
+                Text(SaneFeedbackCopy.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                Text("Describe the problem and the diagnostics will be attached automatically.")
-                    .font(.callout)
-                    .foregroundStyle(.white.opacity(0.9))
+                Text(SaneFeedbackCopy.subtitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
             }
 
             Spacer()
@@ -130,16 +136,12 @@ public struct SaneFeedbackView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
-            Link("Questions instead?", destination: URL(string: "mailto:hi@saneapps.com")!)
-                .font(.callout)
-                .foregroundStyle(.white)
-
-            Spacer()
+            Spacer(minLength: 0)
 
             Button("Cancel") {
                 dismiss()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(SaneActionButtonStyle())
             .keyboardShortcut(.cancelAction)
 
             Button {
@@ -150,10 +152,10 @@ public struct SaneFeedbackView: View {
                         .controlSize(.small)
                         .padding(.horizontal, 8)
                 } else {
-                    Text(didCopyDiagnostics ? "Copied" : "Copy Diagnostics")
+                    Text(didCopyDiagnostics ? "Copied" : "Copy")
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(SaneActionButtonStyle())
             .disabled(collectingAction != nil)
 
             Button {
@@ -164,10 +166,10 @@ public struct SaneFeedbackView: View {
                         .controlSize(.small)
                         .padding(.horizontal, 8)
                 } else {
-                    Text("Report Issue")
+                    Text("Report")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(SaneActionButtonStyle(prominent: true))
             .disabled(issueDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || collectingAction != nil)
             .keyboardShortcut(.defaultAction)
         }

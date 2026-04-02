@@ -507,13 +507,13 @@ public struct WelcomeGateView: View {
 
             Text(welcomeSummary)
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(setupGuidance)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -528,7 +528,7 @@ public struct WelcomeGateView: View {
                     ForEach(Array(welcomeHighlights.enumerated()), id: \.offset) { _, item in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: item.icon)
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(saneAccentSoft)
                                 .frame(width: 14)
                             Text(item.text)
@@ -544,7 +544,7 @@ public struct WelcomeGateView: View {
 
             Text("This setup takes under 60 seconds.")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
         }
         .padding(32)
     }
@@ -563,13 +563,13 @@ public struct WelcomeGateView: View {
 
             Text("It's only a few screens and you'll be\nconfused if you rush through.")
                 .font(.system(size: 17))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("— Mr. Sane")
                 .font(.system(size: 15, weight: .medium, design: .serif))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
 
             Spacer()
         }
@@ -589,7 +589,7 @@ public struct WelcomeGateView: View {
 
                         Text(coreLeadText)
                             .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.95))
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
@@ -611,7 +611,7 @@ public struct WelcomeGateView: View {
                                     .foregroundStyle(.white)
                                 Text("Original keeps formatting. Plain strips formatting. Smart auto-cleans URLs and code pastes.")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.white.opacity(0.95))
+                                    .foregroundStyle(.white)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -648,7 +648,7 @@ public struct WelcomeGateView: View {
 
                         Text(proLeadText)
                             .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.95))
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
@@ -678,7 +678,7 @@ public struct WelcomeGateView: View {
 
                 Text("One click, then you're protected.")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
@@ -718,7 +718,7 @@ public struct WelcomeGateView: View {
 
                 Text("More control when you need it.")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
@@ -763,7 +763,7 @@ public struct WelcomeGateView: View {
                     .foregroundStyle(.white)
                 Text("— 2 Timothy 1:7")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.white)
             }
 
             HStack(spacing: goldenBase) {
@@ -833,12 +833,12 @@ public struct WelcomeGateView: View {
                 if let actionHint = permissionConfig.actionHint {
                     Text(actionHint)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.white)
                 }
             } else if let grantedMessage = permissionConfig.grantedMessage {
                 Text(grantedMessage)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
 
@@ -876,13 +876,13 @@ public struct WelcomeGateView: View {
 
             Text("All features unlocked.\nI couldn't do this without you.")
                 .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("— Mr. Sane")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.white)
                 .padding(.top, 2)
 
             Spacer()
@@ -932,7 +932,7 @@ public struct WelcomeGateView: View {
                             } else if licenseService.usesSetappPurchase {
                                 Text("Managed by Setapp")
                                     .font(.system(size: 13))
-                                    .foregroundStyle(.white.opacity(0.82))
+                                    .foregroundStyle(.white)
                             } else {
                                 Button(licenseService.alternateUnlockLabel) {
                                     showingLicenseEntry = true
@@ -974,13 +974,13 @@ public struct WelcomeGateView: View {
                     if let price {
                         Text(price)
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.white)
                     }
                 }
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 18))
-                    .foregroundStyle(isSelected ? (isPro ? saneAccentSoft : .white) : .white.opacity(0.9))
+                    .foregroundStyle(isSelected ? (isPro ? saneAccentSoft : .white) : .white)
             }
 
             Rectangle()
@@ -1047,7 +1047,7 @@ public struct WelcomeGateView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .font(.system(size: 14))
             }
 
@@ -1067,7 +1067,7 @@ public struct WelcomeGateView: View {
                         Button(secondaryCompletionActionLabel) {
                             completeOnboarding(useSecondaryAction: true)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(SaneActionButtonStyle())
                         .controlSize(.regular)
                         .font(.system(size: 14, weight: .medium))
                         .disabled(licenseService.isPurchasing)
@@ -1138,9 +1138,9 @@ public struct WelcomeGateView: View {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     HStack(alignment: .top, spacing: 8) {
                         Text(row.0)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 17, height: 17)
+                            .frame(width: 19, height: 19)
                             .background(
                                 Circle()
                                     .fill(saneAccentDeep.opacity(0.8))
@@ -1198,8 +1198,8 @@ public struct WelcomeGateView: View {
                 Image(systemName: "checkmark.seal.fill")
                     .foregroundStyle(saneAccentSoft)
                 Text("Protection status updates in real time.")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
             }
             .padding(.top, 5)
         }
@@ -1240,7 +1240,7 @@ public struct WelcomeGateView: View {
 
             Text(subtitle)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, minHeight: 98, alignment: .topLeading)
@@ -1259,9 +1259,9 @@ public struct WelcomeGateView: View {
     private func quickChip(icon: String, text: String, accented: Bool = false) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
             Text(text)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
         }
         .foregroundStyle(accented ? saneAccentSoft : .white)
         .padding(.horizontal, 10)
@@ -1296,7 +1296,7 @@ public struct WelcomeGateView: View {
                     .foregroundStyle(.white)
                 Text(subtitle)
                     .font(.system(size: subtitleSize, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.white)
             }
 
             if columns <= 1 {

@@ -20,6 +20,45 @@ public enum SaneColors {
     public static let info = Color.blue
 }
 
+/// Shared semantic colors for settings sidebar icons.
+///
+/// These colors are stable across apps so the same category carries the same
+/// meaning everywhere in Sane settings surfaces.
+public enum SaneSettingsIconSemantic: Sendable {
+    case general
+    case rules
+    case appearance
+    case shortcuts
+    case content
+    case sync
+    case storage
+    case license
+    case about
+
+    public var color: Color {
+        switch self {
+        case .general:
+            Color(red: 174.0 / 255.0, green: 184.0 / 255.0, blue: 199.0 / 255.0) // #AEB8C7
+        case .rules:
+            Color(red: 255.0 / 255.0, green: 176.0 / 255.0, blue: 66.0 / 255.0) // #FFB042
+        case .appearance:
+            Color(red: 199.0 / 255.0, green: 147.0 / 255.0, blue: 250.0 / 255.0) // #C793FA
+        case .shortcuts:
+            Color(red: 97.0 / 255.0, green: 184.0 / 255.0, blue: 255.0 / 255.0) // #61B8FF
+        case .content:
+            Color(red: 97.0 / 255.0, green: 217.0 / 255.0, blue: 143.0 / 255.0) // #61D98F
+        case .sync:
+            Color(red: 82.0 / 255.0, green: 224.0 / 255.0, blue: 240.0 / 255.0) // #52E0F0
+        case .storage:
+            Color(red: 245.0 / 255.0, green: 138.0 / 255.0, blue: 61.0 / 255.0) // #F58A3D
+        case .license:
+            Color(red: 255.0 / 255.0, green: 214.0 / 255.0, blue: 46.0 / 255.0) // #FFD62E
+        case .about:
+            Color(red: 202.0 / 255.0, green: 217.0 / 255.0, blue: 235.0 / 255.0) // #CAD9EB
+        }
+    }
+}
+
 // MARK: - Color Extensions
 
 public extension Color {

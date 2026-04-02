@@ -30,7 +30,7 @@ public struct CompactSection<Content: View>: View {
     public init(
         _ title: String,
         icon: String? = nil,
-        iconColor: Color = .secondary,
+        iconColor: Color = .white,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -84,7 +84,7 @@ public struct CompactSection<Content: View>: View {
                 Text("Item 1")
                 Spacer()
                 Text("Value")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -96,7 +96,7 @@ public struct CompactSection<Content: View>: View {
                 Text("Item 2")
                 Spacer()
                 Text("Value")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
