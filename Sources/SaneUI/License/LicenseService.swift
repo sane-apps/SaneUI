@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import os.log
 #if canImport(StoreKit)
     import StoreKit
@@ -51,6 +52,31 @@ public enum SaneDistributionChannel: Sendable {
     }
 }
 
+@MainActor
+public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
+    var isPro: Bool { get }
+    var licenseEmail: String? { get }
+    var isValidating: Bool { get }
+    var isPurchasing: Bool { get }
+    var validationError: String? { get set }
+    var purchaseError: String? { get set }
+    var appStoreDisplayPrice: String? { get }
+    var alternateEntryLabel: String { get }
+    var accessManagementLabel: String { get }
+    var alternateEntryInstruction: String { get }
+    var checkoutURL: URL? { get }
+    var distributionChannel: SaneDistributionChannel { get }
+    var usesAppStorePurchase: Bool { get }
+    var usesSetappPurchase: Bool { get }
+
+    func checkCachedLicense()
+    func preloadAppStoreProduct() async
+    func purchasePro() async
+    func restorePurchases() async
+    func activate(key: String) async
+    func deactivate()
+}
+
 /// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain.
 ///
 /// Unlike SaneBar's freemium model, this is a full gate: no purchase = no app.
@@ -64,7 +90,7 @@ public enum SaneDistributionChannel: Sendable {
 /// licenseService.checkCachedLicense()
 /// ```
 @MainActor @Observable
-public final class LicenseService {
+public final class LicenseService: LicenseSettingsServiceProtocol {
     public struct DirectCopy: Sendable {
         public let alternateUnlockLabel: String
         public let alternateEntryLabel: String

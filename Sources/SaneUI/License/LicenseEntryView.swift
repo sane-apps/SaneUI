@@ -2,13 +2,13 @@ import SwiftUI
 
 /// Simple license key entry form. Shown as a nested sheet from ProUpsellView or standalone.
 /// Auto-dismisses 1.5s after successful activation with a checkmark animation.
-public struct LicenseEntryView: View {
-    @Bindable var licenseService: LicenseService
+public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
+    @Bindable var licenseService: Service
     @Environment(\.dismiss) private var dismiss
     @State private var licenseKey = ""
     @State private var showingSuccess = false
 
-    public init(licenseService: LicenseService) {
+    public init(licenseService: Service) {
         self.licenseService = licenseService
     }
 
