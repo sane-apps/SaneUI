@@ -1,8 +1,8 @@
-# SaneUI Development Guide (SOP)
+# SaneUI Development Guide
 
-**Version 1.0** | Last updated: 2026-02-02
+**Last updated:** 2026-04-09
 
-> **Shared UI library for all Sane Apps**
+> Shared SwiftUI design system for the SaneApps product family.
 
 ---
 
@@ -38,7 +38,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Build
@@ -47,8 +47,8 @@ swift build
 # Test
 swift test
 
-# Check which apps use this
-rg -n "SaneUI" ~/SaneApps/apps/* || true
+# Open the catalog app
+swift run SaneUICatalog
 ```
 
 ---
@@ -57,7 +57,7 @@ rg -n "SaneUI" ~/SaneApps/apps/* || true
 
 ### #1: STAY IN YOUR LANE
 
-All files stay in `/Users/sj/SaneApps/apps/Projects/SaneUI/`
+All files stay in `~/SaneApps/infra/SaneUI/`
 
 ### #2: VERIFY BEFORE YOU TRY
 
@@ -89,35 +89,46 @@ Keep component files under 500 lines. Split by responsibility.
 
 ---
 
+## Canonical Sources
+
+Use the catalog and the shared docs before changing app-local settings UI:
+
+- `README.md` for current package usage and shared-surface scope
+- `ARCHITECTURE.md` for the catalog-first source-of-truth model
+- `Sources/SaneUICatalog/SaneUICatalogApp.swift` for the live visual catalog
+
 ## Project Structure
 
 ```
 SaneUI/
 ├── Sources/SaneUI/
-│   ├── Colors/          # Brand color definitions
-│   ├── Typography/      # Font styles
-│   ├── Components/      # Reusable UI components
-│   └── Extensions/      # SwiftUI extensions
-├── Tests/SaneUITests/   # Unit tests
-└── Package.swift        # Package manifest
+│   ├── License/             # Shared license flows
+│   ├── Updater/             # Shared updater rows and update UI
+│   ├── Settings/            # Shared settings chrome and rows
+│   ├── About/               # Shared About surface
+│   ├── Buttons.swift        # Shared button treatments
+│   ├── Colors.swift         # Semantic colors
+│   └── Backgrounds.swift    # Shared backgrounds and materials
+├── Sources/SaneUICatalog/   # Live source-of-truth catalog app
+├── Tests/SaneUITests/       # Unit tests
+└── Package.swift            # Package manifest
 ```
 
 ---
 
 ## Adding a New Component
 
-1. **Create file** in `Sources/SaneUI/Components/`
-2. **Add Preview** at bottom of file
-3. **Document public API** with comments
-4. **Add tests** in `Tests/SaneUITests/`
-5. **Run** `swift test`
-6. **Update** consuming apps if API changed
+1. Extend the existing shared surface if one already exists.
+2. If the component is shared settings/About/license/updater UI, update the catalog too.
+3. Add focused tests in `Tests/SaneUITests/`.
+4. Run `swift test`.
+5. Verify at least one consuming app if the change alters shared behavior.
 
 ---
 
 ## Brand Guidelines Integration
 
-SaneUI implements the [Brand Guidelines](../../meta/Brand/SaneApps-Brand-Guidelines.md):
+SaneUI implements the brand and shared-surface rules defined across the SaneApps docs:
 
 ### Colors
 All colors come from the brand palette. Don't add arbitrary colors.
@@ -159,6 +170,12 @@ SaneUI is currently used by:
 | App | Import Location |
 |-----|-----------------|
 | SaneBar | `Package.swift` |
+| SaneClick | `project.yml` generated package dependency |
+| SaneClip | `project.yml` generated package dependency |
+| SaneHosts | `project.yml` generated package dependency |
+| SaneSales | `project.yml` generated package dependency |
+| SaneSync | `project.yml` generated package dependency |
+| SaneVideo | `project.yml` generated package dependency |
 
 **Before changing any public API**, check all consumers.
 

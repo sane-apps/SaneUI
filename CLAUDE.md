@@ -34,19 +34,15 @@
 | **Brand Guidelines** | `~/SaneApps/meta/Brand/SaneApps-Brand-Guidelines.md` |
 | **Hooks/tooling** | `~/SaneApps/infra/SaneProcess/` |
 
-**Used by:** SaneBar, SaneClip, SaneVideo, SaneSync, SaneHosts, SaneAI, SaneScript
+**Used by:** SaneBar, SaneClick, SaneClip, SaneHosts, SaneSales, SaneSync, SaneVideo
 
 ---
 
 ## What is SaneUI?
 
-SaneUI is a **Swift Package** containing:
-- Brand colors (Navy, Teal, Surface colors)
-- Typography styles (SF Pro Display scale)
-- Reusable SwiftUI components
-- SwiftUI extensions
-
-All Sane Apps import this package to maintain visual consistency.
+SaneUI is a Swift package plus a catalog app. It is the shared source of truth
+for settings chrome, About panes, license surfaces, updater rows, colors, and
+button styling across the SaneApps apps that ship shared UI.
 
 ---
 
@@ -54,10 +50,8 @@ All Sane Apps import this package to maintain visual consistency.
 
 | Path | Purpose |
 |------|---------|
-| `Sources/SaneUI/Colors/` | Brand color definitions |
-| `Sources/SaneUI/Typography/` | Font styles |
-| `Sources/SaneUI/Components/` | Reusable UI components |
-| `Sources/SaneUI/Extensions/` | SwiftUI extensions |
+| `Sources/SaneUI/` | Shared package code |
+| `Sources/SaneUICatalog/` | Live catalog/source-of-truth app |
 | `Tests/` | Unit tests |
 | `Package.swift` | Swift Package manifest |
 
@@ -72,24 +66,18 @@ swift build
 # Test
 swift test
 
-# Add to an app's Package.swift
-.package(path: "../../../infra/SaneUI")
+# Add to a typical app repo Package.swift
+.package(path: "../../infra/SaneUI")
 ```
 
 ---
 
-## Brand Colors
+## Shared UI Rules
 
-| Name | Hex | Usage |
-|------|-----|-------|
-| **Navy** | `#1a2744` | Logo background, dark surfaces |
-| **Glowing Teal** | `#5fa8d3` | Accents, CTAs |
-| **Void** | `#0a0a0a` | Darkest surface |
-| **Carbon** | `#1a1a1a` | Dark surface |
-| **Smoke** | `#2a2a2a` | Elevated surface |
-| **Stone** | `#4a4a4a` | Borders, dividers |
-| **Cloud** | `#e5e5e5` | Light surface |
-| **White** | `#ffffff` | Text on dark |
+- Check `Sources/SaneUICatalog/SaneUICatalogApp.swift` before changing any shared settings/About/license/update surface.
+- Shared settings text must stay bright white and at least `13pt`.
+- Do not reintroduce gray helper text, `mailto:` bug-report links, `Manage Access` copy, or `.buttonStyle(.bordered)` in shared surfaces.
+- Prefer extending existing shared views over adding app-local one-offs.
 
 ---
 

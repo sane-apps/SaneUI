@@ -19,7 +19,7 @@ Add SaneUI to your Swift Package dependencies:
 
 ```swift
 dependencies: [
-    .package(path: "../Projects/SaneUI")  // Local path (monorepo)
+    .package(path: "../../infra/SaneUI")  // Typical local monorepo path from an app repo
     // or
     .package(url: "https://github.com/sane-apps/SaneUI", from: "1.0.0")
 ]
@@ -128,6 +128,8 @@ Image(systemName: SaneIcons.settings)   // gear
 - **SaneClip**
 - **SaneHosts**
 - **SaneSales**
+- **SaneSync**
+- **SaneVideo**
 
 ## Shared UI Rules
 
