@@ -61,6 +61,7 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     var validationError: String? { get set }
     var purchaseError: String? { get set }
     var appStoreDisplayPrice: String? { get }
+    var displayPriceLabel: String { get }
     var alternateEntryLabel: String { get }
     var accessManagementLabel: String { get }
     var alternateEntryInstruction: String { get }
@@ -128,6 +129,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
     /// Freemium alias — matches SaneBar convention. Apps use `isPro` in feature guards.
     public var isPro: Bool { isLicensed }
+    public var displayPriceLabel: String {
+        appStoreDisplayPrice ?? defaultDisplayPrice
+    }
 
     // MARK: - Configuration
 
@@ -176,6 +180,19 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return url
         }
         return nil
+    }
+
+    private var defaultDisplayPrice: String {
+        switch appName.lowercased() {
+        case "saneclick":
+            "$9.99"
+        case "sanesales":
+            "$24.99"
+        case "sanebar", "saneclip", "sanehosts":
+            "$14.99"
+        default:
+            "$14.99"
+        }
     }
 
     public var distributionChannel: SaneDistributionChannel {

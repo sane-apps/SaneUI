@@ -206,7 +206,7 @@ public struct WelcomeGateView: View {
 
     private var resolvedProTierTitle: String {
         proTierTitleOverride
-            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.appStoreDisplayPrice ?? "$6.99")")
+            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.displayPriceLabel)")
     }
 
     private var resolvedProTierPrice: String {
@@ -915,7 +915,7 @@ public struct WelcomeGateView: View {
                                     }
                                 }
                             } label: {
-                                Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro")
+                                Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
                                     .font(.system(size: 13, weight: .semibold))
                                     .frame(maxWidth: .infinity)
                             }

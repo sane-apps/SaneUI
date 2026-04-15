@@ -121,8 +121,8 @@ public struct LicenseGateView: View {
                         Text(licenseService.usesSetappPurchase
                              ? "Managed by Setapp"
                              : (licenseService.usesAppStorePurchase
-                                 ? "Unlock Pro"
-                                 : "Buy Now — \(licenseService.appStoreDisplayPrice ?? "$6.99")"))
+                                 ? "Unlock Pro — \(licenseService.displayPriceLabel)"
+                                 : "Buy Now — \(licenseService.displayPriceLabel)"))
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -175,7 +175,7 @@ public struct LicenseGateView: View {
                  ? "This Setapp build unlocks through Setapp."
                  : (licenseService.usesAppStorePurchase
                      ? "Unlock Pro in-app to continue"
-                     : "$6.99 \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
+                     : "\(licenseService.displayPriceLabel) \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
 

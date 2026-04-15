@@ -69,7 +69,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 includedWithSetappLabel: String(localized: "saneui.license.included_with_setapp_label", defaultValue: "Included with Setapp", bundle: .module),
                 processingLabel: String(localized: "saneui.license.processing_label", defaultValue: "Processing...", bundle: .module),
                 unlockProPrefix: String(localized: "saneui.license.unlock_pro_prefix", defaultValue: "Unlock Pro —", bundle: .module),
-                fallbackPriceLabel: String(localized: "saneui.license.fallback_price_label", defaultValue: "$6.99", bundle: .module)
+                fallbackPriceLabel: String(localized: "saneui.license.fallback_price_label", defaultValue: "$14.99", bundle: .module)
             )
         }
 
@@ -307,7 +307,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                     fittedActionLabel(
                         licenseService.isPurchasing
                             ? labels.processingLabel
-                            : labels.unlockProLabel(price: licenseService.appStoreDisplayPrice)
+                            : labels.unlockProLabel(price: licenseService.displayPriceLabel)
                     )
                 }
                 .disabled(licenseService.isPurchasing)
@@ -323,7 +323,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    fittedActionLabel(labels.unlockProLabel(price: nil))
+                    fittedActionLabel(labels.unlockProLabel(price: licenseService.displayPriceLabel))
                 }
             }
         }

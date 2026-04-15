@@ -107,7 +107,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button(licenseService.isPurchasing ? "Processing..." : "Unlock Pro") {
+            Button(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)") {
                 Task { await licenseService.purchasePro() }
             }
             .buttonStyle(SaneActionButtonStyle(prominent: true))

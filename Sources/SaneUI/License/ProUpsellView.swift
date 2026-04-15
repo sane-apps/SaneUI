@@ -83,7 +83,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.white)
                 } else {
-                    Text(licenseService.appStoreDisplayPrice ?? "$6.99")
+                    Text(licenseService.displayPriceLabel)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.saneAccent)
 
@@ -96,7 +96,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     Button {
                         Task { await licenseService.purchasePro() }
                     } label: {
-                        Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro")
+                        Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -133,7 +133,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             await EventTracker.log("upsell_clicked_buy", app: appName)
                         }
                     } label: {
-                        Text("Unlock Pro")
+                        Text("Unlock Pro — \(licenseService.displayPriceLabel)")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
