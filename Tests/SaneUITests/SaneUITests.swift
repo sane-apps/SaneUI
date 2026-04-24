@@ -302,6 +302,99 @@ struct SaneLicenseServiceTests {
         #expect(service.validationError == nil)
         #expect(service.purchaseError == nil)
     }
+
+    @Test("App Store backend listens for transaction updates and active refreshes")
+    func appStoreBackendListensForTransactionUpdatesAndActiveRefreshes() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseService.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Transaction.updates"))
+        #expect(source.contains("didBecomeActiveNotification"))
+        #expect(source.contains("configureAppStoreObservationIfNeeded()"))
+    }
+}
+
+@Suite("Shared License UI Policy")
+struct SharedLicenseUIPolicyTests {
+    @Test("Shared upsell uses entry label for direct key path")
+    func sharedUpsellUsesEntryLabelForDirectKeyPath() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/ProUpsellView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Button(licenseService.alternateEntryLabel)"))
+        #expect(!source.contains("Button(licenseService.alternateUnlockLabel)"))
+    }
+
+    @Test("Shared upsell does not stack a nested license sheet")
+    func sharedUpsellAvoidsNestedLicenseSheet() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/ProUpsellView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(!source.contains(".sheet(isPresented: $showingLicenseEntry)"))
+        #expect(source.contains("case .licenseEntry"))
+        #expect(source.contains("LicenseEntryView("))
+    }
+
+    @Test("License gate uses entry label for direct key flow")
+    func licenseGateUsesEntryLabelForDirectKeyFlow() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Text(licenseService.alternateEntryLabel)"))
+        #expect(!source.contains("Text(licenseService.alternateUnlockLabel)"))
+    }
+
+    @Test("Welcome gate uses entry label for direct key flow")
+    func welcomeGateUsesEntryLabelForDirectKeyFlow() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Button(licenseService.alternateEntryLabel)"))
+        #expect(!source.contains("Button(licenseService.alternateUnlockLabel)"))
+    }
+
+    @Test("License entry supports shared close and back behavior")
+    func licenseEntrySupportsSharedCloseAndBackBehavior() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseEntryView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private let onClose: (() -> Void)?"))
+        #expect(source.contains("private let onBack: (() -> Void)?"))
+        #expect(source.contains(".saneOnExitCommand { closeView() }"))
+        #expect(source.contains("Button(onBack == nil ? \"Cancel\" : \"Back\")"))
+    }
+
+    @Test("Shared upsell handles keyboard dismissal directly")
+    func sharedUpsellHandlesKeyboardDismissalDirectly() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/ProUpsellView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private func handleKeyCommand(_ event: NSEvent) -> Bool"))
+        #expect(source.contains(".saneOnKeyDown { handleKeyCommand($0) }"))
+        #expect(source.contains("if event.keyCode == 53"))
+        #expect(source.contains("let isCommandW = flags == [.command]"))
+    }
 }
 
 #if canImport(AppKit)

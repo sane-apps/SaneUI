@@ -86,4 +86,35 @@ public extension View {
             self
         #endif
     }
+
+    @ViewBuilder
+    func saneOnKeyDown(perform action: @escaping (NSEvent) -> Bool) -> some View {
+        #if os(macOS)
+            modifier(SaneKeyDownMonitor(action: action))
+        #else
+            self
+        #endif
+    }
 }
+
+#if os(macOS)
+private struct SaneKeyDownMonitor: ViewModifier {
+    let action: (NSEvent) -> Bool
+    @State private var monitor: Any?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                guard monitor == nil else { return }
+                monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    action(event) ? nil : event
+                }
+            }
+            .onDisappear {
+                guard let monitor else { return }
+                NSEvent.removeMonitor(monitor)
+                self.monitor = nil
+            }
+    }
+}
+#endif

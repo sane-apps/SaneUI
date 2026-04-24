@@ -34,6 +34,8 @@ SaneUI is a Swift Package that provides the shared source of truth for SaneApps 
 | SaneSparkleRow | Shared direct-update surface | `Sources/SaneUI/Components/SaneSparkleRow.swift` |
 | SaneUICatalog | Standalone visual source-of-truth app | `Sources/SaneUICatalog/SaneUICatalogApp.swift` |
 
+Channel invariant: shared About/license/update surfaces must be channel-aware. App Store consumers cannot inherit direct-download purchase, donation, GitHub Sponsors, crypto, Sparkle, or direct license-key paths through SaneUI defaults.
+
 ## Data and Persistence
 
 SaneUI stays mostly view-driven. It has light app-facing state only where shared surfaces need it, such as:

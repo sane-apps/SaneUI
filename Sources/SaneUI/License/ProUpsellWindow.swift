@@ -28,7 +28,7 @@ public enum ProUpsellWindow {
         let hostingView = NSHostingView(rootView: upsellView)
         hostingView.setContentHuggingPriority(.required, for: .vertical)
 
-        let panel = NSPanel(
+        let panel = UpsellPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
@@ -45,6 +45,7 @@ public enum ProUpsellWindow {
         panel.level = .floating
         panel.isReleasedWhenClosed = false
         panel.becomesKeyOnlyIfNeeded = false
+        panel.hidesOnDeactivate = false
 
         // Hide traffic light buttons — the SwiftUI X (top-right) is the close mechanism
         panel.standardWindowButton(.closeButton)?.isHidden = true
@@ -80,6 +81,11 @@ public enum ProUpsellWindow {
         func windowWillClose(_: Notification) {
             DispatchQueue.main.async { self.onClose() }
         }
+    }
+
+    private final class UpsellPanel: NSPanel, @unchecked Sendable {
+        override var canBecomeKey: Bool { true }
+        override var canBecomeMain: Bool { true }
     }
 }
 #endif

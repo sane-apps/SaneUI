@@ -9,13 +9,18 @@ import SwiftUI
 /// }
 /// ```
 public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
+    private enum Route {
+        case upsell
+        case licenseEntry
+    }
+
     let feature: Feature
     @Bindable var licenseService: LicenseService
     /// Optional explicit close action (used when presented in a standalone window).
     /// When nil, falls back to SwiftUI's `dismiss` environment action (sheets).
     var onClose: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
-    @State private var showingLicenseEntry = false
+    @State private var route: Route = .upsell
 
     public init(feature: Feature, licenseService: LicenseService, onClose: (() -> Void)? = nil) {
         self.feature = feature
@@ -27,21 +32,85 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
         if let onClose { onClose() } else { dismiss() }
     }
 
+    private func handleKeyCommand(_ event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let isCommandW = flags == [.command] &&
+            event.charactersIgnoringModifiers?.lowercased() == "w"
+
+        if event.keyCode == 53 {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if route == .licenseEntry {
+                    route = .upsell
+                    licenseService.validationError = nil
+                } else {
+                    closeView()
+                }
+            }
+            return true
+        }
+
+        if isCommandW {
+            closeView()
+            return true
+        }
+
+        return false
+    }
+
     public var body: some View {
+        Group {
+            switch route {
+            case .upsell:
+                upsellContent
+            case .licenseEntry:
+                LicenseEntryView(
+                    licenseService: licenseService,
+                    onClose: { closeView() },
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            route = .upsell
+                            licenseService.validationError = nil
+                        }
+                    }
+                )
+            }
+        }
+        .saneOnExitCommand { closeView() }
+        .saneOnKeyDown { handleKeyCommand($0) }
+        .onChange(of: licenseService.isPro) { _, newValue in
+            if newValue { closeView() }
+        }
+        .onAppear {
+            let appName = licenseService.appName.lowercased()
+            Task.detached {
+                await EventTracker.log("upsell_shown", app: appName)
+            }
+            if licenseService.usesAppStorePurchase {
+                Task { await licenseService.preloadAppStoreProduct() }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var dismissButton: some View {
+        Button { closeView() } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Close")
+    }
+
+    private var upsellContent: some View {
         VStack(spacing: 16) {
-            // Close button
             HStack {
                 Spacer()
-                Button { closeView() } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(.plain)
-                .help("Close")
+                dismissButton
             }
 
-            // Feature they tried
             VStack(spacing: 8) {
                 Image(systemName: feature.featureIcon)
                     .font(.system(size: 36))
@@ -63,7 +132,6 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
             Divider()
                 .padding(.horizontal, 20)
 
-            // Value props
             VStack(alignment: .leading, spacing: 6) {
                 proPoint(icon: "star.fill", text: "All Pro features unlocked")
                 proPoint(icon: "infinity", text: "Lifetime updates — no subscription")
@@ -72,7 +140,6 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
             }
             .padding(.horizontal, 10)
 
-            // Price + CTA
             VStack(spacing: 8) {
                 if licenseService.usesSetappPurchase {
                     Text("Setapp")
@@ -142,8 +209,11 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .buttonStyle(SaneActionButtonStyle(prominent: true))
                     .controlSize(.large)
 
-                    Button(licenseService.alternateUnlockLabel) {
-                        showingLicenseEntry = true
+                    Button(licenseService.alternateEntryLabel) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            route = .licenseEntry
+                            licenseService.validationError = nil
+                        }
                     }
                     .buttonStyle(SaneActionButtonStyle())
                     .controlSize(.small)
@@ -159,24 +229,8 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
             }
         }
         .padding(24)
-        .frame(width: 380)
+        .frame(width: 400)
         .fixedSize(horizontal: false, vertical: true)
-        .saneOnExitCommand { closeView() }
-        .sheet(isPresented: $showingLicenseEntry) {
-            LicenseEntryView(licenseService: licenseService)
-        }
-        .onChange(of: licenseService.isPro) { _, newValue in
-            if newValue { closeView() }
-        }
-        .onAppear {
-            let appName = licenseService.appName.lowercased()
-            Task.detached {
-                await EventTracker.log("upsell_shown", app: appName)
-            }
-            if licenseService.usesAppStorePurchase {
-                Task { await licenseService.preloadAppStoreProduct() }
-            }
-        }
     }
 
     private func proPoint(icon: String, text: String) -> some View {

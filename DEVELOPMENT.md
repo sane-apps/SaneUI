@@ -124,6 +124,14 @@ SaneUI/
 4. Run `swift test`.
 5. Verify at least one consuming app if the change alters shared behavior.
 
+## App Store Surface Guardrails
+
+Shared About/license/update UI is reused by direct, App Store, and Setapp builds. Before adding links or copy here, check the consuming channel:
+
+- App Store builds must not expose GitHub Sponsors, crypto donation, external purchase, Sparkle update, or direct license-key unlock paths.
+- Direct-download builds may show direct purchase/update surfaces when the app config explicitly enables them.
+- Review shared About/license changes in `Sources/SaneUICatalog/SaneUICatalogApp.swift` and rerun the consuming app's `SaneMaster.rb appstore_preflight` before App Store submission.
+
 ---
 
 ## Brand Guidelines Integration

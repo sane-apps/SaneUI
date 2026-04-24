@@ -7,9 +7,33 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
     @Environment(\.dismiss) private var dismiss
     @State private var licenseKey = ""
     @State private var showingSuccess = false
+    private let onClose: (() -> Void)?
+    private let onBack: (() -> Void)?
 
-    public init(licenseService: Service) {
+    public init(
+        licenseService: Service,
+        onClose: (() -> Void)? = nil,
+        onBack: (() -> Void)? = nil
+    ) {
         self.licenseService = licenseService
+        self.onClose = onClose
+        self.onBack = onBack
+    }
+
+    private func closeView() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
+    }
+
+    private func backOrDismiss() {
+        if let onBack {
+            onBack()
+        } else {
+            closeView()
+        }
     }
 
     public var body: some View {
@@ -27,13 +51,14 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         .padding(24)
         .frame(width: 400)
         .fixedSize(horizontal: false, vertical: true)
+        .saneOnExitCommand { closeView() }
         .onChange(of: licenseService.isPro) { _, newValue in
             if newValue {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showingSuccess = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    dismiss()
+                    closeView()
                 }
             }
         }
@@ -63,10 +88,12 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         Group {
             HStack {
                 Spacer()
-                Button { dismiss() } label: {
+                Button { closeView() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -88,10 +115,12 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         Group {
             HStack {
                 Spacer()
-                Button { dismiss() } label: {
+                Button { closeView() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -136,10 +165,12 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         Group {
             HStack {
                 Spacer()
-                Button { dismiss() } label: {
+                Button { closeView() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Close")
@@ -169,8 +200,8 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
             }
 
             HStack(spacing: 12) {
-                Button("Cancel") {
-                    dismiss()
+                Button(onBack == nil ? "Cancel" : "Back") {
+                    backOrDismiss()
                 }
                 .buttonStyle(SaneActionButtonStyle())
                 .keyboardShortcut(.cancelAction)

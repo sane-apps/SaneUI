@@ -393,7 +393,7 @@ public struct WelcomeGateView: View {
         case "saneclick":
             return "Run useful Finder actions from right-click, without leaving your workflow."
         case "sanesales":
-            return "Track revenue, orders, and trends across your sales platforms in one place."
+            return "Track revenue, orders, products, and trends across any date range."
         case "saneclip":
             return "Save everything you copy, find it instantly, and paste cleaner."
         case "sanebar":
@@ -410,7 +410,7 @@ public struct WelcomeGateView: View {
         case "saneclick":
             return "In under 60 seconds: enable Finder extension, pick scripts, then right-click to run."
         case "sanesales":
-            return "In under 60 seconds: connect data sources, review dashboard, then monitor in real time."
+            return "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
         case "saneclip":
             return "In under 60 seconds: confirm permissions, choose plan, then start copying."
         default:
@@ -934,7 +934,7 @@ public struct WelcomeGateView: View {
                                     .font(.system(size: 13))
                                     .foregroundStyle(.white)
                             } else {
-                                Button(licenseService.alternateUnlockLabel) {
+                                Button(licenseService.alternateEntryLabel) {
                                     showingLicenseEntry = true
                                 }
                                 .buttonStyle(OnboardingSecondaryButtonStyle())

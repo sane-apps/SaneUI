@@ -154,7 +154,7 @@ public struct LicenseGateView: View {
                             showKeyEntry = true
                         }
                     } label: {
-                        Text(licenseService.alternateUnlockLabel)
+                        Text(licenseService.alternateEntryLabel)
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(SaneActionButtonStyle())
@@ -194,7 +194,7 @@ public struct LicenseGateView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.saneAccent)
 
-            Text(licenseService.alternateUnlockLabel)
+            Text(licenseService.alternateEntryLabel)
                 .font(.title2.bold())
                 .foregroundStyle(.white)
 

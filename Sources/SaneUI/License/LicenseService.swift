@@ -4,6 +4,11 @@ import os.log
 #if canImport(StoreKit)
     import StoreKit
 #endif
+#if canImport(UIKit)
+    import UIKit
+#elseif canImport(AppKit)
+    import AppKit
+#endif
 
 public enum SaneDistributionChannel: Sendable {
     case direct
@@ -292,6 +297,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private let keychain: KeychainServiceProtocol
     private let logger: Logger
     #if canImport(StoreKit)
+        @ObservationIgnored private var hasConfiguredAppStoreObservation = false
+        @ObservationIgnored private var appStoreTransactionUpdatesTask: Task<Void, Never>?
+        @ObservationIgnored private var appStoreDidBecomeActiveTask: Task<Void, Never>?
         private var appStoreProduct: Product?
     #endif
 
@@ -320,6 +328,13 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         self.directCopy = directCopy
         self.keychain = keychain ?? KeychainService(service: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())")
         logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())", category: "License")
+    }
+
+    deinit {
+        #if canImport(StoreKit)
+            appStoreTransactionUpdatesTask?.cancel()
+            appStoreDidBecomeActiveTask?.cancel()
+        #endif
     }
 
     // MARK: - Startup
@@ -357,6 +372,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         #endif
 
         if usesAppStorePurchase {
+            configureAppStoreObservationIfNeeded()
             Task {
                 await preloadAppStoreProduct()
                 await refreshAppStoreEntitlement()
@@ -625,6 +641,58 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     // MARK: - Private
+
+    #if canImport(StoreKit)
+        private static var appDidBecomeActiveNotification: Notification.Name {
+            #if canImport(UIKit)
+                UIApplication.didBecomeActiveNotification
+            #elseif canImport(AppKit)
+                NSApplication.didBecomeActiveNotification
+            #else
+                Notification.Name("SaneAppsAppDidBecomeActive")
+            #endif
+        }
+
+        private func configureAppStoreObservationIfNeeded() {
+            guard case let .appStore(productID) = purchaseBackend else { return }
+            guard !hasConfiguredAppStoreObservation else { return }
+
+            hasConfiguredAppStoreObservation = true
+
+            // Keep StoreKit entitlements current while the app is running, including cross-device redemptions.
+            appStoreTransactionUpdatesTask = Task { [weak self] in
+                for await result in Transaction.updates {
+                    guard !Task.isCancelled else { return }
+                    await self?.handleAppStoreTransactionUpdate(result, expectedProductID: productID)
+                }
+            }
+
+            appStoreDidBecomeActiveTask = Task { [weak self] in
+                for await _ in NotificationCenter.default.notifications(named: Self.appDidBecomeActiveNotification) {
+                    guard !Task.isCancelled else { return }
+                    await self?.refreshAppStoreEntitlement()
+                }
+            }
+        }
+
+        private func handleAppStoreTransactionUpdate(
+            _ result: VerificationResult<Transaction>,
+            expectedProductID: String
+        ) async {
+            guard case let .verified(transaction) = result else {
+                logger.error("Ignoring unverified App Store transaction update")
+                return
+            }
+
+            guard transaction.productID == expectedProductID else { return }
+
+            await transaction.finish()
+            await refreshAppStoreEntitlement()
+            logger.info("Processed App Store transaction update for \(expectedProductID, privacy: .public)")
+        }
+    #else
+        private func configureAppStoreObservationIfNeeded() {}
+    #endif
 
     private func refreshAppStoreEntitlement() async {
         guard case let .appStore(productID) = purchaseBackend else { return }
