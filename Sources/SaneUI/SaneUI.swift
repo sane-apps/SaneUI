@@ -87,14 +87,12 @@ public extension View {
         #endif
     }
 
-    @ViewBuilder
-    func saneOnKeyDown(perform action: @escaping (NSEvent) -> Bool) -> some View {
-        #if os(macOS)
+    #if os(macOS)
+        @ViewBuilder
+        func saneOnKeyDown(perform action: @escaping (NSEvent) -> Bool) -> some View {
             modifier(SaneKeyDownMonitor(action: action))
-        #else
-            self
-        #endif
-    }
+        }
+    #endif
 }
 
 #if os(macOS)
