@@ -32,7 +32,6 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
         if let onClose { onClose() } else { dismiss() }
     }
 
-    #if os(macOS)
     private func handleKeyCommand(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let isCommandW = flags == [.command] &&
@@ -57,15 +56,13 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
         return false
     }
-    #endif
-
     public var body: some View {
-        #if os(macOS)
-            proUpsellBody
-                .saneOnKeyDown { handleKeyCommand($0) }
-        #else
-            proUpsellBody
-        #endif
+#if os(macOS)
+        proUpsellBody
+            .saneOnKeyDown { handleKeyCommand($0) }
+#else
+        proUpsellBody
+#endif
     }
 
     private var proUpsellBody: some View {

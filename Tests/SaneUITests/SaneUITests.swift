@@ -147,6 +147,23 @@ struct WelcomeGateFlowPolicyTests {
         #expect(String(describing: type(of: view)).contains("WelcomeGateView"))
     }
 
+    @Test("Welcome window supports persisting and restoring onboarding page state")
+    func welcomeWindowSupportsResumingCurrentPage() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private let onPageChange: ((Int) -> Void)?"))
+        #expect(source.contains(".onAppear {\n            onPageChange?(currentPage)\n        }"))
+        #expect(source.contains(".onChange(of: currentPage) { _, newValue in\n            onPageChange?(newValue)\n        }"))
+        #expect(source.contains("initialPage: Int = 0,"))
+        #expect(source.contains("onPageChange: ((Int) -> Void)? = nil"))
+        #expect(source.contains("initialPage: initialPage,"))
+        #expect(source.contains("onPageChange: onPageChange"))
+    }
+
     @Test("Pro user always lands on Get Started")
     func proUserLabel() {
         let label = WelcomeGateFlowPolicy.finalPrimaryButtonLabel(

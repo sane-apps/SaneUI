@@ -28,7 +28,39 @@ enum WelcomeGatePrimaryAction {
 }
 
 public struct WelcomeGatePermissionConfig {
+    public struct Section {
+        public let title: String
+        public let bullets: [(icon: String, text: String)]
+        public let grantedMessage: String?
+        public let actionLabel: String?
+        public let actionHint: String?
+        public let initiallyGranted: Bool
+        public let refreshGranted: (() -> Bool)?
+        public let action: (() -> Void)?
+
+        public init(
+            title: String,
+            bullets: [(icon: String, text: String)],
+            grantedMessage: String? = nil,
+            actionLabel: String? = nil,
+            actionHint: String? = nil,
+            initiallyGranted: Bool = false,
+            refreshGranted: (() -> Bool)? = nil,
+            action: (() -> Void)? = nil
+        ) {
+            self.title = title
+            self.bullets = bullets
+            self.grantedMessage = grantedMessage
+            self.actionLabel = actionLabel
+            self.actionHint = actionHint
+            self.initiallyGranted = initiallyGranted
+            self.refreshGranted = refreshGranted
+            self.action = action
+        }
+    }
+
     public let title: String
+    public let sections: [Section]
     public let bullets: [(icon: String, text: String)]
     public let grantedMessage: String?
     public let actionLabel: String?
@@ -48,6 +80,17 @@ public struct WelcomeGatePermissionConfig {
         action: (() -> Void)? = nil
     ) {
         self.title = title
+        let section = Section(
+            title: title,
+            bullets: bullets,
+            grantedMessage: grantedMessage,
+            actionLabel: actionLabel,
+            actionHint: actionHint,
+            initiallyGranted: initiallyGranted,
+            refreshGranted: refreshGranted,
+            action: action
+        )
+        self.sections = [section]
         self.bullets = bullets
         self.grantedMessage = grantedMessage
         self.actionLabel = actionLabel
@@ -55,6 +98,19 @@ public struct WelcomeGatePermissionConfig {
         self.initiallyGranted = initiallyGranted
         self.refreshGranted = refreshGranted
         self.action = action
+    }
+
+    public init(title: String, sections: [Section]) {
+        self.title = title
+        self.sections = sections
+        let first = sections.first ?? Section(title: title, bullets: [])
+        self.bullets = first.bullets
+        self.grantedMessage = first.grantedMessage
+        self.actionLabel = first.actionLabel
+        self.actionHint = first.actionHint
+        self.initiallyGranted = sections.allSatisfy(\.initiallyGranted)
+        self.refreshGranted = nil
+        self.action = first.action
     }
 }
 
@@ -193,11 +249,12 @@ public struct WelcomeGateView: View {
     @State private var navigateForward = true
     @State private var selectedTier: Tier = .pro
     @State private var showingLicenseEntry = false
-    @State private var permissionGranted = false
+    @State private var permissionGrantedStates: [Bool]
     private let autoDismissOnPro: Bool
     private let secondaryCompletionActionLabel: String?
     private let secondaryCompletionAccessibilityIdentifier: String?
     private let onSecondaryCompletion: (() -> Void)?
+    private let onPageChange: ((Int) -> Void)?
     private let onComplete: (() -> Void)?
 
     // Canonical onboarding flow across all apps.
@@ -230,6 +287,7 @@ public struct WelcomeGateView: View {
         secondaryCompletionActionLabel: String? = nil,
         secondaryCompletionAccessibilityIdentifier: String? = nil,
         onSecondaryCompletion: (() -> Void)? = nil,
+        onPageChange: ((Int) -> Void)? = nil,
         onComplete: (() -> Void)? = nil
     ) {
         self.appName = appName
@@ -254,9 +312,10 @@ public struct WelcomeGateView: View {
         self.secondaryCompletionActionLabel = secondaryCompletionActionLabel
         self.secondaryCompletionAccessibilityIdentifier = secondaryCompletionAccessibilityIdentifier
         self.onSecondaryCompletion = onSecondaryCompletion
+        self.onPageChange = onPageChange
         self.onComplete = onComplete
         _currentPage = State(initialValue: max(0, min(initialPage, Self.pageCount - 1)))
-        _permissionGranted = State(initialValue: self.permissionConfig.initiallyGranted)
+        _permissionGrantedStates = State(initialValue: self.permissionConfig.sections.map(\.initiallyGranted))
     }
 
     public var body: some View {
@@ -287,14 +346,24 @@ public struct WelcomeGateView: View {
                 .padding(.horizontal, 40)
                 .padding(.bottom, 30)
         }
-        .frame(width: 700, height: 520)
+        .frame(width: 700, height: appSlug == "saneclip" ? 620 : 520)
         .background(onboardingBackground)
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
         }
+        .onAppear {
+            onPageChange?(currentPage)
+        }
         .onReceive(NotificationCenter.default.publisher(for: SanePlatform.didBecomeActiveNotification)) { _ in
-            guard let refreshGranted = permissionConfig.refreshGranted else { return }
-            permissionGranted = refreshGranted()
+            permissionGrantedStates = permissionConfig.sections.enumerated().map { index, section in
+                guard let refreshGranted = section.refreshGranted else {
+                    return permissionGrantedStates.indices.contains(index) ? permissionGrantedStates[index] : section.initiallyGranted
+                }
+                return refreshGranted()
+            }
+        }
+        .onChange(of: currentPage) { _, newValue in
+            onPageChange?(newValue)
         }
         .onChange(of: licenseService.isPro) { _, newValue in
             guard autoDismissOnPro, newValue else { return }
@@ -395,7 +464,7 @@ public struct WelcomeGateView: View {
         case "sanesales":
             return "Track revenue, orders, products, and trends across any date range."
         case "saneclip":
-            return "Save everything you copy, find it instantly, and paste cleaner."
+            return "Private clipboard history for your Mac. Start with the free core, then unlock deeper paste and capture tools if you need them."
         case "sanebar":
             return "Take control of your menu bar so your Mac stays clean and focused."
         default:
@@ -412,7 +481,7 @@ public struct WelcomeGateView: View {
         case "sanesales":
             return "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
         case "saneclip":
-            return "In under 60 seconds: confirm permissions, choose plan, then start copying."
+            return "A short walkthrough: Basic, Pro, the Sane Promise, and the optional access behind capture and fast paste."
         default:
             return "This takes about a minute. Follow each step in order."
         }
@@ -426,12 +495,21 @@ public struct WelcomeGateView: View {
             return [("checkmark.seal", "Enable"), ("cursorarrow.click.2", "Right-Click"), ("arrow.right.circle", "Run")]
         case "sanesales":
             return [("checkmark.seal", "Connect"), ("chart.xyaxis.line", "Review"), ("arrow.right.circle", "Track")]
+        case "saneclip":
+            return [("magnifyingglass", "Search Fast"), ("pin.fill", "Pin Important"), ("lock.shield", "Private by Default")]
         default:
             return [("checkmark.seal", "Set Up"), ("sparkles", "Learn"), ("arrow.right.circle", "Launch")]
         }
     }
 
     private var welcomeHighlights: [(icon: String, text: String)] {
+        if appSlug == "saneclip" {
+            return [
+                ("clipboard", "Basic keeps your last 50 clips searchable, pinnable, and easy to recover."),
+                ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
+                ("text.viewfinder", "Pro adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls.")
+            ]
+        }
         if appSlug == "sanehosts" {
             return []
         }
@@ -549,6 +627,7 @@ public struct WelcomeGateView: View {
         .padding(32)
     }
 
+    @ViewBuilder
     private var dontSkipPage: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -580,6 +659,36 @@ public struct WelcomeGateView: View {
     private var coreFeaturesPage: some View {
         if appSlug == "sanehosts" {
             saneHostsCorePage
+        } else if appSlug == "saneclip" {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: goldenGap) {
+                    VStack(spacing: goldenBase * 0.62) {
+                        (Text("Basic ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
+                            .font(.system(size: 30, weight: .bold, design: .serif))
+
+                        Text("Start free with the core clipboard workflow: history, search, pinning, screenshots, and optional private sync.")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, goldenBase * 0.35)
+
+                    VStack(spacing: goldenBase * 0.62) {
+                        featureCard(
+                            title: "What Basic Includes",
+                            subtitle: "History, search, screenshots, the companion app, and private defaults",
+                            features: freeFeatures,
+                            columns: 1,
+                            compact: false
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, goldenPad)
+                .padding(.top, goldenBase)
+                .padding(.bottom, goldenBase * 1.4)
+            }
         } else {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
@@ -639,6 +748,56 @@ public struct WelcomeGateView: View {
     private var proWorkflowPage: some View {
         if appSlug == "sanehosts" {
             saneHostsAdvancedPage
+        } else if appSlug == "saneclip" {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: goldenGap) {
+                    VStack(spacing: goldenBase * 0.62) {
+                        (Text("Pro ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
+                            .font(.system(size: 30, weight: .bold, design: .serif))
+
+                        Text("Upgrade for OCR capture, smarter paste, deeper organization, and stronger privacy controls.")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, goldenBase * 0.35)
+
+                    VStack(spacing: goldenBase * 0.62) {
+                        featureCard(
+                            title: "What Pro Unlocks",
+                            subtitle: "OCR capture, smarter paste, reusable text, and stronger control",
+                            features: proFeatures.filter { !$0.text.localizedCaseInsensitiveContains("everything in basic") },
+                            columns: 1,
+                            compact: false
+                        )
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Paste modes")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                            Text("Original keeps formatting. Plain strips formatting. Smart auto-cleans URLs and code pastes.")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.white)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(cardBg)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(saneAccent.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, goldenPad)
+                .padding(.top, goldenBase)
+                .padding(.bottom, goldenBase * 1.4)
+            }
         } else {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
@@ -748,6 +907,7 @@ public struct WelcomeGateView: View {
 
     // MARK: - Page 5: Sane Philosophy
 
+    @ViewBuilder
     private var sanePromisePage: some View {
         VStack(spacing: 20) {
             Text("Our Sane Philosophy")
@@ -790,61 +950,95 @@ public struct WelcomeGateView: View {
     // MARK: - Page 6: Permissions
 
     private var permissionPage: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
+        VStack(spacing: 14) {
             Image(systemName: "lock.shield.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 38))
                 .foregroundStyle(saneAccent)
 
             Text(permissionConfig.title)
-                .font(.system(size: 28, weight: .bold, design: .serif))
+                .font(.system(size: 26, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(Array(permissionConfig.bullets.enumerated()), id: \.offset) { _, bullet in
-                    permissionLine(icon: bullet.icon, text: bullet.text)
+            Text("Turn on only the access \(appName) needs for capture and fast paste workflows.")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 10) {
+                ForEach(Array(permissionConfig.sections.enumerated()), id: \.offset) { index, section in
+                    permissionSection(
+                        section,
+                        isGranted: permissionGrantedStates.indices.contains(index) ? permissionGrantedStates[index] : section.initiallyGranted
+                    )
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.horizontal, 40)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
+        }
+    }
 
-            if permissionGranted, let grantedMessage = permissionConfig.grantedMessage {
+    @ViewBuilder
+    private func permissionSection(_ section: WelcomeGatePermissionConfig.Section, isGranted: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(section.title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+
+            ForEach(Array(section.bullets.enumerated()), id: \.offset) { _, bullet in
+                permissionLine(icon: bullet.icon, text: bullet.text)
+            }
+
+            if isGranted, let grantedMessage = section.grantedMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text(grantedMessage)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.green)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, 8)
-            } else if let actionLabel = permissionConfig.actionLabel,
-                      let action = permissionConfig.action {
+                .padding(.top, 2)
+            } else if let actionLabel = section.actionLabel,
+                      let action = section.action {
                 Button {
                     action()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.open.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                         Text(actionLabel)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                     }
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 10))
+                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 16, verticalPadding: 8))
 
-                if let actionHint = permissionConfig.actionHint {
+                if let actionHint = section.actionHint {
                     Text(actionHint)
-                        .font(.system(size: 13))
+                        .font(.system(size: 12.5))
                         .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-            } else if let grantedMessage = permissionConfig.grantedMessage {
+            } else if let grantedMessage = section.grantedMessage {
                 Text(grantedMessage)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer()
         }
-        .padding(.horizontal, 40)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     // MARK: - Page 7: Plan / Upgrade
@@ -1349,14 +1543,15 @@ public struct WelcomeGateView: View {
     }
 
     private func permissionLine(icon: String, text: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.system(size: 18))
                 .foregroundStyle(saneAccent)
                 .frame(width: 28)
             Text(text)
-                .font(.system(size: 17, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -1447,6 +1642,8 @@ public enum WelcomeWindow {
         proFeatures: [(icon: String, text: String)],
         permissionConfig: WelcomeGatePermissionConfig? = nil,
         licenseService: LicenseService,
+        initialPage: Int = 0,
+        onPageChange: ((Int) -> Void)? = nil,
         onDismiss: @escaping () -> Void = {}
     ) {
         if let existingWindow = window {
@@ -1473,7 +1670,9 @@ public enum WelcomeWindow {
             freeFeatures: freeFeatures,
             proFeatures: proFeatures,
             permissionConfig: permissionConfig,
-            licenseService: licenseService
+            licenseService: licenseService,
+            initialPage: initialPage,
+            onPageChange: onPageChange
         )
 
         let hostingView = NSHostingView(rootView: welcomeView)
