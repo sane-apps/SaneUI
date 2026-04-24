@@ -88,7 +88,7 @@ public extension View {
     }
 }
 
-@available(macOS 13.0, *)
+#if os(macOS)
 public extension View {
     @ViewBuilder
     func saneOnKeyDown(perform action: @escaping (NSEvent) -> Bool) -> some View {
@@ -96,7 +96,6 @@ public extension View {
     }
 }
 
-#if os(macOS)
 private struct SaneKeyDownMonitor: ViewModifier {
     let action: (NSEvent) -> Bool
     @State private var monitor: Any?
