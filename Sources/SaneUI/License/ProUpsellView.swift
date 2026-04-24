@@ -32,30 +32,32 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
         if let onClose { onClose() } else { dismiss() }
     }
 
-    private func handleKeyCommand(_ event: NSEvent) -> Bool {
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        let isCommandW = flags == [.command] &&
-            event.charactersIgnoringModifiers?.lowercased() == "w"
+    #if os(macOS)
+        private func handleKeyCommand(_ event: NSEvent) -> Bool {
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            let isCommandW = flags == [.command] &&
+                event.charactersIgnoringModifiers?.lowercased() == "w"
 
-        if event.keyCode == 53 {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                if route == .licenseEntry {
-                    route = .upsell
-                    licenseService.validationError = nil
-                } else {
-                    closeView()
+            if event.keyCode == 53 {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if route == .licenseEntry {
+                        route = .upsell
+                        licenseService.validationError = nil
+                    } else {
+                        closeView()
+                    }
                 }
+                return true
             }
-            return true
-        }
 
-        if isCommandW {
-            closeView()
-            return true
-        }
+            if isCommandW {
+                closeView()
+                return true
+            }
 
-        return false
-    }
+            return false
+        }
+    #endif
     public var body: some View {
 #if os(macOS)
         proUpsellBody
