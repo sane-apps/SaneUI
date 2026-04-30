@@ -122,6 +122,36 @@ struct SettingsLocalizationTests {
     }
 }
 
+@Suite("Readable Help Standard")
+struct ReadableHelpStandardTests {
+    @Test("SaneUI exposes native hover help with matching accessibility hint")
+    func saneHelpUsesAppleNativeHelp() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneHelp.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("public struct SaneHelpModifier"))
+        #expect(source.contains(".help(text)"))
+        #expect(source.contains(".accessibilityHint(text)"))
+        #expect(!source.contains("overlay(alignment:"))
+        #expect(!source.contains("onHover"))
+    }
+
+    @Test("SaneUI Catalog documents visible inline help for important explanations")
+    func catalogShowsInlineHelpPattern() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUICatalog/SaneUICatalogApp.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains(".saneHelp("))
+        #expect(source.contains("SaneInlineHelp("))
+    }
+}
+
 @Suite("Welcome Gate Flow Policy")
 struct WelcomeGateFlowPolicyTests {
     @Test("Welcome gate accepts tier copy overrides")

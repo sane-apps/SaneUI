@@ -197,7 +197,9 @@ private struct ControlsCatalogView: View {
                 CompactRow("Status") {
                     HStack(spacing: 8) {
                         StatusBadge("Active", color: .green, icon: "checkmark.circle.fill")
+                            .saneHelp("This status is healthy and does not need action.")
                         StatusBadge("Warning", color: .orange, icon: "exclamationmark.triangle.fill")
+                            .saneHelp("This status needs attention.")
                     }
                 }
                 CompactDivider()
@@ -218,9 +220,13 @@ private struct ControlsCatalogView: View {
                         ) {
                             selectedChoice = title
                         }
+                        .saneHelp("Changes the preview cadence to \(title.lowercased()).")
                     }
                 }
                 .padding(12)
+                SaneInlineHelp("Use native Apple hover help for short explanations, and visible inline help for settings customers need to understand without hovering.")
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
             }
         }
     }
