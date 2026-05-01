@@ -353,6 +353,9 @@ public struct WelcomeGateView: View {
         }
         .onAppear {
             onPageChange?(currentPage)
+            Task.detached {
+                await EventTracker.logOnce(.onboardingStarted, app: appName.lowercased())
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: SanePlatform.didBecomeActiveNotification)) { _ in
             permissionGrantedStates = permissionConfig.sections.enumerated().map { index, section in
@@ -368,6 +371,9 @@ public struct WelcomeGateView: View {
         .onChange(of: licenseService.isPro) { _, newValue in
             guard autoDismissOnPro, newValue else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task.detached {
+                    await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())
+                }
                 onComplete?()
                 dismiss()
             }
@@ -1098,6 +1104,9 @@ public struct WelcomeGateView: View {
                     actions: {
                         AnyView(VStack(spacing: 6) {
                             Button {
+                                Task.detached {
+                                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                                }
                                 if licenseService.usesAppStorePurchase {
                                     Task { await licenseService.purchasePro() }
                                 } else if licenseService.usesSetappPurchase {
@@ -1289,6 +1298,9 @@ public struct WelcomeGateView: View {
     private func completeOnboarding(useSecondaryAction: Bool = false) {
         if useSecondaryAction {
             onSecondaryCompletion?()
+            Task.detached {
+                await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())
+            }
             onComplete?()
             dismiss()
             return
@@ -1301,6 +1313,9 @@ public struct WelcomeGateView: View {
         ) {
         case .purchasePro:
             if licenseService.usesAppStorePurchase {
+                Task.detached {
+                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                }
                 Task { await licenseService.purchasePro() }
                 return
             }
@@ -1308,11 +1323,15 @@ public struct WelcomeGateView: View {
             if let url = licenseService.checkoutURL {
                 SanePlatform.open(url)
                 Task.detached {
+                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
                     await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                 }
             }
         case .complete:
             break
+        }
+        Task.detached {
+            await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())
         }
         onComplete?()
         dismiss()

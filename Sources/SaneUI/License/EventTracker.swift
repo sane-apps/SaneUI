@@ -12,6 +12,49 @@ private let eventLogger = Logger(subsystem: "com.saneapps", category: "EventTrac
 public enum EventTracker: Sendable {
     private static let endpoint = "https://dist.saneapps.com/api/event"
 
+    /// Shared funnel events that stay aggregate-only.
+    public enum FunnelEvent: String, Sendable {
+        case onboardingStarted = "onboarding_started"
+        case onboardingCompleted = "onboarding_completed"
+        case demoStarted = "demo_started"
+        case providerConnectStarted = "provider_connect_started"
+        case providerConnectSuccess = "provider_connect_success"
+        case providerConnectFailed = "provider_connect_failed"
+        case paywallSeen = "paywall_seen"
+        case checkoutClicked = "checkout_clicked"
+        case firstValueAction = "first_value_action"
+    }
+
+    /// Log a standard funnel event. Call from `Task.detached` so it never blocks the calling actor.
+    public static func log(_ event: FunnelEvent, app: String) async {
+        await log(event.rawValue, app: app)
+    }
+
+    /// Log a standard funnel event once per local install.
+    ///
+    /// This stores only a local boolean marker. It does not create or send any user, device, or session ID.
+    public static func logOnce(
+        _ event: FunnelEvent,
+        app: String,
+        defaults: UserDefaults = .standard
+    ) async {
+        await logOnce(event.rawValue, app: app, defaults: defaults)
+    }
+
+    /// Log an event once per local install.
+    ///
+    /// This stores only a local boolean marker. It does not create or send any user, device, or session ID.
+    public static func logOnce(
+        _ event: String,
+        app: String,
+        defaults: UserDefaults = .standard
+    ) async {
+        let key = onceKey(app: app, event: event)
+        guard !defaults.bool(forKey: key) else { return }
+        defaults.set(true, forKey: key)
+        await log(event, app: app)
+    }
+
     /// Log an event. Call from `Task.detached` so it never blocks the calling actor.
     public static func log(_ event: String, app: String) async {
         await log(event, app: app, tier: nil, targetVersion: nil, targetBuild: nil)
@@ -80,6 +123,12 @@ public enum EventTracker: Sendable {
         payload
             .sorted { $0.key < $1.key }
             .map { URLQueryItem(name: $0.key, value: $0.value) }
+    }
+
+    static func onceKey(app: String, event: String) -> String {
+        let normalizedApp = app.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedEvent = event.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return "SaneApps.EventTracker.logged.\(normalizedApp).\(normalizedEvent)"
     }
 
     static func appVersion(bundle: Bundle) -> String {

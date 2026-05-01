@@ -186,7 +186,8 @@ struct WelcomeGateFlowPolicyTests {
         )
 
         #expect(source.contains("private let onPageChange: ((Int) -> Void)?"))
-        #expect(source.contains(".onAppear {\n            onPageChange?(currentPage)\n        }"))
+        #expect(source.contains(".onAppear {\n            onPageChange?(currentPage)"))
+        #expect(source.contains("EventTracker.logOnce(.onboardingStarted"))
         #expect(source.contains(".onChange(of: currentPage) { _, newValue in\n            onPageChange?(newValue)\n        }"))
         #expect(source.contains("initialPage: Int = 0,"))
         #expect(source.contains("onPageChange: ((Int) -> Void)? = nil"))
@@ -536,6 +537,27 @@ struct SaneEventTrackerTests {
 
         #expect(payload["tier"] == "free")
         #expect(payload["channel"] == "setapp")
+    }
+
+    @Test("Funnel event names are stable for aggregate analytics")
+    func funnelEventNamesAreStable() {
+        #expect(EventTracker.FunnelEvent.onboardingStarted.rawValue == "onboarding_started")
+        #expect(EventTracker.FunnelEvent.onboardingCompleted.rawValue == "onboarding_completed")
+        #expect(EventTracker.FunnelEvent.demoStarted.rawValue == "demo_started")
+        #expect(EventTracker.FunnelEvent.providerConnectStarted.rawValue == "provider_connect_started")
+        #expect(EventTracker.FunnelEvent.providerConnectSuccess.rawValue == "provider_connect_success")
+        #expect(EventTracker.FunnelEvent.providerConnectFailed.rawValue == "provider_connect_failed")
+        #expect(EventTracker.FunnelEvent.paywallSeen.rawValue == "paywall_seen")
+        #expect(EventTracker.FunnelEvent.checkoutClicked.rawValue == "checkout_clicked")
+        #expect(EventTracker.FunnelEvent.firstValueAction.rawValue == "first_value_action")
+    }
+
+    @Test("Once key contains no unique identifier")
+    func onceKeyContainsNoUniqueIdentifier() {
+        #expect(
+            EventTracker.onceKey(app: " SaneClip ", event: " Onboarding_Started ")
+                == "SaneApps.EventTracker.logged.saneclip.onboarding_started"
+        )
     }
 }
 

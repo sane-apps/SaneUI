@@ -92,6 +92,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
         .onAppear {
             let appName = licenseService.appName.lowercased()
             Task.detached {
+                await EventTracker.log(.paywallSeen, app: appName)
                 await EventTracker.log("upsell_shown", app: appName)
             }
             if licenseService.usesAppStorePurchase {
@@ -170,6 +171,10 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
                 if licenseService.usesAppStorePurchase {
                     Button {
+                        let appName = licenseService.appName.lowercased()
+                        Task.detached {
+                            await EventTracker.log(.checkoutClicked, app: appName)
+                        }
                         Task { await licenseService.purchasePro() }
                     } label: {
                         Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
@@ -201,11 +206,12 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Button {
+                        let appName = licenseService.appName.lowercased()
                         if let url = licenseService.checkoutURL {
                             SanePlatform.open(url)
                         }
-                        let appName = licenseService.appName.lowercased()
                         Task.detached {
+                            await EventTracker.log(.checkoutClicked, app: appName)
                             await EventTracker.log("upsell_clicked_buy", app: appName)
                         }
                     } label: {
