@@ -1423,6 +1423,19 @@ struct SaneFeedbackCopyTests {
         #expect(source.contains("NSOpenPanel"))
         #expect(source.contains("prepareAttachmentPackage"))
     }
+
+    @Test("Feedback view has explicit escape paths")
+    func feedbackViewHasExplicitEscapePaths() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneFeedbackView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Image(systemName: \"xmark.circle.fill\")"))
+        #expect(source.contains("Button(\"Cancel\")"))
+        #expect(source.contains(".keyboardShortcut(.cancelAction)"))
+    }
 }
 
 @Suite("License Settings Layout")

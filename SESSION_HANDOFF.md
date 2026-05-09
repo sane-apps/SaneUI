@@ -8,7 +8,7 @@ Last updated: 2026-05-09
   - `SaneApplicationMover` is the shared move-to-Applications implementation for direct-download apps, with copy-then-relaunch behavior, destination verification, user Applications fallback, and loop prevention.
   - `SaneUpdateEligibility` and `SaneSparkleRow` make update controls unavailable outside `/Applications` or `~/Applications` instead of letting Sparkle fail later.
   - `SaneStandardMenu.addCoreUtilityItems` is the shared customer-critical utility menu contract for background apps: Settings, License, Check for Updates, About / Report a Bug, optional What's New, optional app utilities, then Quit.
-  - `SaneFeedbackView` supports diagnostics-backed in-app bug reports with media attachments.
+  - `SaneFeedbackView` supports diagnostics-backed in-app bug reports with media attachments, explicit close/cancel escape paths, and an attachment package for selected media.
   - `SaneLoginItemToggle` centralizes launch-at-login UI.
   - `SanePermissionGuidanceView` centralizes permission explanation/recovery rows.
   - `SaneAppStorage` gives apps an app-owned storage helper so shared surfaces do not reach into protected user folders casually.
@@ -19,7 +19,7 @@ Last updated: 2026-05-09
 
 ## Latest Verification
 
-- Mini `swift test` passed `95` tests for the current shared-surface set.
+- Mini `swift test` passed `96` tests for the current shared-surface set on 2026-05-09, including feedback media attachment and escape-path coverage.
 - SaneProcess guard coverage passed after shared SaneUI updates:
   - `scripts/sanemaster/saneui_guard_test.rb`
   - `scripts/app_test_mode_test.rb`

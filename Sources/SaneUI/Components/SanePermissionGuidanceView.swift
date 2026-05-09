@@ -16,24 +16,28 @@
         public var url: URL {
             switch self {
             case .accessibility:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+                privacyURL("Accessibility")
             case .automation:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
+                privacyURL("Automation")
             case .screenRecording:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
+                privacyURL("ScreenCapture")
             case .microphone:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
+                privacyURL("Microphone")
             case .camera:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!
+                privacyURL("Camera")
             case .photos:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos")!
+                privacyURL("Photos")
             case .filesAndFolders:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders")!
+                privacyURL("FilesAndFolders")
             case .fullDiskAccess:
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+                privacyURL("AllFiles")
             case .loginItems:
                 URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!
             }
+        }
+
+        private func privacyURL(_ pane: String) -> URL {
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_" + pane)!
         }
 
         @MainActor

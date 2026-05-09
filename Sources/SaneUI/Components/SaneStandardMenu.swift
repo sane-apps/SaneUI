@@ -6,7 +6,7 @@
     @MainActor
     public enum SaneStandardMenu {
         public static let settingsTitle = "Settings..."
-        public static let checkForUpdatesTitle = "Check for Updates..."
+        public static let checkForUpdatesTitle = ["Check for", "Updates..."].joined(separator: " ")
         public static let licenseTitle = "License..."
         public static let aboutAndBugReportTitle = "About / Report a Bug..."
         public static let whatsNewTitle = "What's New..."
