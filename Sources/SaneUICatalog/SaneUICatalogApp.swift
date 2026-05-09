@@ -260,6 +260,29 @@ private struct SettingsCatalogView: View {
                 onCheckNow: {}
             )
         }
+
+        SanePermissionGuidanceView(
+            title: "Automation Access",
+            message: "Use this shared layout when an app needs to explain a macOS privacy permission and provide one-click recovery.",
+            steps: [
+                "Open the matching Privacy & Security pane.",
+                "Enable the app for the requested target.",
+                "Return to the app and retry the action.",
+            ],
+            primaryAction: SanePermissionAction(
+                title: "Open Automation Settings",
+                systemImage: "gearshape",
+                destination: .automation,
+                help: "Open macOS Automation privacy settings.",
+                prominent: true
+            ),
+            secondaryAction: SanePermissionAction(
+                title: "Open Photos Privacy",
+                systemImage: "photo",
+                destination: .photos,
+                help: "Open macOS Photos privacy settings."
+            )
+        )
     }
 }
 
@@ -365,14 +388,10 @@ private struct AboutCatalogView: View {
             githubRepo: "SaneUI",
             diagnosticsService: diagnosticsService,
             licenses: [
-                .init(
-                    name: "SaneUI",
-                    url: "https://github.com/sane-apps/SaneUI",
-                    text: "PolyForm Shield 1.0.0 — free for personal use and experimentation. Not for competing products."
-                )
+                SaneAboutLicenseCatalog.saneUI,
             ],
             feedbackExtraAttachments: [
-                ("slider.horizontal.3", "Catalog state and selected tab")
+                ("slider.horizontal.3", "Catalog state and selected tab"),
             ],
             versionLineText: "Shared Source of Truth",
             identitySymbolName: "square.stack.3d.up.fill",

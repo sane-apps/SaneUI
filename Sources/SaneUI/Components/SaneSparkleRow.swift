@@ -87,18 +87,33 @@ public struct SaneSparkleRow: View {
 
     @Binding private var automaticallyChecks: Bool
     @Binding private var checkFrequency: SaneSparkleCheckFrequency
+    private let isAvailable: Bool
+    private let unavailableStatus: String?
+    private let recoveryActionLabel: String?
+    private let recoveryActionHelp: String?
     private let labels: Labels
     private let onCheckNow: () -> Void
+    private let onRecoveryAction: (() -> Void)?
     @State private var isChecking = false
 
     public init(
         automaticallyChecks: Binding<Bool>,
         checkFrequency: Binding<SaneSparkleCheckFrequency>,
+        isAvailable: Bool = true,
+        unavailableStatus: String? = nil,
+        recoveryActionLabel: String? = nil,
+        recoveryActionHelp: String? = nil,
+        onRecoveryAction: (() -> Void)? = nil,
         onCheckNow: @escaping () -> Void
     ) {
         self.init(
             automaticallyChecks: automaticallyChecks,
             checkFrequency: checkFrequency,
+            isAvailable: isAvailable,
+            unavailableStatus: unavailableStatus,
+            recoveryActionLabel: recoveryActionLabel,
+            recoveryActionHelp: recoveryActionHelp,
+            onRecoveryAction: onRecoveryAction,
             labels: .default,
             onCheckNow: onCheckNow
         )
@@ -107,18 +122,53 @@ public struct SaneSparkleRow: View {
     public init(
         automaticallyChecks: Binding<Bool>,
         checkFrequency: Binding<SaneSparkleCheckFrequency>,
+        isAvailable: Bool = true,
+        unavailableStatus: String? = nil,
+        recoveryActionLabel: String? = nil,
+        recoveryActionHelp: String? = nil,
+        onRecoveryAction: (() -> Void)? = nil,
         labels: Labels,
         onCheckNow: @escaping () -> Void
     ) {
         _automaticallyChecks = automaticallyChecks
         _checkFrequency = checkFrequency
+        self.isAvailable = isAvailable
+        self.unavailableStatus = unavailableStatus
+        self.recoveryActionLabel = recoveryActionLabel
+        self.recoveryActionHelp = recoveryActionHelp
         self.labels = labels
         self.onCheckNow = onCheckNow
+        self.onRecoveryAction = onRecoveryAction
     }
 
     public var body: some View {
+        if let unavailableStatus, !isAvailable {
+            CompactRow("Status") {
+                Text(unavailableStatus)
+                    .font(.system(size: 13, weight: .medium))
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            CompactDivider()
+
+            if let recoveryActionLabel, let onRecoveryAction {
+                CompactRow(labels.actionsLabel) {
+                    Button(recoveryActionLabel) {
+                        onRecoveryAction()
+                    }
+                    .buttonStyle(SaneActionButtonStyle())
+                    .help(recoveryActionHelp ?? recoveryActionLabel)
+                }
+
+                CompactDivider()
+            }
+        }
+
         CompactToggle(label: labels.automaticCheckLabel, isOn: $automaticallyChecks)
             .help(labels.automaticCheckHelp)
+            .disabled(!isAvailable)
 
         CompactDivider()
 
@@ -130,7 +180,7 @@ public struct SaneSparkleRow: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 170)
-            .disabled(!automaticallyChecks)
+            .disabled(!isAvailable || !automaticallyChecks)
         }
         .help(labels.checkFrequencyHelp)
 
@@ -148,8 +198,8 @@ public struct SaneSparkleRow: View {
                 }
             }
             .buttonStyle(SaneActionButtonStyle())
-            .disabled(isChecking)
-            .help(labels.checkNowHelp)
+            .disabled(isChecking || !isAvailable)
+            .help(isAvailable ? labels.checkNowHelp : (unavailableStatus ?? labels.checkNowHelp))
         }
     }
 }

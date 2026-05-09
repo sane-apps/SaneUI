@@ -1,6 +1,6 @@
 # SaneUI
 
-A shared SwiftUI design system for SaneApps. This is the source of truth for shared settings, About, license, updater, colors, and button styling.
+A shared SwiftUI design system for SaneApps. This is the source of truth for shared settings, About, license, updater, permissions, launch-at-login, move-to-Applications, standard menus, colors, and button styling.
 
 ## Features
 
@@ -9,6 +9,11 @@ A shared SwiftUI design system for SaneApps. This is the source of truth for sha
 - Shared SF Symbol constants
 - Shared settings shell (`SaneSettingsContainer`, `CompactSection`, `CompactRow`)
 - Shared settings surfaces (`SaneAboutView`, `LicenseSettingsView`, `SaneSparkleRow`)
+- Shared standard menus (`SaneStandardMenu`) for status-bar and Dock utility actions
+- Shared direct-download install/update helpers (`SaneApplicationMover`, `SaneUpdateEligibility`)
+- Shared launch-at-login and app storage helpers (`SaneLoginItemToggle`, `SaneAppStorage`)
+- Shared permission recovery guidance (`SanePermissionGuidanceView`)
+- Shared feedback/bug-report UI with diagnostics and media attachments (`SaneFeedbackView`)
 - Standalone visual catalog app (`SaneUICatalog`)
 - macOS 14+ optimized
 - Swift 6 concurrency safe
@@ -134,8 +139,9 @@ Image(systemName: SaneIcons.settings)   // gear
 ## Shared UI Rules
 
 - Shared settings text should be bright white and at least `13pt`.
-- App repos should extend SaneUI instead of redefining `SaneSparkleRow`, About panes, or license panes locally.
+- App repos should extend SaneUI instead of redefining `SaneSparkleRow`, update eligibility, move-to-Applications, settings chrome, standard menus, About panes, permission guidance, or license panes locally.
 - Bug reporting in shared settings surfaces should route through GitHub-backed diagnostics, not `mailto:` links.
+- Status-bar and Dock menus should use `SaneStandardMenu.addCoreUtilityItems` so Settings, License, Check for Updates, About / Report a Bug, optional What's New, and Quit stay in a consistent order.
 
 ## License
 

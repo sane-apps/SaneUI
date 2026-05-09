@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+    import UniformTypeIdentifiers
+#endif
 
 enum SaneFeedbackCopy {
     static let title = "Report an Issue"
@@ -22,6 +25,8 @@ public struct SaneFeedbackView: View {
     private let extraAttachments: [(icon: String, label: String)]
 
     @State private var issueDescription = ""
+    @State private var selectedAttachmentURLs: [URL] = []
+    @State private var preparedAttachmentFolder: URL?
 
     private enum CollectingAction {
         case report
@@ -88,6 +93,41 @@ public struct SaneFeedbackView: View {
                             }
                         }
 
+                        #if os(macOS)
+                            CompactSection("Photos and Videos", icon: "photo.on.rectangle.angled", iconColor: .blue) {
+                                CompactRow("Selected files", icon: "paperclip", iconColor: .blue) {
+                                    Button("Add...") { chooseAttachments() }
+                                        .buttonStyle(SaneActionButtonStyle())
+                                        .controlSize(.small)
+                                }
+
+                                if selectedAttachmentURLs.isEmpty {
+                                    CompactDivider()
+                                    CompactRow("None selected", icon: "photo.badge.plus", iconColor: .blue) { EmptyView() }
+                                } else {
+                                    ForEach(selectedAttachmentURLs, id: \.self) { url in
+                                        CompactDivider()
+                                        CompactRow(url.lastPathComponent, icon: "doc", iconColor: .blue) {
+                                            Button("Remove") { removeAttachment(url) }
+                                                .buttonStyle(SaneActionButtonStyle())
+                                                .controlSize(.small)
+                                        }
+                                    }
+                                }
+
+                                if let preparedAttachmentFolder {
+                                    CompactDivider()
+                                    CompactRow("Attachment package ready", icon: "folder", iconColor: .green) {
+                                        Button("Show") {
+                                            NSWorkspace.shared.activateFileViewerSelecting([preparedAttachmentFolder])
+                                        }
+                                        .buttonStyle(SaneActionButtonStyle())
+                                        .controlSize(.small)
+                                    }
+                                }
+                            }
+                        #endif
+
                         CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
                             CompactRow(
                                 SaneFeedbackCopy.privacyLine,
@@ -105,7 +145,7 @@ public struct SaneFeedbackView: View {
             .padding(.vertical, 16)
         }
         #if os(macOS)
-            .frame(width: 540, height: 660)
+        .frame(width: 540, height: 660)
         #endif
     }
 
@@ -217,6 +257,19 @@ public struct SaneFeedbackView: View {
     }
 
     private func openInGitHub(report: SaneDiagnosticReport) {
+        if !selectedAttachmentURLs.isEmpty,
+           let folder = try? Self.prepareAttachmentPackage(
+               report: report,
+               userDescription: issueDescription,
+               attachmentURLs: selectedAttachmentURLs
+           )
+        {
+            preparedAttachmentFolder = folder
+            #if os(macOS)
+                NSWorkspace.shared.activateFileViewerSelecting([folder])
+            #endif
+        }
+
         let firstLine = issueDescription.components(separatedBy: .newlines).first ?? ""
         let title = String(firstLine.prefix(60))
         if let url = report.gitHubIssueURL(
@@ -227,5 +280,66 @@ public struct SaneFeedbackView: View {
             SanePlatform.open(url)
             dismiss()
         }
+    }
+
+    #if os(macOS)
+        private func chooseAttachments() {
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = true
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+            panel.allowedContentTypes = [.image, .movie, .video, .quickTimeMovie, .mpeg4Movie]
+            if panel.runModal() == .OK {
+                let existing = Set(selectedAttachmentURLs)
+                selectedAttachmentURLs.append(contentsOf: panel.urls.filter { !existing.contains($0) })
+            }
+        }
+
+        private func removeAttachment(_ url: URL) {
+            selectedAttachmentURLs.removeAll { $0 == url }
+        }
+    #endif
+
+    static func attachmentPackageDirectoryName(appName: String, date: Date = Date()) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return "\(appName)-Issue-\(formatter.string(from: date))"
+    }
+
+    static func prepareAttachmentPackage(
+        report: SaneDiagnosticReport,
+        userDescription: String,
+        attachmentURLs: [URL],
+        baseDirectory: URL = FileManager.default.temporaryDirectory
+    ) throws -> URL {
+        let directory = baseDirectory
+            .appendingPathComponent("SaneApps-Issue-Attachments", isDirectory: true)
+            .appendingPathComponent(attachmentPackageDirectoryName(appName: report.appName), isDirectory: true)
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let diagnosticsURL = directory.appendingPathComponent("diagnostics.md")
+        try report.toMarkdown(userDescription: userDescription).write(to: diagnosticsURL, atomically: true, encoding: .utf8)
+
+        for sourceURL in attachmentURLs {
+            let destinationURL = uniqueDestinationURL(for: sourceURL.lastPathComponent, in: directory)
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+        }
+
+        return directory
+    }
+
+    private static func uniqueDestinationURL(for filename: String, in directory: URL) -> URL {
+        let base = URL(fileURLWithPath: filename).deletingPathExtension().lastPathComponent
+        let ext = URL(fileURLWithPath: filename).pathExtension
+
+        var candidate = directory.appendingPathComponent(filename)
+        var index = 2
+        while FileManager.default.fileExists(atPath: candidate.path) {
+            let indexedName = ext.isEmpty ? "\(base)-\(index)" : "\(base)-\(index).\(ext)"
+            candidate = directory.appendingPathComponent(indexedName)
+            index += 1
+        }
+        return candidate
     }
 }

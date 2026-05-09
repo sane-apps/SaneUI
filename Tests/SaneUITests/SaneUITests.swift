@@ -1,8 +1,8 @@
 import Foundation
-import Testing
 @testable import SaneUI
+import Testing
 #if canImport(AppKit)
-import AppKit
+    import AppKit
 #endif
 
 private func saneUIPackageRootURL(filePath: StaticString = #filePath) -> URL {
@@ -25,6 +25,79 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
         strings.removeValue(forKey: key)
     }
 }
+
+#if canImport(AppKit)
+    @MainActor
+    private final class MenuTarget: NSObject {
+        @objc func action() {}
+    }
+
+    @Suite("Standard Menu Contract")
+    @MainActor
+    struct StandardMenuContractTests {
+        @Test("Core utility items keep customer-critical actions in one shared order")
+        func coreUtilityItemsUseSharedOrder() {
+            let target = MenuTarget()
+            let menu = NSMenu()
+            let restartItem = SaneStandardMenu.item(
+                title: "Restart Finder",
+                target: target,
+                action: #selector(MenuTarget.action)
+            )
+
+            SaneStandardMenu.addCoreUtilityItems(
+                to: menu,
+                appName: "SaneClick",
+                target: target,
+                settingsAction: #selector(MenuTarget.action),
+                licenseAction: #selector(MenuTarget.action),
+                checkForUpdatesAction: #selector(MenuTarget.action),
+                configureCheckForUpdates: { $0.isEnabled = false },
+                aboutAndBugReportAction: #selector(MenuTarget.action),
+                extraUtilityItems: [restartItem],
+                quitAction: #selector(MenuTarget.action)
+            )
+
+            let actionTitles = menu.items
+                .filter { !$0.isSeparatorItem }
+                .map(\.title)
+            #expect(actionTitles == [
+                "Settings...",
+                "License...",
+                "Check for Updates...",
+                "About / Report a Bug...",
+                "Restart Finder",
+                "Quit SaneClick",
+            ])
+            #expect(menu.item(withTitle: "Check for Updates...")?.isEnabled == false)
+            #expect(SaneStandardMenu.coreUtilityOrder == [
+                "Settings...",
+                "License...",
+                "Check for Updates...",
+                "About / Report a Bug...",
+                "What's New...",
+            ])
+        }
+
+        @Test("Shared update menu configurator disables ineligible direct updates")
+        func updateMenuConfiguratorUsesSharedAvailabilityState() {
+            let target = MenuTarget()
+            let item = SaneStandardMenu.checkForUpdatesItem(
+                target: target,
+                action: #selector(MenuTarget.action)
+            )
+
+            SaneStandardMenu.configureUpdateItem(
+                item,
+                isAvailable: false,
+                unavailableStatus: "Updates are available after the app is opened from your Applications folder."
+            )
+
+            #expect(!item.isEnabled)
+            #expect(item.toolTip == "Updates are available after the app is opened from your Applications folder.")
+        }
+    }
+#endif
 
 @Suite("Runtime Environment Policy")
 struct RuntimeEnvironmentPolicyTests {
@@ -73,6 +146,30 @@ struct RuntimeEnvironmentPolicyTests {
         )
 
         #expect(source.contains("fallbackDefaults = .standard"))
+    }
+
+    @Test("Debug keychain bypass has explicit real-keychain opt-in")
+    func debugKeychainBypassPolicyCanExerciseRealKeychain() {
+        #expect(KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: true))
+        #expect(!KeychainService.shouldBypassKeychain(
+            environment: ["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1"],
+            arguments: [],
+            isDebugBuild: true
+        ))
+        #expect(KeychainService.shouldBypassKeychain(
+            environment: [
+                "SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1",
+                "SANEAPPS_DISABLE_KEYCHAIN": "1"
+            ],
+            arguments: [],
+            isDebugBuild: true
+        ))
+        #expect(!KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: false))
+        #expect(KeychainService.shouldBypassKeychain(
+            environment: [:],
+            arguments: ["SaneApp", "--sane-no-keychain"],
+            isDebugBuild: false
+        ))
     }
 }
 
@@ -151,6 +248,79 @@ struct ReadableHelpStandardTests {
         #expect(source.contains("SaneInlineHelp("))
     }
 }
+
+#if canImport(AppKit)
+    @Suite("Permission Guidance")
+    struct PermissionGuidanceTests {
+        @Test("System Settings destinations use Apple preference URLs")
+        func systemSettingsDestinationsUsePreferenceURLs() {
+            #expect(SaneSystemSettingsDestination.automation.url.absoluteString.contains("Privacy_Automation"))
+            #expect(SaneSystemSettingsDestination.screenRecording.url.absoluteString.contains("Privacy_ScreenCapture"))
+            #expect(SaneSystemSettingsDestination.microphone.url.absoluteString.contains("Privacy_Microphone"))
+        }
+
+        @Test("Permission guidance uses shared styling and hover help")
+        func permissionGuidanceUsesSharedStyling() throws {
+            let source = try String(
+                contentsOf: saneUIPackageRootURL()
+                    .appendingPathComponent("Sources/SaneUI/Components/SanePermissionGuidanceView.swift"),
+                encoding: .utf8
+            )
+
+            #expect(source.contains("SaneActionButtonStyle"))
+            #expect(source.contains(".saneHelp("))
+            #expect(!source.contains(".foregroundStyle(.secondary)"))
+            #expect(!source.contains(".buttonStyle(.bordered"))
+            #expect(!source.contains("minWidth: 520"))
+        }
+    }
+
+    @Suite("App Storage")
+    struct AppStorageTests {
+        @Test("Shared storage helper keeps app internals out of Documents")
+        func sharedStorageHelperAvoidsDocuments() throws {
+            let source = try String(
+                contentsOf: saneUIPackageRootURL()
+                    .appendingPathComponent("Sources/SaneUI/Components/SaneAppStorage.swift"),
+                encoding: .utf8
+            )
+
+            #expect(source.contains(".applicationSupportDirectory"))
+            #expect(source.contains(".cachesDirectory"))
+            #expect(source.contains(".libraryDirectory"))
+            #expect(!source.contains(".documentDirectory"))
+        }
+    }
+
+    @Suite("Settings Container")
+    struct SettingsContainerTests {
+        @Test("Settings sidebar uses native List selection")
+        func settingsSidebarUsesNativeListSelection() throws {
+            let source = try String(
+                contentsOf: saneUIPackageRootURL()
+                    .appendingPathComponent("Sources/SaneUI/Components/SaneSettingsContainer.swift"),
+                encoding: .utf8
+            )
+
+            #expect(source.contains("NavigationSplitView"))
+            #expect(source.contains("List(Array(Tab.allCases), id: \\.id, selection: selection)"))
+            #expect(source.contains("NavigationLink(value: tab)"))
+            #expect(source.contains(".listStyle(.sidebar)"))
+            #expect(source.contains(".navigationSplitViewColumnWidth"))
+            #expect(!source.contains("case .about: .secondary"))
+        }
+    }
+
+    @Suite("About License Catalog")
+    struct AboutLicenseCatalogTests {
+        @Test("Common license entries are centralized")
+        func commonLicenseEntriesAreCentralized() {
+            #expect(SaneAboutLicenseCatalog.sparkle.name == "Sparkle")
+            #expect(SaneAboutLicenseCatalog.keyboardShortcuts.text == "MIT License")
+            #expect(SaneAboutLicenseCatalog.saneUI.text == "PolyForm Shield 1.0.0")
+        }
+    }
+#endif
 
 @Suite("Welcome Gate Flow Policy")
 struct WelcomeGateFlowPolicyTests {
@@ -446,49 +616,49 @@ struct SharedLicenseUIPolicyTests {
 }
 
 #if canImport(AppKit)
-@Suite("Settings Icon Semantics")
-struct SaneSettingsIconSemanticTests {
-    @Test("Shared settings semantics keep stable colors")
-    func sharedSettingsSemanticsKeepStableColors() {
-        #expect(hex(SaneSettingsIconSemantic.general.color) == "AEB8C7")
-        #expect(hex(SaneSettingsIconSemantic.rules.color) == "FFB042")
-        #expect(hex(SaneSettingsIconSemantic.appearance.color) == "C793FA")
-        #expect(hex(SaneSettingsIconSemantic.shortcuts.color) == "61B8FF")
-        #expect(hex(SaneSettingsIconSemantic.content.color) == "61D98F")
-        #expect(hex(SaneSettingsIconSemantic.sync.color) == "52E0F0")
-        #expect(hex(SaneSettingsIconSemantic.storage.color) == "F58A3D")
-        #expect(hex(SaneSettingsIconSemantic.license.color) == "FFD62E")
-        #expect(hex(SaneSettingsIconSemantic.about.color) == "CAD9EB")
+    @Suite("Settings Icon Semantics")
+    struct SaneSettingsIconSemanticTests {
+        @Test("Shared settings semantics keep stable colors")
+        func sharedSettingsSemanticsKeepStableColors() {
+            #expect(hex(SaneSettingsIconSemantic.general.color) == "AEB8C7")
+            #expect(hex(SaneSettingsIconSemantic.rules.color) == "FFB042")
+            #expect(hex(SaneSettingsIconSemantic.appearance.color) == "C793FA")
+            #expect(hex(SaneSettingsIconSemantic.shortcuts.color) == "61B8FF")
+            #expect(hex(SaneSettingsIconSemantic.content.color) == "61D98F")
+            #expect(hex(SaneSettingsIconSemantic.sync.color) == "52E0F0")
+            #expect(hex(SaneSettingsIconSemantic.storage.color) == "F58A3D")
+            #expect(hex(SaneSettingsIconSemantic.license.color) == "FFD62E")
+            #expect(hex(SaneSettingsIconSemantic.about.color) == "CAD9EB")
+        }
+
+        @Test("Core settings tabs stay visually distinct")
+        func coreSettingsTabsStayVisuallyDistinct() {
+            let coreHexes = [
+                hex(SaneSettingsIconSemantic.general.color),
+                hex(SaneSettingsIconSemantic.shortcuts.color),
+                hex(SaneSettingsIconSemantic.license.color),
+                hex(SaneSettingsIconSemantic.about.color),
+            ]
+
+            #expect(Set(coreHexes).count == coreHexes.count)
+        }
+
+        private func hex(_ color: Color) -> String {
+            let resolved = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor(color)
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+            return String(
+                format: "%02X%02X%02X",
+                Int(round(red * 255)),
+                Int(round(green * 255)),
+                Int(round(blue * 255))
+            )
+        }
     }
-
-    @Test("Core settings tabs stay visually distinct")
-    func coreSettingsTabsStayVisuallyDistinct() {
-        let coreHexes = [
-            hex(SaneSettingsIconSemantic.general.color),
-            hex(SaneSettingsIconSemantic.shortcuts.color),
-            hex(SaneSettingsIconSemantic.license.color),
-            hex(SaneSettingsIconSemantic.about.color)
-        ]
-
-        #expect(Set(coreHexes).count == coreHexes.count)
-    }
-
-    private func hex(_ color: Color) -> String {
-        let resolved = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor(color)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-
-        return String(
-            format: "%02X%02X%02X",
-            Int(round(red * 255)),
-            Int(round(green * 255)),
-            Int(round(blue * 255))
-        )
-    }
-}
 #endif
 
 @Suite("Event Tracker")
@@ -577,6 +747,107 @@ struct SaneInstallLocationTests {
     func downloadsPathIsNotInstalled() {
         #expect(!SaneInstallLocation.isInApplicationsDirectory("/Users/tester/Downloads/SaneBar.app", homeDirectory: "/Users/tester"))
     }
+
+    @Test("Move-to-Applications skip policy is explicit")
+    func applicationMoverSkipPolicy() {
+        #expect(SaneApplicationMover.shouldSkipMove(environment: ["SANEAPPS_SKIP_MOVE_TO_APPLICATIONS": "1"], arguments: []))
+        #expect(SaneApplicationMover.shouldSkipMove(environment: [:], arguments: ["SaneBar", "--sane-skip-app-move"]))
+        #expect(!SaneApplicationMover.shouldSkipMove(environment: [:], arguments: ["SaneBar"]))
+    }
+
+    @Test("Move-to-Applications candidates include system and user Applications folders")
+    func applicationMoverDestinationCandidates() {
+        let candidates = SaneApplicationMover.destinationCandidates(
+            appBundleName: "SaneBar.app",
+            homeDirectory: "/Users/tester"
+        )
+
+        #expect(candidates.map(\.url.path) == [
+            "/Applications/SaneBar.app",
+            "/Users/tester/Applications/SaneBar.app",
+        ])
+    }
+
+    @Test("Move-to-Applications copies to user Applications when system Applications is unavailable")
+    func applicationMoverFallsBackToUserApplications() throws {
+        let fileManager = FileManager.default
+        let rootURL = fileManager.temporaryDirectory
+            .appendingPathComponent("SaneApplicationMoverTests-\(UUID().uuidString)", isDirectory: true)
+        let sourceURL = rootURL.appendingPathComponent("Downloads/SaneBar.app", isDirectory: true)
+        let sourceContentsURL = sourceURL.appendingPathComponent("Contents", isDirectory: true)
+        let homeURL = rootURL.appendingPathComponent("Home", isDirectory: true)
+        let missingSystemApplications = rootURL.appendingPathComponent("MissingSystemApplications", isDirectory: true)
+        defer { try? fileManager.removeItem(at: rootURL) }
+
+        try fileManager.createDirectory(at: sourceContentsURL, withIntermediateDirectories: true)
+        try "bundle".write(to: sourceContentsURL.appendingPathComponent("Info.plist"), atomically: true, encoding: .utf8)
+
+        let destinationURL = SaneApplicationMover.copyAppBundleToInstalledLocation(
+            sourceURL: sourceURL,
+            appBundleName: "SaneBar.app",
+            homeDirectory: homeURL.path,
+            systemApplicationsDirectory: missingSystemApplications.path
+        )
+
+        #expect(destinationURL?.path == homeURL.appendingPathComponent("Applications/SaneBar.app", isDirectory: true).path)
+        #expect(fileManager.fileExists(atPath: sourceURL.path))
+        #expect(fileManager.fileExists(atPath: homeURL.appendingPathComponent("Applications/SaneBar.app/Contents/Info.plist").path))
+    }
+
+    @Test("Move-to-Applications preserves existing install when replacement copy fails")
+    func applicationMoverPreservesExistingInstallWhenCopyFails() throws {
+        let fileManager = FileManager.default
+        let rootURL = fileManager.temporaryDirectory
+            .appendingPathComponent("SaneApplicationMoverTests-\(UUID().uuidString)", isDirectory: true)
+        let missingSourceURL = rootURL.appendingPathComponent("Downloads/MissingSaneBar.app", isDirectory: true)
+        let homeURL = rootURL.appendingPathComponent("Home", isDirectory: true)
+        let systemApplicationsURL = rootURL.appendingPathComponent("Applications", isDirectory: true)
+        let existingInfoURL = systemApplicationsURL
+            .appendingPathComponent("SaneBar.app/Contents/Info.plist", isDirectory: false)
+        defer { try? fileManager.removeItem(at: rootURL) }
+
+        try fileManager.createDirectory(at: existingInfoURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "existing".write(to: existingInfoURL, atomically: true, encoding: .utf8)
+
+        let destinationURL = SaneApplicationMover.copyAppBundleToInstalledLocation(
+            sourceURL: missingSourceURL,
+            appBundleName: "SaneBar.app",
+            homeDirectory: homeURL.path,
+            systemApplicationsDirectory: systemApplicationsURL.path
+        )
+
+        #expect(destinationURL == nil)
+        #expect((try String(contentsOf: existingInfoURL, encoding: .utf8)) == "existing")
+    }
+
+    @Test("Move-to-Applications swaps existing install only after replacement copy succeeds")
+    func applicationMoverSwapsExistingInstallAfterCopySucceeds() throws {
+        let fileManager = FileManager.default
+        let rootURL = fileManager.temporaryDirectory
+            .appendingPathComponent("SaneApplicationMoverTests-\(UUID().uuidString)", isDirectory: true)
+        let sourceInfoURL = rootURL
+            .appendingPathComponent("Downloads/SaneBar.app/Contents/Info.plist", isDirectory: false)
+        let homeURL = rootURL.appendingPathComponent("Home", isDirectory: true)
+        let systemApplicationsURL = rootURL.appendingPathComponent("Applications", isDirectory: true)
+        let existingInfoURL = systemApplicationsURL
+            .appendingPathComponent("SaneBar.app/Contents/Info.plist", isDirectory: false)
+        defer { try? fileManager.removeItem(at: rootURL) }
+
+        try fileManager.createDirectory(at: sourceInfoURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: existingInfoURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "new".write(to: sourceInfoURL, atomically: true, encoding: .utf8)
+        try "existing".write(to: existingInfoURL, atomically: true, encoding: .utf8)
+
+        let destinationURL = SaneApplicationMover.copyAppBundleToInstalledLocation(
+            sourceURL: sourceInfoURL.deletingLastPathComponent().deletingLastPathComponent(),
+            appBundleName: "SaneBar.app",
+            homeDirectory: homeURL.path,
+            systemApplicationsDirectory: systemApplicationsURL.path
+        )
+
+        #expect(destinationURL?.path == systemApplicationsURL.appendingPathComponent("SaneBar.app", isDirectory: true).path)
+        #expect((try String(contentsOf: existingInfoURL, encoding: .utf8)) == "new")
+    }
 }
 
 @Suite("Sparkle Check Frequency")
@@ -595,11 +866,76 @@ struct SaneSparkleCheckFrequencyTests {
     func shortLegacyIntervalsNormalizeToDaily() {
         #expect(SaneSparkleCheckFrequency.normalizedInterval(from: 60 * 60 * 6) == SaneSparkleCheckFrequency.daily.interval)
     }
+
+    @Test("Sparkle row exposes an optional recovery action for bad install locations")
+        func sparkleRowRecoveryActionSource() throws {
+            let source = try String(
+                contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneSparkleRow.swift"),
+            encoding: .utf8
+        )
+
+            #expect(source.contains("recoveryActionLabel"))
+            #expect(source.contains("onRecoveryAction"))
+            #expect(source.contains("Button(recoveryActionLabel)"))
+            #expect(source.contains(".font(.system(size: 13"))
+            #expect(!source.contains(".font(.caption)"))
+        }
+    }
+
+@Suite("Update Eligibility")
+struct SaneUpdateEligibilityTests {
+    @Test("Release bundle in Applications is update eligible")
+    func releaseBundleInApplicationsIsEligible() {
+        #expect(SaneUpdateEligibility.resolve(
+            bundleIdentifier: "com.sanebar.app",
+            releaseBundleIdentifier: "com.sanebar.app",
+            bundlePath: "/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester"
+        ) == .eligible)
+    }
+
+    @Test("Release bundle in user Applications is update eligible")
+    func releaseBundleInUserApplicationsIsEligible() {
+        #expect(SaneUpdateEligibility.resolve(
+            bundleIdentifier: "com.sanebar.app",
+            releaseBundleIdentifier: "com.sanebar.app",
+            bundlePath: "/Users/tester/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester"
+        ) == .eligible)
+    }
+
+    @Test("Release bundle outside Applications is not update eligible")
+    func releaseBundleOutsideApplicationsIsNotEligible() {
+        let eligibility = SaneUpdateEligibility.resolve(
+            bundleIdentifier: "com.sanebar.app",
+            releaseBundleIdentifier: "com.sanebar.app",
+            bundlePath: "/Users/tester/Downloads/SaneBar.app",
+            homeDirectory: "/Users/tester"
+        )
+
+        #expect(eligibility == .notInstalledInApplications)
+        #expect(!eligibility.canUseInAppUpdates)
+        #expect(eligibility.userFacingStatus == "Updates are available after the app is opened from your Applications folder.")
+    }
+
+    @Test("Dev bundle is not update eligible")
+    func devBundleIsNotEligible() {
+        #expect(SaneUpdateEligibility.resolve(
+            bundleIdentifier: "com.sanebar.dev",
+            releaseBundleIdentifier: "com.sanebar.app",
+            bundlePath: "/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester"
+        ) == .nonReleaseBundle)
+    }
 }
 
 @Suite("Background App Defaults")
 struct SaneBackgroundAppDefaultsTests {
-    @Test("Background apps default to hidden Dock icon and launch at login")
+    @Test("Background apps default to hidden Dock icon and consented login prompt")
     func defaultPolicyValues() {
         #expect(!SaneBackgroundAppDefaults.showDockIcon)
         #expect(SaneBackgroundAppDefaults.launchAtLogin)
@@ -620,67 +956,136 @@ struct SaneBackgroundAppDefaultsTests {
         #expect(!SaneLoginItemPolicy.toggleValue(statusProvider: { .notRegistered }))
     }
 
-    @Test("Auto-enable registers only once on first launch")
-    func autoEnableRegistersOnce() {
+    @Test("Default login prompt is offered only from an eligible unregistered install")
+    func defaultLoginPromptOfferPolicy() {
         let defaults = UserDefaults(suiteName: #function)!
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
-        var registerCount = 0
-
-        let firstRun = SaneLoginItemPolicy.enableByDefaultIfNeeded(
-            isFirstLaunch: true,
-            markerKey: "hasAutoEnabledLaunchAtLoginDefault",
+        #expect(SaneLoginItemPolicy.shouldOfferDefaultPrompt(
+            markerKey: "prompted",
             bundlePath: "/Applications/SaneBar.app",
             homeDirectory: "/Users/tester",
             userDefaults: defaults,
-            statusProvider: { .notRegistered },
-            register: { registerCount += 1 }
-        )
-        let secondRun = SaneLoginItemPolicy.enableByDefaultIfNeeded(
-            isFirstLaunch: true,
-            markerKey: "hasAutoEnabledLaunchAtLoginDefault",
+            statusProvider: { .notRegistered }
+        ))
+        #expect(!SaneLoginItemPolicy.shouldOfferDefaultPrompt(
+            markerKey: "prompted",
+            bundlePath: "/Users/tester/Downloads/SaneBar.app",
+            homeDirectory: "/Users/tester",
+            userDefaults: defaults,
+            statusProvider: { .notRegistered }
+        ))
+        #expect(!SaneLoginItemPolicy.shouldOfferDefaultPrompt(
+            markerKey: "prompted",
             bundlePath: "/Applications/SaneBar.app",
             homeDirectory: "/Users/tester",
             userDefaults: defaults,
-            statusProvider: { .notRegistered },
-            register: { registerCount += 1 }
-        )
+            statusProvider: { .enabled }
+        ))
 
-        #expect(firstRun)
-        #expect(!secondRun)
-        #expect(registerCount == 1)
+        defaults.set(true, forKey: "prompted")
+        #expect(!SaneLoginItemPolicy.shouldOfferDefaultPrompt(
+            markerKey: "prompted",
+            bundlePath: "/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester",
+            userDefaults: defaults,
+            statusProvider: { .notRegistered }
+        ))
     }
 
-    @Test("Auto-enable skips unsupported installs and missing services")
-    func autoEnableSkipsUnsupportedStates() {
+    @Test("Accepted default login prompt registers the app")
+    @MainActor
+    func acceptedDefaultLoginPromptRegistersTheApp() {
+        let defaults = UserDefaults(suiteName: #function)!
+        defaults.removePersistentDomain(forName: #function)
+        defer { defaults.removePersistentDomain(forName: #function) }
+
+        var promptCount = 0
+        var registerCount = 0
+        let result = SaneLoginItemPolicy.offerDefaultLaunchAtLoginIfNeeded(
+            appName: "SaneBar",
+            markerKey: "prompted",
+            bundlePath: "/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester",
+            userDefaults: defaults,
+            statusProvider: { .notRegistered },
+            prompt: { appName in
+                promptCount += 1
+                return appName == "SaneBar"
+            },
+            register: { registerCount += 1 },
+            failurePresenter: { _ in }
+        )
+
+        #expect(result == .enabled)
+        #expect(promptCount == 1)
+        #expect(registerCount == 1)
+        #expect(defaults.bool(forKey: "prompted"))
+    }
+
+    @Test("Declined default login prompt does not register")
+    @MainActor
+    func declinedDefaultLoginPromptDoesNotRegister() {
         let defaults = UserDefaults(suiteName: #function)!
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
         var registerCount = 0
-
-        let derivedData = SaneLoginItemPolicy.enableByDefaultIfNeeded(
-            isFirstLaunch: true,
-            markerKey: "hasAutoEnabledLaunchAtLoginDefault",
-            bundlePath: "/Users/tester/Library/Developer/Xcode/DerivedData/SaneBar.app",
-            homeDirectory: "/Users/tester",
-            userDefaults: defaults,
-            statusProvider: { .notRegistered },
-            register: { registerCount += 1 }
-        )
-        let missingService = SaneLoginItemPolicy.enableByDefaultIfNeeded(
-            isFirstLaunch: true,
-            markerKey: "hasAutoEnabledLaunchAtLoginDefault",
+        let result = SaneLoginItemPolicy.offerDefaultLaunchAtLoginIfNeeded(
+            appName: "SaneBar",
+            markerKey: "prompted",
             bundlePath: "/Applications/SaneBar.app",
             homeDirectory: "/Users/tester",
             userDefaults: defaults,
-            statusProvider: { .notFound },
-            register: { registerCount += 1 }
+            statusProvider: { .notRegistered },
+            prompt: { _ in false },
+            register: { registerCount += 1 },
+            failurePresenter: { _ in }
         )
 
-        #expect(!derivedData)
-        #expect(!missingService)
+        #expect(result == .declined)
+        #expect(registerCount == 0)
+        #expect(defaults.bool(forKey: "prompted"))
+    }
+
+    @Test("Login item toggle explains ineligible install locations")
+    func loginItemToggleExplainsIneligibleInstallLocations() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneLoginItemToggle.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Start at login is available after the app is opened from your Applications folder."))
+        #expect(source.contains("SaneInlineHelp(statusMessage)"))
+    }
+
+    @Test("Explicit login item choice is recorded")
+    func explicitLoginItemChoiceIsRecorded() throws {
+        let defaults = UserDefaults(suiteName: #function)!
+        defaults.removePersistentDomain(forName: #function)
+        defer { defaults.removePersistentDomain(forName: #function) }
+
+        var unregisterCount = 0
+        var registerCount = 0
+
+        let didApplyChoice = try SaneLoginItemPolicy.setEnabled(
+            false,
+            markerKey: "hasAnsweredLaunchAtLoginDefaultPrompt",
+            bundlePath: "/Applications/SaneBar.app",
+            homeDirectory: "/Users/tester",
+            userDefaults: defaults,
+            register: { registerCount += 1 },
+            unregister: { unregisterCount += 1 }
+        )
+
+        #expect(didApplyChoice)
+        #expect(defaults.bool(forKey: "hasAnsweredLaunchAtLoginDefaultPrompt"))
+        #expect(unregisterCount == 1)
         #expect(registerCount == 0)
     }
 }
@@ -723,7 +1128,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok")
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok"),
             ],
             settingsSummary: "showDockIcon: false",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -764,6 +1169,42 @@ struct DiagnosticsReportingTests {
         #expect(items["body"]?.contains("Clipboard history disappeared") == true)
         #expect(items["body"]?.contains("Full diagnostics were copied to your clipboard.") == true)
     }
+
+    @Test("Attachment package includes diagnostics and selected files")
+    @MainActor
+    func attachmentPackageIncludesDiagnosticsAndFiles() throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        let source = base.appendingPathComponent("screen.png")
+        try Data("image-data".utf8).write(to: source)
+
+        let report = SaneDiagnosticReport(
+            appName: "SaneBar",
+            appVersion: "2.1.48",
+            buildNumber: "2148",
+            platformDescription: "macOS 26.4",
+            deviceDescription: "Mac",
+            recentLogs: [],
+            settingsSummary: "state: expanded",
+            collectedAt: Date(timeIntervalSince1970: 0)
+        )
+
+        let package = try SaneFeedbackView.prepareAttachmentPackage(
+            report: report,
+            userDescription: "Visual glitch",
+            attachmentURLs: [source],
+            baseDirectory: base
+        )
+
+        let diagnostics = try String(contentsOf: package.appendingPathComponent("diagnostics.md"), encoding: .utf8)
+        let copiedAttachment = package.appendingPathComponent("screen.png")
+
+        #expect(diagnostics.contains("Visual glitch"))
+        #expect(FileManager.default.fileExists(atPath: copiedAttachment.path))
+    }
 }
 
 @Suite("Purchase Backend Inference")
@@ -782,7 +1223,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "SUFeedURL": "https://example.com/appcast.xml"
+            "SUFeedURL": "https://example.com/appcast.xml",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -803,7 +1244,7 @@ struct PurchaseBackendInferenceTests {
         )
 
         switch backend {
-        case .direct(let checkoutURL):
+        case let .direct(checkoutURL):
             #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanehosts"))
         case .appStore, .setapp:
             Issue.record("Direct bundle unexpectedly inferred App Store purchase backend")
@@ -826,7 +1267,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
-            "AppStoreProductID": "com.saneapps.direct.pro"
+            "AppStoreProductID": "com.saneapps.direct.pro",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -847,7 +1288,7 @@ struct PurchaseBackendInferenceTests {
         )
 
         switch backend {
-        case .direct(let checkoutURL):
+        case let .direct(checkoutURL):
             #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanesales"))
         case .appStore, .setapp:
             Issue.record("Direct bundle with Sparkle unexpectedly inferred App Store purchase backend")
@@ -868,7 +1309,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.appstorebundle",
-            "AppStoreProductID": "com.saneapps.sales.pro"
+            "AppStoreProductID": "com.saneapps.sales.pro",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -889,7 +1330,7 @@ struct PurchaseBackendInferenceTests {
         )
 
         switch backend {
-        case .appStore(let productID):
+        case let .appStore(productID):
             #expect(productID == "com.saneapps.sales.pro")
         case .direct, .setapp:
             Issue.record("App Store bundle unexpectedly inferred direct purchase backend")
@@ -932,7 +1373,7 @@ struct SaneAboutViewPolicyTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "CFBundleShortVersionString": "9.9.9"
+            "CFBundleShortVersionString": "9.9.9",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -969,6 +1410,19 @@ struct SaneFeedbackCopyTests {
     func privacyLineMatchesSharedStandard() {
         #expect(SaneFeedbackCopy.privacyLine == "No personal information is collected.")
     }
+
+    @Test("Feedback view exposes media attachment workflow")
+    func feedbackViewExposesMediaAttachments() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneFeedbackView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Photos and Videos"))
+        #expect(source.contains("NSOpenPanel"))
+        #expect(source.contains("prepareAttachmentPackage"))
+    }
 }
 
 @Suite("License Settings Layout")
@@ -1003,6 +1457,93 @@ struct SaneDistributionChannelTests {
         #expect(SaneDistributionChannel.setapp.managementLabel == "Managed by Setapp")
     }
 }
+
+#if canImport(AppKit)
+    @MainActor
+    private final class StandardMenuTarget: NSObject {
+        @objc func openApp(_: Any?) {}
+        @objc func openSettings(_: Any?) {}
+        @objc func checkForUpdates(_: Any?) {}
+        @objc func license(_: Any?) {}
+        @objc func about(_: Any?) {}
+        @objc func whatsNew(_: Any?) {}
+        @objc func quit(_: Any?) {}
+    }
+
+    @MainActor
+    @Suite("Standard Menu Policy")
+    struct SaneStandardMenuPolicyTests {
+        @Test("Settings item uses the shared title and command shortcut")
+        func settingsItemUsesSharedTitleAndShortcut() {
+            let target = StandardMenuTarget()
+            let item = SaneStandardMenu.settingsItem(
+                target: target,
+                action: #selector(StandardMenuTarget.openSettings(_:))
+            )
+
+            #expect(item.title == "Settings...")
+            #expect(item.keyEquivalent == ",")
+            #expect(item.keyEquivalentModifierMask.contains(.command))
+            #expect(item.action == #selector(StandardMenuTarget.openSettings(_:)))
+            #expect(item.target === target)
+        }
+
+        @Test("Dock settings item can omit the keyboard shortcut")
+        func dockSettingsItemCanOmitShortcut() {
+            let target = StandardMenuTarget()
+            let item = SaneStandardMenu.settingsItem(
+                target: target,
+                action: #selector(StandardMenuTarget.openSettings(_:)),
+                keyEquivalent: ""
+            )
+
+            #expect(item.title == "Settings...")
+            #expect(item.keyEquivalent.isEmpty)
+            #expect(item.keyEquivalentModifierMask.isEmpty)
+        }
+
+        @Test("Shared footer items use standard titles")
+        func sharedFooterItemsUseStandardTitles() {
+            let target = StandardMenuTarget()
+            let openItem = SaneStandardMenu.openAppItem(
+                appName: "SaneClick",
+                target: target,
+                action: #selector(StandardMenuTarget.openApp(_:))
+            )
+            let updateItem = SaneStandardMenu.checkForUpdatesItem(
+                target: target,
+                action: #selector(StandardMenuTarget.checkForUpdates(_:))
+            )
+            let licenseItem = SaneStandardMenu.licenseItem(
+                target: target,
+                action: #selector(StandardMenuTarget.license(_:))
+            )
+            let aboutItem = SaneStandardMenu.aboutAndBugReportItem(
+                target: target,
+                action: #selector(StandardMenuTarget.about(_:))
+            )
+            let whatsNewItem = SaneStandardMenu.whatsNewItem(
+                target: target,
+                action: #selector(StandardMenuTarget.whatsNew(_:))
+            )
+            let quitItem = SaneStandardMenu.quitItem(
+                appName: "SaneClick",
+                target: target,
+                action: #selector(StandardMenuTarget.quit(_:))
+            )
+
+            #expect(openItem.title == "Open SaneClick")
+            #expect(updateItem.title == "Check for Updates...")
+            #expect(licenseItem.title == "License...")
+            #expect(aboutItem.title == "About / Report a Bug...")
+            #expect(whatsNewItem.title == "What's New...")
+            #expect(updateItem.keyEquivalent.isEmpty)
+            #expect(quitItem.title == "Quit SaneClick")
+            #expect(quitItem.keyEquivalent == "q")
+            #expect(quitItem.keyEquivalentModifierMask.contains(.command))
+        }
+    }
+#endif
 
 @Suite("Shared Gradient Background")
 struct SaneGradientBackgroundTests {

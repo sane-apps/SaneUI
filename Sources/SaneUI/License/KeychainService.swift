@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import Security
 
 /// Protocol for keychain operations, injectable for testing.
@@ -34,20 +35,33 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         // Keep no-keychain fallback data in the app's own defaults domain.
         // Sandboxed macOS builds do not reliably persist arbitrary suite names here.
         fallbackDefaults = .standard
-        let debugBypass: Bool = {
-            #if DEBUG
-                return ProcessInfo.processInfo.environment["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG"] != "1"
-            #else
-                return false
-            #endif
-        }()
         isTestEnvironment = SaneRuntimeEnvironment.isTestRun()
-        isKeychainBypassed = debugBypass
-            || ProcessInfo.processInfo.environment["SANEAPPS_DISABLE_KEYCHAIN"] == "1"
-            || ProcessInfo.processInfo.arguments.contains("--sane-no-keychain")
+        isKeychainBypassed = Self.shouldBypassKeychain(
+            environment: ProcessInfo.processInfo.environment,
+            arguments: ProcessInfo.processInfo.arguments
+        )
         debugLog(
             "init service=\(service) bundle=\(Bundle.main.bundleIdentifier ?? "nil") test=\(isTestEnvironment) bypass=\(isKeychainBypassed)"
         )
+    }
+
+    static func shouldBypassKeychain(
+        environment: [String: String],
+        arguments: [String],
+        isDebugBuild: Bool = isDebugBuild
+    ) -> Bool {
+        let debugBypass = isDebugBuild && environment["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG"] != "1"
+        return debugBypass ||
+            environment["SANEAPPS_DISABLE_KEYCHAIN"] == "1" ||
+            arguments.contains("--sane-no-keychain")
+    }
+
+    private static var isDebugBuild: Bool {
+        #if DEBUG
+            true
+        #else
+            false
+        #endif
     }
 
     public func bool(forKey key: String) throws -> Bool? {
@@ -70,7 +84,8 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             kSecAttrService: service,
             kSecAttrAccount: key,
             kSecMatchLimit: kSecMatchLimitOne,
-            kSecReturnData: true
+            kSecReturnData: true,
+            kSecUseAuthenticationContext: nonInteractiveAuthenticationContext()
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -102,7 +117,8 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             kSecAttrService: service,
             kSecAttrAccount: key,
             kSecMatchLimit: kSecMatchLimitOne,
-            kSecReturnData: true
+            kSecReturnData: true,
+            kSecUseAuthenticationContext: nonInteractiveAuthenticationContext()
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -165,6 +181,12 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
 
     private func fallbackKey(_ key: String) -> String {
         "sane.no-keychain.\(service).\(key)"
+    }
+
+    private func nonInteractiveAuthenticationContext() -> LAContext {
+        let context = LAContext()
+        context.interactionNotAllowed = true
+        return context
     }
 
     private func fallbackValue(forKey key: String) -> Any? {

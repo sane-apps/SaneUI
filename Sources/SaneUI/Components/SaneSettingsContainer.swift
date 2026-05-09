@@ -11,6 +11,7 @@ private enum SaneSettingsWindowMetrics {
     static let idealHeight: CGFloat = 400
     static let sidebarMinWidth: CGFloat = 152
     static let sidebarIdealWidth: CGFloat = 168
+    static let sidebarMaxWidth: CGFloat = 220
 }
 
 /// A tab definition for `SaneSettingsContainer`.
@@ -28,12 +29,7 @@ private enum SaneSettingsWindowMetrics {
 ///         }
 ///     }
 ///
-///     var iconColor: Color {
-///         switch self {
-///         case .general: .gray
-///         case .about: .secondary
-///         }
-///     }
+    ///     var iconColor: Color { .white }
 /// }
 /// ```
 public protocol SaneSettingsTab: RawRepresentable, CaseIterable, Identifiable, Hashable
@@ -62,7 +58,7 @@ public enum SaneSettingsWindowSizingBehavior {
 
 /// Standardized settings window container with sidebar navigation.
 ///
-/// Provides: NavigationSplitView, sidebar with icons + colors, gradient background,
+/// Provides: deterministic dark sidebar with icons + colors, gradient background,
 /// glass group box style, and consistent window sizing with a tighter default footprint.
 ///
 /// ```swift
@@ -107,21 +103,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
 
     public var body: some View {
         NavigationSplitView {
-            List(Array(Tab.allCases), id: \.id, selection: selection) { tab in
-                NavigationLink(value: tab) {
-                    Label {
-                        Text(tab.title)
-                    } icon: {
-                        Image(systemName: tab.icon)
-                            .foregroundStyle(tab.iconColor)
-                    }
-                }
-            }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(
-                min: SaneSettingsWindowMetrics.sidebarMinWidth,
-                ideal: SaneSettingsWindowMetrics.sidebarIdealWidth
-            )
+            sidebar
         } detail: {
             ZStack {
                 SaneGradientBackground(style: .panel)
@@ -130,6 +112,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
+        .navigationSplitViewStyle(.balanced)
         .groupBoxStyle(GlassGroupBoxStyle())
         .tint(SanePanelChrome.accentStart)
         .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
@@ -145,6 +128,40 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
 
     private var selection: Binding<Tab?> {
         externalSelection ?? $internalSelectedTab
+    }
+
+    private var sidebar: some View {
+        List(Array(Tab.allCases), id: \.id, selection: selection) { tab in
+            NavigationLink(value: tab) {
+                Label {
+                    Text(tab.title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                } icon: {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(tab.iconColor)
+                        .frame(width: 20)
+                }
+            }
+            .saneHelp(tab.title)
+        }
+        .listStyle(.sidebar)
+        .scrollIndicators(.never)
+        .scrollContentBackground(.hidden)
+        .navigationSplitViewColumnWidth(
+            min: SaneSettingsWindowMetrics.sidebarMinWidth,
+            ideal: SaneSettingsWindowMetrics.sidebarIdealWidth,
+            max: SaneSettingsWindowMetrics.sidebarMaxWidth
+        )
+        .background(
+            ZStack {
+                SaneGradientBackground(style: .panel)
+                SanePanelChrome.controlNavyDeep.opacity(0.62)
+            }
+        )
     }
 
     #if os(macOS)

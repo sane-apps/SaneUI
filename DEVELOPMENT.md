@@ -1,6 +1,6 @@
 # SaneUI Development Guide
 
-**Last updated:** 2026-04-09
+**Last updated:** 2026-05-09
 
 > Shared SwiftUI design system for the SaneApps product family.
 
@@ -102,10 +102,8 @@ Use the catalog and the shared docs before changing app-local settings UI:
 ```
 SaneUI/
 ├── Sources/SaneUI/
-│   ├── License/             # Shared license flows
-│   ├── Updater/             # Shared updater rows and update UI
-│   ├── Settings/            # Shared settings chrome and rows
-│   ├── About/               # Shared About surface
+│   ├── Components/          # Shared settings, menus, update, permissions, feedback
+│   ├── License/             # Shared license views and Keychain storage
 │   ├── Buttons.swift        # Shared button treatments
 │   ├── Colors.swift         # Semantic colors
 │   └── Backgrounds.swift    # Shared backgrounds and materials
@@ -123,6 +121,15 @@ SaneUI/
 3. Add focused tests in `Tests/SaneUITests/`.
 4. Run `swift test`.
 5. Verify at least one consuming app if the change alters shared behavior.
+
+Shared surfaces that should stay centralized:
+
+- settings shell and rows: `SaneSettingsContainer`, `CompactSection`, `CompactRow`
+- customer utility menus: `SaneStandardMenu.addCoreUtilityItems`
+- update/install recovery: `SaneSparkleRow`, `SaneUpdateEligibility`, `SaneApplicationMover`
+- support surfaces: `SaneAboutView`, `SaneFeedbackView`, `SaneAboutLicenseCatalog`
+- permissions and startup controls: `SanePermissionGuidanceView`, `SaneLoginItemToggle`
+- storage and license persistence: `SaneAppStorage`, `KeychainService`
 
 ## App Store Surface Guardrails
 
