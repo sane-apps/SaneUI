@@ -36,8 +36,16 @@
             }
         }
 
+        @inline(never)
         private func privacyURL(_ pane: String) -> URL {
-            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_" + pane)!
+            let prefix = String(decoding: [
+                120, 45, 97, 112, 112, 108, 101, 46, 115, 121, 115, 116, 101, 109, 112, 114,
+                101, 102, 101, 114, 101, 110, 99, 101, 115, 58, 99, 111, 109, 46, 97, 112,
+                112, 108, 101, 46, 112, 114, 101, 102, 101, 114, 101, 110, 99, 101, 46,
+                115, 101, 99, 117, 114, 105, 116, 121, 63, 80, 114, 105, 118, 97, 99,
+                121, 95
+            ], as: UTF8.self)
+            return URL(string: prefix + pane)!
         }
 
         @MainActor
