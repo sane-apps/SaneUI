@@ -1,3 +1,8 @@
+#if os(macOS)
+    import AppKit
+#elseif canImport(UIKit)
+    import UIKit
+#endif
 import SwiftUI
 
 /// Simple license key entry form. Shown as a nested sheet from ProUpsellView or standalone.
@@ -7,6 +12,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
     @Environment(\.dismiss) private var dismiss
     @State private var licenseKey = ""
     @State private var showingSuccess = false
+    @FocusState private var licenseFieldFocused: Bool
     private let onClose: (() -> Void)?
     private let onBack: (() -> Void)?
 
@@ -52,6 +58,9 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         .frame(width: 400)
         .fixedSize(horizontal: false, vertical: true)
         .saneOnExitCommand { closeView() }
+        .task {
+            await focusLicenseField()
+        }
         .onChange(of: licenseService.isPro) { _, newValue in
             if newValue {
                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -186,10 +195,24 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $licenseKey)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13, design: .monospaced))
-                .accessibilityIdentifier("saneui-license-key-field")
+            HStack(spacing: 8) {
+                TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $licenseKey)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13, design: .monospaced))
+                    .focused($licenseFieldFocused)
+                    .accessibilityIdentifier("saneui-license-key-field")
+
+                Button {
+                    pasteLicenseKeyFromClipboard()
+                } label: {
+                    Image(systemName: "doc.on.clipboard")
+                        .frame(width: 16, height: 16)
+                }
+                .buttonStyle(SaneActionButtonStyle(compact: true))
+                .accessibilityIdentifier("saneui-license-paste")
+                .accessibilityLabel("Paste License Key")
+                .help("Paste License Key")
+            }
 
             if let error = licenseService.validationError {
                 Text(error)
@@ -223,5 +246,31 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func focusLicenseField() async {
+        try? await Task.sleep(for: .milliseconds(150))
+        guard !Task.isCancelled else { return }
+        licenseFieldFocused = true
+    }
+
+    @MainActor
+    private func pasteLicenseKeyFromClipboard() {
+        #if os(macOS)
+            let pastedText = NSPasteboard.general.string(forType: .string)
+        #elseif canImport(UIKit)
+            let pastedText = UIPasteboard.general.string
+        #else
+            let pastedText: String? = nil
+        #endif
+
+        guard let pastedText else {
+            licenseFieldFocused = true
+            return
+        }
+
+        licenseKey = pastedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        licenseFieldFocused = true
     }
 }

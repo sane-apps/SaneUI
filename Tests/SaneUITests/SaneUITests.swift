@@ -600,6 +600,24 @@ struct SharedLicenseUIPolicyTests {
         #expect(source.contains("Button(onBack == nil ? \"Cancel\" : \"Back\")"))
     }
 
+    @Test("License entry gives clipboard and focus fallback for direct key entry")
+    func licenseEntryGivesClipboardAndFocusFallbackForDirectKeyEntry() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseEntryView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("@FocusState private var licenseFieldFocused"))
+        #expect(source.contains(".focused($licenseFieldFocused)"))
+        #expect(source.contains("focusLicenseField()"))
+        #expect(source.contains("pasteLicenseKeyFromClipboard()"))
+        #expect(source.contains("NSPasteboard.general.string(forType: .string)"))
+        #expect(source.contains("UIPasteboard.general.string"))
+        #expect(source.contains("accessibilityIdentifier(\"saneui-license-paste\")"))
+        #expect(source.contains("accessibilityLabel(\"Paste License Key\")"))
+    }
+
     @Test("Shared upsell handles keyboard dismissal directly")
     func sharedUpsellHandlesKeyboardDismissalDirectly() throws {
         let source = try String(
