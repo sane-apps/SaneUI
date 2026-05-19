@@ -53,9 +53,11 @@ public struct SaneDiagnosticReport: Sendable {
 
     /// Generate markdown-formatted report for GitHub issue
     public func toMarkdown(userDescription: String) -> String {
+        let safeDescription = Self.sanitizedForPublicDiagnostics(userDescription)
+        let safeSettingsSummary = Self.sanitizedForPublicDiagnostics(settingsSummary)
         var md = """
         ## Issue Description
-        \(userDescription)
+        \(safeDescription)
 
         ---
 
@@ -74,7 +76,7 @@ public struct SaneDiagnosticReport: Sendable {
 
             ## Recent Logs (last 5 minutes)
             ```
-            \(formattedLogs)
+            \(Self.sanitizedForPublicDiagnostics(formattedLogs))
             ```
 
             """
@@ -84,7 +86,7 @@ public struct SaneDiagnosticReport: Sendable {
 
         ## Settings Summary
         ```
-        \(settingsSummary)
+        \(safeSettingsSummary)
         ```
 
         ---
@@ -92,6 +94,36 @@ public struct SaneDiagnosticReport: Sendable {
         """
 
         return md
+    }
+
+    public static func sanitizedForPublicDiagnostics(_ text: String) -> String {
+        var sanitized = text
+
+        let homeDir = NSHomeDirectory()
+        if !homeDir.isEmpty {
+            sanitized = sanitized.replacingOccurrences(of: homeDir, with: "~")
+        }
+
+        let replacements: [(String, String)] = [
+            ("file://[^\\s\\)\\]\\}\"']+", "[REDACTED_FILE_URL]"),
+            ("(?<![:A-Za-z0-9_])/(?:Users|Volumes|private|var|tmp|Applications|Library|System|opt|usr|bin|sbin|etc)/[^\\s\\)\\]\\}\"']+", "[REDACTED_PATH]"),
+            ("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", "[REDACTED_EMAIL]"),
+            ("\\b(?:sk|pk|rk|ghp|gho|github_pat|xoxb|xoxp|AKIA)[A-Za-z0-9_\\-]{12,}\\b", "[REDACTED_TOKEN]"),
+            ("\\b[A-Fa-f0-9]{32,}\\b", "[REDACTED_TOKEN]"),
+            ("(?i)(api[_-]?key|secret|token|password|license[_-]?key)\\s*[:=]\\s*[^\\s,;]+", "$1: [REDACTED]")
+        ]
+
+        for (pattern, replacement) in replacements {
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                sanitized = regex.stringByReplacingMatches(
+                    in: sanitized,
+                    range: NSRange(sanitized.startIndex..., in: sanitized),
+                    withTemplate: replacement
+                )
+            }
+        }
+
+        return sanitized
     }
 
     private var formattedLogs: String {
@@ -345,26 +377,6 @@ public final class SaneDiagnosticsService: @unchecked Sendable {
     // MARK: - Privacy
 
     private func sanitize(_ message: String) -> String {
-        var sanitized = message
-
-        let homeDir = NSHomeDirectory()
-        sanitized = sanitized.replacingOccurrences(of: homeDir, with: "~")
-
-        let patterns = [
-            "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
-            "\\b[A-Za-z0-9]{32,}\\b"
-        ]
-
-        for pattern in patterns {
-            if let regex = try? NSRegularExpression(pattern: pattern) {
-                sanitized = regex.stringByReplacingMatches(
-                    in: sanitized,
-                    range: NSRange(sanitized.startIndex..., in: sanitized),
-                    withTemplate: "[REDACTED]"
-                )
-            }
-        }
-
-        return sanitized
+        SaneDiagnosticReport.sanitizedForPublicDiagnostics(message)
     }
 }

@@ -191,6 +191,9 @@ public struct SaneActionButtonStyle: ButtonStyle {
             configuration.label
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.62))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, compact ? 9 : 12)
                 .padding(.vertical, compact ? 4 : 6)
                 .background(

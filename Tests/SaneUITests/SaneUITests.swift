@@ -247,6 +247,20 @@ struct ReadableHelpStandardTests {
         #expect(source.contains(".saneHelp("))
         #expect(source.contains("SaneInlineHelp("))
     }
+
+    @Test("Shared action buttons keep compact settings labels visible")
+    func actionButtonStylePreventsClippedLabels() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/Badge.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("public struct SaneActionButtonStyle"))
+        #expect(source.contains(".lineLimit(1)"))
+        #expect(source.contains(".minimumScaleFactor(0.82)"))
+        #expect(source.contains(".fixedSize(horizontal: false, vertical: true)"))
+    }
 }
 
 #if canImport(AppKit)
@@ -530,6 +544,8 @@ struct SaneLicenseServiceTests {
         )
 
         #expect(source.contains("Transaction.updates"))
+        #expect(source.contains("Transaction.unfinished"))
+        #expect(source.contains("Transaction.latest(for: productID)"))
         #expect(source.contains("didBecomeActiveNotification"))
         #expect(source.contains("configureAppStoreObservationIfNeeded()"))
     }
@@ -1160,6 +1176,33 @@ struct DiagnosticsReportingTests {
         #expect(markdown.contains("Submitted via SaneBar's in-app feedback"))
     }
 
+    @Test("Diagnostics markdown redacts sensitive public issue data")
+    func markdownRedactsSensitivePublicIssueData() {
+        let report = SaneDiagnosticReport(
+            appName: "SaneBar",
+            appVersion: "2.1.28",
+            buildNumber: "2128",
+            platformDescription: "macOS 26.3.1",
+            deviceDescription: "Macmini9,1 (Apple Silicon)",
+            recentLogs: [
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com"),
+            ],
+            settingsSummary: "exportPath: /Users/alex/Projects/PrivateClient\napiKey: sk_test_12345678901234567890",
+            collectedAt: Date(timeIntervalSince1970: 2)
+        )
+
+        let markdown = report.toMarkdown(userDescription: "video at file:///Users/alex/Desktop/private.mov failed")
+
+        #expect(markdown.contains("[REDACTED_PATH]"))
+        #expect(markdown.contains("[REDACTED_FILE_URL]"))
+        #expect(markdown.contains("[REDACTED_EMAIL]"))
+        #expect(markdown.contains("apiKey: [REDACTED]"))
+        #expect(!markdown.contains("ClientDrive"))
+        #expect(!markdown.contains("jane@example.com"))
+        #expect(!markdown.contains("/Users/alex"))
+        #expect(!markdown.contains("sk_test_12345678901234567890"))
+    }
+
     @Test("Issue URL uses GitHub bug template and clipboard hint")
     @MainActor
     func issueURLUsesBugTemplate() throws {
@@ -1426,7 +1469,17 @@ struct SaneAboutViewPolicyTests {
 struct SaneFeedbackCopyTests {
     @Test("Privacy line matches shared standard")
     func privacyLineMatchesSharedStandard() {
-        #expect(SaneFeedbackCopy.privacyLine == "No personal information is collected.")
+        #expect(SaneFeedbackCopy.privacyLine.contains("Nothing is sent automatically"))
+        #expect(SaneFeedbackCopy.privacyLine.contains("GitHub issues are public"))
+        #expect(SaneFeedbackCopy.privacyLine.contains("email for sensitive logs or media"))
+    }
+
+    @Test("Feedback copy says media is prepared locally, not auto-uploaded")
+    func feedbackCopyExplainsLocalMediaPackage() {
+        #expect(SaneFeedbackCopy.subtitle.contains("selected media is prepared in a local folder"))
+        #expect(SaneFeedbackCopy.mediaInstruction.contains("drag prepared files into the issue"))
+        #expect(SaneFeedbackCopy.mediaInstruction.contains("large videos"))
+        #expect(SaneFeedbackCopy.mediaInstruction.contains("file-sharing link"))
     }
 
     @Test("Feedback view exposes media attachment workflow")
@@ -1440,6 +1493,10 @@ struct SaneFeedbackCopyTests {
         #expect(source.contains("Photos and Videos"))
         #expect(source.contains("NSOpenPanel"))
         #expect(source.contains("prepareAttachmentPackage"))
+        #expect(source.contains("SaneFeedbackCopy.mediaInstruction"))
+        #expect(source.contains("reportErrorMessage"))
+        #expect(!source.contains("try? Self.prepareAttachmentPackage"))
+        #expect(source.contains("if selectedAttachmentURLs.isEmpty {\n                dismiss()"))
     }
 
     @Test("Feedback view has explicit escape paths")

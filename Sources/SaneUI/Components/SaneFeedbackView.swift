@@ -5,8 +5,9 @@ import SwiftUI
 
 enum SaneFeedbackCopy {
     static let title = "Report an Issue"
-    static let subtitle = "Describe the problem and diagnostics will be attached before GitHub opens in your browser."
-    static let privacyLine = "No personal information is collected."
+    static let subtitle = "Describe the problem. Diagnostics are copied for GitHub, and selected media is prepared in a local folder."
+    static let privacyLine = "Nothing is sent automatically. GitHub issues are public, so use email for sensitive logs or media."
+    static let mediaInstruction = "After GitHub opens, drag prepared files into the issue. For large videos, paste a file-sharing link."
 }
 
 /// In-app issue reporting view with diagnostic log collection.
@@ -35,6 +36,7 @@ public struct SaneFeedbackView: View {
 
     @State private var collectingAction: CollectingAction?
     @State private var didCopyDiagnostics = false
+    @State private var reportErrorMessage: String?
 
     /// Create a feedback view backed by the given diagnostics service.
     /// - Parameters:
@@ -124,9 +126,21 @@ public struct SaneFeedbackView: View {
                                         .buttonStyle(SaneActionButtonStyle())
                                         .controlSize(.small)
                                     }
+                                    CompactDivider()
+                                    CompactRow(SaneFeedbackCopy.mediaInstruction, icon: "arrow.up.doc", iconColor: .orange) {
+                                        EmptyView()
+                                    }
                                 }
                             }
                         #endif
+
+                        if let reportErrorMessage {
+                            CompactSection("Needs Attention", icon: "exclamationmark.triangle.fill", iconColor: .orange) {
+                                CompactRow(reportErrorMessage, icon: "exclamationmark.triangle", iconColor: .orange) {
+                                    EmptyView()
+                                }
+                            }
+                        }
 
                         CompactSection("Privacy", icon: "lock.shield", iconColor: .green) {
                             CompactRow(
@@ -257,16 +271,28 @@ public struct SaneFeedbackView: View {
     }
 
     private func openInGitHub(report: SaneDiagnosticReport) {
-        if !selectedAttachmentURLs.isEmpty,
-           let folder = try? Self.prepareAttachmentPackage(
-               report: report,
-               userDescription: issueDescription,
-               attachmentURLs: selectedAttachmentURLs
-           )
-        {
-            preparedAttachmentFolder = folder
+        reportErrorMessage = nil
+
+        if !selectedAttachmentURLs.isEmpty {
+            do {
+                let folder = try Self.prepareAttachmentPackage(
+                    report: report,
+                    userDescription: issueDescription,
+                    attachmentURLs: selectedAttachmentURLs
+                )
+                preparedAttachmentFolder = folder
+                #if os(macOS)
+                    NSWorkspace.shared.activateFileViewerSelecting([folder])
+                #endif
+            } catch {
+                reportErrorMessage = "I couldn't prepare the selected files. Try removing large or unavailable files, or use a file-sharing link."
+                return
+            }
+        }
+
+        if let preparedAttachmentFolder {
             #if os(macOS)
-                NSWorkspace.shared.activateFileViewerSelecting([folder])
+                NSWorkspace.shared.activateFileViewerSelecting([preparedAttachmentFolder])
             #endif
         }
 
@@ -278,7 +304,9 @@ public struct SaneFeedbackView: View {
             githubRepo: diagnosticsService.githubRepo
         ) {
             SanePlatform.open(url)
-            dismiss()
+            if selectedAttachmentURLs.isEmpty {
+                dismiss()
+            }
         }
     }
 

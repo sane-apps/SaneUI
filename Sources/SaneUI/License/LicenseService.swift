@@ -192,7 +192,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         case "saneclick":
             "$9.99"
         case "sanesales":
-            "$24.99"
+            "$9.99"
         case "sanebar", "saneclip", "sanehosts":
             "$14.99"
         default:
@@ -532,14 +532,19 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     public func restorePurchases() async {
-        guard usesAppStorePurchase else { return }
+        guard case let .appStore(productID) = purchaseBackend else { return }
         #if canImport(StoreKit)
             isPurchasing = true
             purchaseError = nil
             do {
                 try await AppStore.sync()
+                let restoredFromUnfinished = await processUnfinishedAppStoreTransactions(productID: productID)
                 await refreshAppStoreEntitlement()
-                if !isLicensed {
+                if restoredFromUnfinished && !isLicensed {
+                    isLicensed = true
+                    purchaseError = nil
+                    validationError = nil
+                } else if !isLicensed {
                     purchaseError = "No prior Pro purchase was found for this Apple ID."
                 }
             } catch {
@@ -690,6 +695,28 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             await refreshAppStoreEntitlement()
             logger.info("Processed App Store transaction update for \(expectedProductID, privacy: .public)")
         }
+
+        private func processUnfinishedAppStoreTransactions(productID: String) async -> Bool {
+            var unlocked = false
+            for await result in Transaction.unfinished {
+                guard case let .verified(transaction) = result else {
+                    logger.error("Ignoring unverified unfinished App Store transaction")
+                    continue
+                }
+
+                guard transaction.productID == productID else { continue }
+                guard transaction.revocationDate == nil else { continue }
+
+                isLicensed = true
+                licenseEmail = nil
+                purchaseError = nil
+                validationError = nil
+                await transaction.finish()
+                unlocked = true
+                logger.info("Processed unfinished App Store transaction for \(productID, privacy: .public)")
+            }
+            return unlocked
+        }
     #else
         private func configureAppStoreObservationIfNeeded() {}
     #endif
@@ -697,13 +724,20 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private func refreshAppStoreEntitlement() async {
         guard case let .appStore(productID) = purchaseBackend else { return }
         #if canImport(StoreKit)
-            var unlocked = false
+            var unlocked = await processUnfinishedAppStoreTransactions(productID: productID)
             for await result in Transaction.currentEntitlements {
                 guard case let .verified(transaction) = result else { continue }
                 guard transaction.productID == productID else { continue }
                 guard transaction.revocationDate == nil else { continue }
                 unlocked = true
                 break
+            }
+            if !unlocked,
+               let latest = await Transaction.latest(for: productID),
+               case let .verified(transaction) = latest,
+               transaction.productID == productID,
+               transaction.revocationDate == nil {
+                unlocked = true
             }
             isLicensed = unlocked
             if unlocked {

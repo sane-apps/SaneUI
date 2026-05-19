@@ -1,6 +1,30 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-05-09
+Last updated: 2026-05-15
+
+## 2026-05-18 License Key Paste Reliability
+
+- SaneBar GitHub `#148` showed the shared license-entry sheet could ignore paste/type input when the visible key field did not become the active key target.
+- `Sources/SaneUI/License/LicenseEntryView.swift` now auto-focuses the license key field on presentation and includes an explicit clipboard paste button (`saneui-license-paste`) that reads the system clipboard directly on macOS and UIKit platforms.
+- Added SaneUI source guards in `Tests/SaneUITests/SaneUITests.swift` for the focus and paste fallback. SaneBar now pins SaneUI to commit `da41307 Improve license key paste handling`.
+- Verification: Mini `swift test` passed `100` tests. `swiftformat --lint --trailing-commas never Sources/SaneUI/License/LicenseEntryView.swift` passed. Note: `Tests/SaneUITests/SaneUITests.swift` still has unrelated pre-existing local formatting/dirty changes outside the committed hunk.
+
+## 2026-05-15 Reporting Regression Hardening
+
+- Hardened `SaneFeedbackView` so selected media is clearly a local preparation step, not an automatic upload. When media is selected, the report sheet now stays open after GitHub launches, and packaging failures show a visible "Needs Attention" message instead of silently dropping the files.
+- Replaced the misleading privacy line with: "Nothing is sent automatically. GitHub issues are public, so use email for sensitive logs or media."
+- Added public-diagnostics redaction in `SaneDiagnosticReport.sanitizedForPublicDiagnostics(_:)` and run it across user description, logs, and settings summaries before GitHub markdown is generated. It redacts local paths, file URLs, emails, common token shapes, and secret-like key/value pairs.
+- Documented the support-reporting contract in `DEVELOPMENT.md`.
+- Verification:
+  - Local `swift test` passed 98/98 tests.
+  - Mini temp-copy verification passed `swift test --filter SaneFeedbackCopyTests` 4/4 and `swift test --filter DiagnosticsReportingTests` 4/4 against the exact local patch.
+
+## 2026-05-15 Support Report Copy Fix
+
+- Matthew Longbottom's SaneBar support thread exposed a misleading report-flow assumption: selected media was prepared in a local folder for GitHub, but the copy could be read as if diagnostics/media were automatically attached remotely.
+- `SaneFeedbackCopy.subtitle` now says diagnostics are copied for GitHub and selected media is prepared locally.
+- `SaneFeedbackCopy.mediaInstruction` now tells the customer to drag prepared files into the GitHub issue and to paste a file-sharing link for large videos.
+- Verification: `swift test --filter SaneFeedbackCopyTests` passed 4/4 tests.
 
 ## Current Status
 

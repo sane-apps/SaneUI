@@ -131,6 +131,10 @@ Shared surfaces that should stay centralized:
 - permissions and startup controls: `SanePermissionGuidanceView`, `SaneLoginItemToggle`
 - storage and license persistence: `SaneAppStorage`, `KeychainService`
 
+`SaneFeedbackView` is the canonical in-app report flow. Keep it explicit that nothing is sent automatically, GitHub issues are public, and sensitive logs/media should go through email. Selected media is prepared locally, not silently uploaded; when media is selected, the sheet must stay open after GitHub launches so the user can drag prepared files into the issue or paste a file-sharing link for large videos.
+
+Diagnostics copied into GitHub issue bodies must pass through `SaneDiagnosticReport.sanitizedForPublicDiagnostics(_:)`. The sanitizer redacts local paths, file URLs, email addresses, common token shapes, and secret-like key/value pairs from user text, logs, and settings summaries before markdown is generated.
+
 ## App Store Surface Guardrails
 
 Shared About/license/update UI is reused by direct, App Store, and Setapp builds. Before adding links or copy here, check the consuming channel:
