@@ -67,7 +67,7 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
                 "Check for Updates...",
                 "About / Report a Bug...",
                 "Restart Finder",
-                "Quit SaneClick",
+                "Quit SaneClick"
             ])
             #expect(menu.item(withTitle: "Check for Updates...")?.isEnabled == false)
             #expect(SaneStandardMenu.coreUtilityOrder == [
@@ -75,7 +75,7 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
                 "License...",
                 "Check for Updates...",
                 "About / Report a Bug...",
-                "What's New...",
+                "What's New..."
             ])
         }
 
@@ -321,6 +321,10 @@ struct ReadableHelpStandardTests {
             #expect(source.contains("NavigationLink(value: tab)"))
             #expect(source.contains(".listStyle(.sidebar)"))
             #expect(source.contains(".navigationSplitViewColumnWidth"))
+            #expect(source.contains("public final class SaneSettingsWindow: NSWindow"))
+            #expect(source.contains("override public func performKeyEquivalent(with event: NSEvent)"))
+            #expect(source.contains("forwardPasteToFirstResponder()"))
+            #expect(source.contains("#selector(NSText.paste(_:))"))
             #expect(!source.contains("case .about: .secondary"))
         }
     }
@@ -625,13 +629,40 @@ struct SharedLicenseUIPolicyTests {
         )
 
         #expect(source.contains("@FocusState private var licenseFieldFocused"))
-        #expect(source.contains(".focused($licenseFieldFocused)"))
+        #expect(source.contains("SaneLicenseKeyTextField("))
+        #expect(source.contains("SaneLicensePasteButton(onPaste: pasteLicenseKeyFromClipboard)"))
+        #expect(source.contains("func makeNSView(context: Context) -> NSButton"))
+        #expect(source.contains("button.action = #selector(Coordinator.pressPasteButton(_:))"))
+        #expect(source.contains("keyboardPasteShortcut"))
+        #expect(source.contains(".keyboardShortcut(\"v\", modifiers: .command)"))
+        #expect(source.contains(".accessibilityElement(children: .ignore)"))
+        #expect(source.contains("PasteAwareTextField"))
+        #expect(source.contains("PasteAwareTextFieldCell"))
+        #expect(source.contains("PasteAwareFieldEditor"))
+        #expect(source.contains("override func fieldEditor(for controlView: NSView)"))
+        #expect(source.contains("override func keyDown(with event: NSEvent)"))
+        #expect(source.contains("override func performKeyEquivalent(with event: NSEvent)"))
+        #expect(source.contains("flags.contains(.command)"))
+        #expect(source.contains("flags.intersection([.option, .control]).isEmpty"))
+        #expect(source.contains("SaneLicenseEditMenu.ensureInstalled()"))
+        #expect(source.contains("NSApp.mainMenu = NSMenu()"))
+        #expect(source.contains("SaneLicenseEditCommandTarget.shared.registerPasteHandler"))
+        #expect(source.contains("#selector(SaneLicenseEditCommandTarget.paste(_:))"))
+        #expect(source.contains("SaneLicenseEditMenu.updatePasteTarget()"))
         #expect(source.contains("focusLicenseField()"))
         #expect(source.contains("pasteLicenseKeyFromClipboard()"))
         #expect(source.contains("NSPasteboard.general.string(forType: .string)"))
         #expect(source.contains("UIPasteboard.general.string"))
         #expect(source.contains("accessibilityIdentifier(\"saneui-license-paste\")"))
         #expect(source.contains("accessibilityLabel(\"Paste License Key\")"))
+        #expect(source.contains(".saneOnKeyDown { handleKeyCommand($0) }"))
+        #expect(source.contains("event.keyCode == 9"))
+        #expect(source.contains("NSApp.setActivationPolicy(.regular)"))
+        #expect(source.contains("NSApp.activate(ignoringOtherApps: true)"))
+        #expect(source.contains("NSApp.setActivationPolicy(previousActivationPolicy)"))
+        #expect(source.contains("NSEvent.addLocalMonitorForEvents(matching: .keyDown)"))
+        #expect(source.contains("NSEvent.addGlobalMonitorForEvents(matching: .keyDown)"))
+        #expect(source.contains("removePasteMonitors()"))
     }
 
     @Test("Shared upsell handles keyboard dismissal directly")
@@ -671,7 +702,7 @@ struct SharedLicenseUIPolicyTests {
                 hex(SaneSettingsIconSemantic.general.color),
                 hex(SaneSettingsIconSemantic.shortcuts.color),
                 hex(SaneSettingsIconSemantic.license.color),
-                hex(SaneSettingsIconSemantic.about.color),
+                hex(SaneSettingsIconSemantic.about.color)
             ]
 
             #expect(Set(coreHexes).count == coreHexes.count)
@@ -798,7 +829,7 @@ struct SaneInstallLocationTests {
 
         #expect(candidates.map(\.url.path) == [
             "/Applications/SaneBar.app",
-            "/Users/tester/Applications/SaneBar.app",
+            "/Users/tester/Applications/SaneBar.app"
         ])
     }
 
@@ -851,7 +882,7 @@ struct SaneInstallLocationTests {
         )
 
         #expect(destinationURL == nil)
-        #expect((try String(contentsOf: existingInfoURL, encoding: .utf8)) == "existing")
+        #expect(try (String(contentsOf: existingInfoURL, encoding: .utf8)) == "existing")
     }
 
     @Test("Move-to-Applications swaps existing install only after replacement copy succeeds")
@@ -880,7 +911,7 @@ struct SaneInstallLocationTests {
         )
 
         #expect(destinationURL?.path == systemApplicationsURL.appendingPathComponent("SaneBar.app", isDirectory: true).path)
-        #expect((try String(contentsOf: existingInfoURL, encoding: .utf8)) == "new")
+        #expect(try (String(contentsOf: existingInfoURL, encoding: .utf8)) == "new")
     }
 }
 
@@ -902,9 +933,9 @@ struct SaneSparkleCheckFrequencyTests {
     }
 
     @Test("Sparkle row exposes an optional recovery action for bad install locations")
-        func sparkleRowRecoveryActionSource() throws {
-            let source = try String(
-                contentsOf: URL(fileURLWithPath: #filePath)
+    func sparkleRowRecoveryActionSource() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
@@ -912,13 +943,13 @@ struct SaneSparkleCheckFrequencyTests {
             encoding: .utf8
         )
 
-            #expect(source.contains("recoveryActionLabel"))
-            #expect(source.contains("onRecoveryAction"))
-            #expect(source.contains("Button(recoveryActionLabel)"))
-            #expect(source.contains(".font(.system(size: 13"))
-            #expect(!source.contains(".font(.caption)"))
-        }
+        #expect(source.contains("recoveryActionLabel"))
+        #expect(source.contains("onRecoveryAction"))
+        #expect(source.contains("Button(recoveryActionLabel)"))
+        #expect(source.contains(".font(.system(size: 13"))
+        #expect(!source.contains(".font(.caption)"))
     }
+}
 
 @Suite("Update Eligibility")
 struct SaneUpdateEligibilityTests {
@@ -1162,7 +1193,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok"),
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok")
             ],
             settingsSummary: "showDockIcon: false",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1185,7 +1216,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com"),
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com")
             ],
             settingsSummary: "exportPath: /Users/alex/Projects/PrivateClient\napiKey: sk_test_12345678901234567890",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1284,7 +1315,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "SUFeedURL": "https://example.com/appcast.xml",
+            "SUFeedURL": "https://example.com/appcast.xml"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1328,7 +1359,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
-            "AppStoreProductID": "com.saneapps.direct.pro",
+            "AppStoreProductID": "com.saneapps.direct.pro"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1370,7 +1401,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.appstorebundle",
-            "AppStoreProductID": "com.saneapps.sales.pro",
+            "AppStoreProductID": "com.saneapps.sales.pro"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1434,7 +1465,7 @@ struct SaneAboutViewPolicyTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "CFBundleShortVersionString": "9.9.9",
+            "CFBundleShortVersionString": "9.9.9"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,

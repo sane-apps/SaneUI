@@ -1,7 +1,7 @@
 import SwiftUI
 
 #if os(macOS)
-import AppKit
+    import AppKit
 #endif
 
 private enum SaneSettingsWindowMetrics {
@@ -29,11 +29,12 @@ private enum SaneSettingsWindowMetrics {
 ///         }
 ///     }
 ///
-    ///     var iconColor: Color { .white }
+///     var iconColor: Color { .white }
 /// }
 /// ```
 public protocol SaneSettingsTab: RawRepresentable, CaseIterable, Identifiable, Hashable
-    where RawValue == String, AllCases: RandomAccessCollection {
+    where RawValue == String, AllCases: RandomAccessCollection
+{
     var title: String { get }
     var icon: String { get }
     var iconColor: Color { get }
@@ -117,13 +118,13 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
         .tint(SanePanelChrome.accentStart)
         .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
         #if os(macOS)
-        .background(windowSizingBackground)
+            .background(windowSizingBackground)
         #endif
-        .onAppear {
-            if selection.wrappedValue == nil {
-                selection.wrappedValue = defaultTab
+            .onAppear {
+                if selection.wrappedValue == nil {
+                    selection.wrappedValue = defaultTab
+                }
             }
-        }
     }
 
     private var selection: Binding<Tab?> {
@@ -165,21 +166,21 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     }
 
     #if os(macOS)
-    @ViewBuilder
-    private var windowSizingBackground: some View {
-        if windowSizing == .standalone {
-            SaneSettingsWindowConfigurator(
-                minContentSize: NSSize(
-                    width: SaneSettingsWindowMetrics.minWidth,
-                    height: SaneSettingsWindowMetrics.minHeight
-                ),
-                idealContentSize: NSSize(
-                    width: SaneSettingsWindowMetrics.idealWidth,
-                    height: SaneSettingsWindowMetrics.idealHeight
+        @ViewBuilder
+        private var windowSizingBackground: some View {
+            if windowSizing == .standalone {
+                SaneSettingsWindowConfigurator(
+                    minContentSize: NSSize(
+                        width: SaneSettingsWindowMetrics.minWidth,
+                        height: SaneSettingsWindowMetrics.minHeight
+                    ),
+                    idealContentSize: NSSize(
+                        width: SaneSettingsWindowMetrics.idealWidth,
+                        height: SaneSettingsWindowMetrics.idealHeight
+                    )
                 )
-            )
+            }
         }
-    }
     #endif
 }
 
@@ -202,60 +203,101 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
 }
 
 #if os(macOS)
-private struct SaneSettingsWindowConfigurator: NSViewRepresentable {
-    let minContentSize: NSSize
-    let idealContentSize: NSSize
+    /// Shared settings host window for AppKit-based SaneApps.
+    ///
+    /// Native SwiftUI `Settings {}` scenes get standard AppKit responder-chain paste
+    /// behavior for free. Menu-bar apps that host settings in a custom `NSWindow`
+    /// should use this class so text-entry views receive Cmd+V consistently.
+    public final class SaneSettingsWindow: NSWindow, @unchecked Sendable {
+        override public var canBecomeKey: Bool { true }
+        override public var canBecomeMain: Bool { true }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
+        override public func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if Self.isPlainCommandV(event), forwardPasteToFirstResponder() {
+                return true
+            }
 
-    func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
-    }
+            return super.performKeyEquivalent(with: event)
+        }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            guard let window = nsView.window else { return }
-            context.coordinator.configure(
-                window: window,
-                minContentSize: minContentSize,
-                idealContentSize: idealContentSize
-            )
+        override public func keyDown(with event: NSEvent) {
+            if Self.isPlainCommandV(event), forwardPasteToFirstResponder() {
+                return
+            }
+
+            super.keyDown(with: event)
+        }
+
+        private func forwardPasteToFirstResponder() -> Bool {
+            if let firstResponder, firstResponder.tryToPerform(#selector(NSText.paste(_:)), with: self) {
+                return true
+            }
+
+            return NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: self)
+        }
+
+        private static func isPlainCommandV(_ event: NSEvent) -> Bool {
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            return flags.contains(.command) &&
+                flags.intersection([.option, .control]).isEmpty &&
+                (event.keyCode == 9 || event.charactersIgnoringModifiers?.lowercased() == "v")
         }
     }
 
-    final class Coordinator {
-        private var resizeAttemptsByWindow: [Int: Int] = [:]
-        private let maxResizeAttempts = 3
+    private struct SaneSettingsWindowConfigurator: NSViewRepresentable {
+        let minContentSize: NSSize
+        let idealContentSize: NSSize
 
-        @MainActor
-        func configure(window: NSWindow, minContentSize: NSSize, idealContentSize: NSSize) {
-            let windowNumber = window.windowNumber
-            let attempts = resizeAttemptsByWindow[windowNumber, default: 0]
+        func makeCoordinator() -> Coordinator {
+            Coordinator()
+        }
 
-            if !window.styleMask.contains(.fullSizeContentView) {
-                window.styleMask.insert(.fullSizeContentView)
+        func makeNSView(context _: Context) -> NSView {
+            NSView(frame: .zero)
+        }
+
+        func updateNSView(_ nsView: NSView, context: Context) {
+            DispatchQueue.main.async {
+                guard let window = nsView.window else { return }
+                context.coordinator.configure(
+                    window: window,
+                    minContentSize: minContentSize,
+                    idealContentSize: idealContentSize
+                )
             }
-            window.titleVisibility = .hidden
-            window.titlebarAppearsTransparent = true
-            window.isMovableByWindowBackground = true
-            if #available(macOS 13.0, *) {
-                window.toolbarStyle = .unifiedCompact
-            }
-            window.contentMinSize = minContentSize
+        }
 
-            let currentContentSize = window.contentRect(forFrameRect: window.frame).size
-            let needsClamp = currentContentSize.width > idealContentSize.width + 1 ||
-                currentContentSize.height > idealContentSize.height + 1
+        final class Coordinator {
+            private var resizeAttemptsByWindow: [Int: Int] = [:]
+            private let maxResizeAttempts = 3
 
-            guard attempts == 0 || (needsClamp && attempts < maxResizeAttempts) else { return }
-            resizeAttemptsByWindow[windowNumber] = attempts + 1
+            @MainActor
+            func configure(window: NSWindow, minContentSize: NSSize, idealContentSize: NSSize) {
+                let windowNumber = window.windowNumber
+                let attempts = resizeAttemptsByWindow[windowNumber, default: 0]
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                window.setContentSize(idealContentSize)
+                if !window.styleMask.contains(.fullSizeContentView) {
+                    window.styleMask.insert(.fullSizeContentView)
+                }
+                window.titleVisibility = .hidden
+                window.titlebarAppearsTransparent = true
+                window.isMovableByWindowBackground = true
+                if #available(macOS 13.0, *) {
+                    window.toolbarStyle = .unifiedCompact
+                }
+                window.contentMinSize = minContentSize
+
+                let currentContentSize = window.contentRect(forFrameRect: window.frame).size
+                let needsClamp = currentContentSize.width > idealContentSize.width + 1 ||
+                    currentContentSize.height > idealContentSize.height + 1
+
+                guard attempts == 0 || (needsClamp && attempts < maxResizeAttempts) else { return }
+                resizeAttemptsByWindow[windowNumber] = attempts + 1
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    window.setContentSize(idealContentSize)
+                }
             }
         }
     }
-}
 #endif
