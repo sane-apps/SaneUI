@@ -128,6 +128,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public private(set) var licenseEmail: String?
     public private(set) var isValidating: Bool = false
     public private(set) var isPurchasing: Bool = false
+    public private(set) var hasCompletedPurchaseStateRefresh: Bool = false
     public var validationError: String?
     public var purchaseError: String?
     public private(set) var appStoreDisplayPrice: String?
@@ -352,6 +353,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         if environment["SANEAPPS_FORCE_FREE_MODE"] == "1" || arguments.contains("--force-free-mode") {
             isLicensed = false
             licenseEmail = nil
+            hasCompletedPurchaseStateRefresh = true
             validationError = nil
             purchaseError = nil
             debugLog("forced free mode")
@@ -363,6 +365,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             if environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode") {
                 isLicensed = true
                 licenseEmail = nil
+                hasCompletedPurchaseStateRefresh = true
                 validationError = nil
                 purchaseError = nil
                 debugLog("forced pro mode")
@@ -372,6 +375,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         #endif
 
         if usesAppStorePurchase {
+            hasCompletedPurchaseStateRefresh = false
             configureAppStoreObservationIfNeeded()
             Task {
                 await preloadAppStoreProduct()
@@ -383,6 +387,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         if usesSetappPurchase {
             isLicensed = true
             licenseEmail = nil
+            hasCompletedPurchaseStateRefresh = true
             validationError = nil
             purchaseError = nil
             logger.info("Setapp purchase backend selected; access is managed by Setapp.")
@@ -397,6 +402,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                ProcessInfo.processInfo.environment["SANEAPPS_FORCE_LICENSE_CHECK"] != "1" {
                 isLicensed = true
                 licenseEmail = nil
+                hasCompletedPurchaseStateRefresh = true
                 logger.info("DEBUG build — auto-granted license")
                 return
             }
@@ -407,6 +413,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         else {
             isLicensed = false
             licenseEmail = nil
+            hasCompletedPurchaseStateRefresh = true
             debugLog("no cached key")
             logger.info("No cached unlock credential — locked")
             return
@@ -421,6 +428,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             let daysSince = Date().timeIntervalSince(lastDate) / 86400
             if daysSince <= offlineGraceDays {
                 isLicensed = true
+                hasCompletedPurchaseStateRefresh = true
                 debugLog("offline grace hit daysSince=\(Int(daysSince))")
                 logger.info("License valid (offline grace, \(Int(daysSince))d since check)")
                 return
@@ -429,6 +437,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
         // Grace expired or no date — attempt background revalidation
         isLicensed = true // Optimistic while validating
+        hasCompletedPurchaseStateRefresh = true
         Task {
             await revalidate(key: storedKey)
         }
@@ -740,11 +749,14 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                 unlocked = true
             }
             isLicensed = unlocked
+            hasCompletedPurchaseStateRefresh = true
             if unlocked {
                 validationError = nil
                 purchaseError = nil
             }
             logger.info("App Store entitlement check: \(unlocked ? "pro" : "free")")
+        #else
+            hasCompletedPurchaseStateRefresh = true
         #endif
     }
 

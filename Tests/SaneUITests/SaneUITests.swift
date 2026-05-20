@@ -515,6 +515,7 @@ struct SaneLicenseServiceTests {
 
         #expect(service.isLicensed)
         #expect(service.isPro)
+        #expect(service.hasCompletedPurchaseStateRefresh)
         #expect(service.validationError == nil)
         #expect(service.purchaseError == nil)
     }
@@ -535,8 +536,23 @@ struct SaneLicenseServiceTests {
 
         #expect(service.isLicensed)
         #expect(service.isPro)
+        #expect(service.hasCompletedPurchaseStateRefresh)
         #expect(service.validationError == nil)
         #expect(service.purchaseError == nil)
+    }
+
+    @Test("App Store purchase state remains pending until entitlement refresh")
+    @MainActor
+    func appStorePurchaseStateRemainsPendingUntilEntitlementRefresh() {
+        let service = LicenseService(
+            appName: "SaneSales",
+            purchaseBackend: .appStore(productID: "com.sanesales.app.pro.unlock.v2"),
+            keychain: MockKeychainService()
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.hasCompletedPurchaseStateRefresh)
     }
 
     @Test("App Store backend listens for transaction updates and active refreshes")
