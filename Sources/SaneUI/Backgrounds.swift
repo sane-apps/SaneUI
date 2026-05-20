@@ -93,11 +93,16 @@ public enum SaneGradientBackgroundStyle: Sendable {
     case panel
 }
 
+public enum SaneGradientBackgroundMotion: Sendable {
+    case `static`
+    case animated
+}
+
 // MARK: - Sane Gradient Background
 
-/// The standard SaneApps background with living mesh gradient.
+/// The standard SaneApps background with a performance-safe mesh gradient.
 ///
-/// Animates by default on macOS 15+. Respects Reduce Motion.
+/// Uses a static mesh by default on macOS 15+. Animation is opt-in and respects Reduce Motion.
 /// Falls back to a linear gradient on macOS 14.
 ///
 /// ```swift
@@ -107,9 +112,14 @@ public struct SaneGradientBackground: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let style: SaneGradientBackgroundStyle
+    private let motion: SaneGradientBackgroundMotion
 
-    public init(style: SaneGradientBackgroundStyle = .standard) {
+    public init(
+        style: SaneGradientBackgroundStyle = .standard,
+        motion: SaneGradientBackgroundMotion = .static
+    ) {
         self.style = style
+        self.motion = motion
     }
 
     public var body: some View {
@@ -125,7 +135,7 @@ public struct SaneGradientBackground: View {
 
             // Layer 1: Living mesh or linear fallback
             if #available(iOS 18.0, macOS 15.0, *) {
-                if Self.usesAnimatedMesh(style: style, reduceMotion: reduceMotion) {
+                if Self.usesAnimatedMesh(style: style, reduceMotion: reduceMotion, motion: motion) {
                     livingMesh
                 } else {
                     staticMesh
@@ -267,9 +277,17 @@ public struct SaneGradientBackground: View {
         style: SaneGradientBackgroundStyle,
         reduceMotion: Bool
     ) -> Bool {
+        usesAnimatedMesh(style: style, reduceMotion: reduceMotion, motion: .static)
+    }
+
+    internal nonisolated static func usesAnimatedMesh(
+        style: SaneGradientBackgroundStyle,
+        reduceMotion: Bool,
+        motion: SaneGradientBackgroundMotion
+    ) -> Bool {
         switch style {
         case .standard:
-            !reduceMotion
+            motion == .animated && !reduceMotion
         case .panel:
             false
         }

@@ -1673,10 +1673,20 @@ struct SaneGradientBackgroundTests {
         #expect(SaneGradientBackground.meshOpacity(for: .standard) == 1.0)
     }
 
-    @Test("Panel gradient stays static even when motion is allowed")
-    func panelGradientStaysStatic() {
+    @Test("Gradient animation is opt-in and respects reduce motion")
+    func gradientAnimationIsOptIn() {
         #expect(!SaneGradientBackground.usesAnimatedMesh(style: .panel, reduceMotion: false))
-        #expect(SaneGradientBackground.usesAnimatedMesh(style: .standard, reduceMotion: false))
+        #expect(!SaneGradientBackground.usesAnimatedMesh(style: .standard, reduceMotion: false))
+        #expect(SaneGradientBackground.usesAnimatedMesh(
+            style: .standard,
+            reduceMotion: false,
+            motion: .animated
+        ))
         #expect(!SaneGradientBackground.usesAnimatedMesh(style: .standard, reduceMotion: true))
+        #expect(!SaneGradientBackground.usesAnimatedMesh(
+            style: .standard,
+            reduceMotion: true,
+            motion: .animated
+        ))
     }
 }

@@ -23,7 +23,7 @@ SaneUI is a Swift Package that provides the shared source of truth for SaneApps 
 
 | Component | Responsibility | Key Files |
 |---|---|---|
-| SaneGradientBackground | Glass-like adaptive background | `Sources/SaneUI/Backgrounds.swift` |
+| SaneGradientBackground | Glass-like adaptive background, static by default with opt-in animation | `Sources/SaneUI/Backgrounds.swift` |
 | VisualEffectBlur | NSVisualEffectView wrapper | `Sources/SaneUI/Backgrounds.swift` |
 | GlassGroupBoxStyle | GroupBox glass style | `Sources/SaneUI/Backgrounds.swift` |
 | SaneColors | Semantic color palette | `Sources/SaneUI/Colors.swift` |

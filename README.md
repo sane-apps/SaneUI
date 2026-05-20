@@ -76,7 +76,7 @@ The catalog is the fastest way to inspect the current source-of-truth layout, co
 
 ### Backgrounds
 
-- `SaneGradientBackground` - Glass morphism background with adaptive colors
+- `SaneGradientBackground` - Glass morphism background with adaptive colors; static by default, animation opt-in
 - `VisualEffectBlur` - macOS blur effect (NSVisualEffectView wrapper)
 - `GlassGroupBoxStyle` - Glass morphism style for GroupBox
 
