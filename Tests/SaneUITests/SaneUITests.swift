@@ -480,6 +480,18 @@ struct SaneLicenseServiceTests {
         #expect(service.accessManagementLabel == "Deactivate Pro")
     }
 
+    @Test("SaneVideo direct public testing price is discounted")
+    @MainActor
+    func saneVideoDirectPublicTestingPriceIsDiscounted() {
+        let service = LicenseService(
+            appName: "SaneVideo",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanevideo"),
+            keychain: MockKeychainService()
+        )
+
+        #expect(service.displayPriceLabel == "$3.49")
+    }
+
     @Test("Direct copy uses app-provided labels")
     @MainActor
     func directCopyUsesAppProvidedLabels() {

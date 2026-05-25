@@ -194,6 +194,8 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             "$9.99"
         case "sanesales":
             "$9.99"
+        case "sanevideo":
+            "$3.49"
         case "sanebar", "saneclip", "sanehosts":
             "$14.99"
         default:
