@@ -33,8 +33,7 @@ private enum SaneSettingsWindowMetrics {
 /// }
 /// ```
 public protocol SaneSettingsTab: RawRepresentable, CaseIterable, Identifiable, Hashable
-    where RawValue == String, AllCases: RandomAccessCollection
-{
+where RawValue == String, AllCases: RandomAccessCollection {
     var title: String { get }
     var icon: String { get }
     var iconColor: Color { get }
@@ -239,8 +238,87 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         private static func isPlainCommandV(_ event: NSEvent) -> Bool {
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             return flags.contains(.command) &&
-                flags.intersection([.option, .control]).isEmpty &&
+                flags.isDisjoint(with: [.option, .control]) &&
                 (event.keyCode == 9 || event.charactersIgnoringModifiers?.lowercased() == "v")
+        }
+    }
+
+    public struct SaneSettingsResizeGrip: NSViewRepresentable {
+        public init() {}
+
+        public func makeNSView(context: Context) -> SaneSettingsResizeGripView {
+            SaneSettingsResizeGripView()
+        }
+
+        public func updateNSView(_ nsView: SaneSettingsResizeGripView, context: Context) {
+            nsView.needsDisplay = true
+        }
+    }
+
+    public final class SaneSettingsResizeGripView: NSView {
+        private var initialFrame: NSRect?
+        private var initialMouseLocation: NSPoint?
+
+        override public var isFlipped: Bool { false }
+
+        override public init(frame frameRect: NSRect) {
+            super.init(frame: frameRect)
+            wantsLayer = true
+            layer?.backgroundColor = NSColor.clear.cgColor
+            setAccessibilityRole(.handle)
+            setAccessibilityLabel("Resize Settings window")
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override public func resetCursorRects() {
+            super.resetCursorRects()
+            addCursorRect(bounds, cursor: .resizeLeftRight)
+        }
+
+        override public func draw(_ dirtyRect: NSRect) {
+            super.draw(dirtyRect)
+            guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+            context.setStrokeColor(NSColor.white.withAlphaComponent(0.36).cgColor)
+            context.setLineWidth(1.2)
+            context.setLineCap(.round)
+
+            let offsets: [CGFloat] = [5, 9, 13]
+            for offset in offsets {
+                context.move(to: CGPoint(x: bounds.maxX - offset, y: bounds.minY + 4))
+                context.addLine(to: CGPoint(x: bounds.maxX - 4, y: bounds.minY + offset))
+            }
+            context.strokePath()
+        }
+
+        override public func mouseDown(with event: NSEvent) {
+            guard let window else { return }
+            initialFrame = window.frame
+            initialMouseLocation = NSEvent.mouseLocation
+        }
+
+        override public func mouseDragged(with event: NSEvent) {
+            guard let window,
+                  let initialFrame,
+                  let initialMouseLocation
+            else { return }
+
+            let current = NSEvent.mouseLocation
+            let deltaX = current.x - initialMouseLocation.x
+            let deltaY = current.y - initialMouseLocation.y
+
+            var frame = initialFrame
+            let minFrameSize = window.frameRect(
+                forContentRect: NSRect(origin: .zero, size: window.contentMinSize)
+            ).size
+            frame.size.width = max(minFrameSize.width, initialFrame.width + deltaX)
+            frame.size.height = max(minFrameSize.height, initialFrame.height - deltaY)
+            frame.origin.y = initialFrame.maxY - frame.height
+            window.setFrame(frame, display: true)
         }
     }
 

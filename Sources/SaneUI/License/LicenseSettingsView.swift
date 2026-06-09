@@ -135,10 +135,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                     icon: licenseService.isPro ? "checkmark.seal.fill" : "lock.open",
                     iconColor: licenseService.isPro ? .green : .white
                 ) {
-                    statusBadge(
-                        title: licenseService.isPro ? labels.proBadgeTitle : labels.basicBadgeTitle,
-                        color: licenseService.isPro ? .green : .white
-                    )
+                    statusBadgeGroup
                 }
 
                 CompactDivider()
@@ -168,10 +165,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
             Image(systemName: licenseService.isPro ? "checkmark.seal.fill" : "person.fill")
                 .foregroundStyle(licenseService.isPro ? .green : .white)
                 .font(.system(size: 15))
-            statusBadge(
-                title: licenseService.isPro ? labels.proBadgeTitle : labels.basicBadgeTitle,
-                color: licenseService.isPro ? .green : .white
-            )
+            statusBadgeGroup
             Spacer()
             if let email = licenseService.licenseEmail {
                 Text(email)
@@ -369,6 +363,30 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 Capsule()
                     .fill(color.opacity(0.15))
             )
+    }
+
+    @ViewBuilder
+    private var statusBadgeGroup: some View {
+        HStack(spacing: 6) {
+            statusBadge(
+                title: licenseService.isPro ? proBadgeTitle : labels.basicBadgeTitle,
+                color: licenseService.isPro ? .green : .white
+            )
+            if let detail = proAccessDetail {
+                Text(detail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
+            }
+        }
+    }
+
+    private var proBadgeTitle: String {
+        (licenseService as? LicenseService)?.proAccessBadgeTitle ?? labels.proBadgeTitle
+    }
+
+    private var proAccessDetail: String? {
+        guard licenseService.isPro else { return nil }
+        return (licenseService as? LicenseService)?.proAccessDetail
     }
 }
 #endif

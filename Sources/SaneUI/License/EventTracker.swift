@@ -23,6 +23,15 @@ public enum EventTracker: Sendable {
         case paywallSeen = "paywall_seen"
         case checkoutClicked = "checkout_clicked"
         case firstValueAction = "first_value_action"
+        case productLoaded = "product_loaded"
+        case productLoadFailed = "product_load_failed"
+        case purchaseStarted = "purchase_started"
+        case purchaseCompleted = "purchase_completed"
+        case purchaseCancelled = "purchase_cancelled"
+        case purchasePending = "purchase_pending"
+        case purchaseFailed = "purchase_failed"
+        case restoreCompleted = "restore_completed"
+        case restoreFailed = "restore_failed"
     }
 
     /// Log a standard funnel event. Call from `Task.detached` so it never blocks the calling actor.

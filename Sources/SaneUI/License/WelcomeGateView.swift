@@ -1070,23 +1070,44 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.green)
 
-            Text("Pro Activated")
+            Text(licenseService.isProTrialActive ? "Pro Trial Active" : "Pro Activated")
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("All features unlocked.\nI couldn't do this without you.")
+            Text(proActivatedMessage)
                 .font(.system(size: 15))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("— Mr. Sane")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
-                .padding(.top, 2)
+            if licenseService.isProTrialActive {
+                Button("Keep Pro — \(licenseService.displayPriceLabel)") {
+                    if let url = licenseService.checkoutURL {
+                        SanePlatform.open(url)
+                    }
+                    Task.detached {
+                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                    }
+                }
+                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 9))
+                .padding(.top, 4)
+            } else {
+                Text("— Mr. Sane")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .padding(.top, 2)
+            }
 
             Spacer()
         }
+    }
+
+    private var proActivatedMessage: String {
+        if let days = licenseService.proTrialDaysRemaining {
+            let dayText = days == 1 ? "1 day" : "\(days) days"
+            return "All Pro features are unlocked for \(dayText).\nBuy once to keep Pro after the trial."
+        }
+        return "All features unlocked.\nI couldn't do this without you."
     }
 
     private var selectionView: some View {
