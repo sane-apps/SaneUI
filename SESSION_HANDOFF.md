@@ -2,6 +2,13 @@
 
 Last updated: 2026-05-15
 
+## 2026-05-25 Optional Pro Trial Support
+
+- Added opt-in 30-day Pro trial support to `LicenseService` through `ProTrialConfiguration`. Trials are disabled by default, start only for direct-backend apps that explicitly opt in, and are ignored when force-free mode is active.
+- Trial-aware license state now feeds the shared settings badge and welcome gate so apps can show "Pro Trial", days remaining, and a "Keep Pro" purchase CTA without inventing local license chrome.
+- SaneHosts opts in with storage prefix `sanehosts.pro_trial` and a 30-day duration.
+- Verification: local `swift test` passed `105` SaneUI tests. SaneHosts Mini `./scripts/SaneMaster.rb verify --timeout 1200` passed `97` tests and runtime proof logged `sanehosts.pro_trial_started`.
+
 ## 2026-05-18 License Key Paste Reliability
 
 - SaneBar GitHub `#148` showed the shared license-entry sheet could ignore paste/type input when the visible key field did not become the active key target.

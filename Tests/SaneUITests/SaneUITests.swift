@@ -492,6 +492,89 @@ struct SaneLicenseServiceTests {
         #expect(service.displayPriceLabel == "$3.49")
     }
 
+    @Test("Opt-in direct Pro trial starts automatically without a cached license")
+    @MainActor
+    func optInDirectProTrialStartsAutomaticallyWithoutCachedLicense() throws {
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
+        defer { unsetenv("SANEAPPS_FORCE_LICENSE_CHECK") }
+        let suiteName = "tests.saneui.protrial.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let service = LicenseService(
+            appName: "SaneHosts",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
+            keychain: MockKeychainService(),
+            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            userDefaults: defaults
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.isLicensed)
+        #expect(service.isPro)
+        #expect(service.isProTrialActive)
+        #expect(service.proAccessBadgeTitle == "Pro Trial")
+        #expect(service.proTrialDaysRemaining == 30)
+        #expect(defaults.object(forKey: "tests.sanehosts.trial.started_at") != nil)
+    }
+
+    @Test("Expired Pro trial falls back to Basic")
+    @MainActor
+    func expiredProTrialFallsBackToBasic() throws {
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
+        defer { unsetenv("SANEAPPS_FORCE_LICENSE_CHECK") }
+        let suiteName = "tests.saneui.expiredtrial.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(Date().addingTimeInterval(-31 * 86400).timeIntervalSince1970, forKey: "tests.sanehosts.trial.started_at")
+
+        let service = LicenseService(
+            appName: "SaneHosts",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
+            keychain: MockKeychainService(),
+            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            userDefaults: defaults
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.isLicensed)
+        #expect(!service.isPro)
+        #expect(!service.isProTrialActive)
+        #expect(service.hasExpiredProTrial)
+        #expect(service.proAccessDetail == "Trial ended")
+    }
+
+    @Test("Force-free mode disables active Pro trial access")
+    @MainActor
+    func forceFreeModeDisablesActiveProTrialAccess() throws {
+        setenv("SANEAPPS_FORCE_FREE_MODE", "1", 1)
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
+        defer {
+            unsetenv("SANEAPPS_FORCE_FREE_MODE")
+            unsetenv("SANEAPPS_FORCE_LICENSE_CHECK")
+        }
+        let suiteName = "tests.saneui.forcefree.trial.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let service = LicenseService(
+            appName: "SaneHosts",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
+            keychain: MockKeychainService(),
+            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            userDefaults: defaults
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.isLicensed)
+        #expect(!service.isPro)
+        #expect(!service.isProTrialActive)
+        #expect(defaults.object(forKey: "tests.sanehosts.trial.started_at") == nil)
+    }
+
     @Test("Direct copy uses app-provided labels")
     @MainActor
     func directCopyUsesAppProvidedLabels() {

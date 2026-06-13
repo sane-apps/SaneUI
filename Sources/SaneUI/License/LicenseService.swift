@@ -122,6 +122,18 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         case setapp
     }
 
+    public struct ProTrialConfiguration: Sendable {
+        public let durationDays: Int
+        public let automaticallyStarts: Bool
+        public let storageKeyPrefix: String?
+
+        public init(durationDays: Int = 30, automaticallyStarts: Bool = true, storageKeyPrefix: String? = nil) {
+            self.durationDays = max(1, durationDays)
+            self.automaticallyStarts = automaticallyStarts
+            self.storageKeyPrefix = storageKeyPrefix
+        }
+    }
+
     // MARK: - Public State
 
     public private(set) var isLicensed: Bool = false
@@ -129,12 +141,57 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public private(set) var isValidating: Bool = false
     public private(set) var isPurchasing: Bool = false
     public private(set) var hasCompletedPurchaseStateRefresh: Bool = false
+    public private(set) var proTrialStartedAt: Date?
     public var validationError: String?
     public var purchaseError: String?
     public private(set) var appStoreDisplayPrice: String?
 
     /// Freemium alias — matches SaneBar convention. Apps use `isPro` in feature guards.
-    public var isPro: Bool { isLicensed }
+    public var isPro: Bool { !isForceFreeMode && (isLicensed || isProTrialActive) }
+    public var isProTrialActive: Bool {
+        guard !isForceFreeMode,
+              !isLicensed,
+              let proTrial,
+              let startedAt = proTrialStartedAt
+        else { return false }
+        return Date() < trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
+    }
+
+    public var hasExpiredProTrial: Bool {
+        guard !isForceFreeMode,
+              !isLicensed,
+              let proTrial,
+              let startedAt = proTrialStartedAt
+        else { return false }
+        return Date() >= trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
+    }
+
+    public var proTrialDaysRemaining: Int? {
+        guard isProTrialActive,
+              let proTrialStartedAt,
+              let proTrial
+        else { return nil }
+        let remaining = trialEndDate(
+            startedAt: proTrialStartedAt,
+            durationDays: proTrial.durationDays
+        ).timeIntervalSince(Date())
+        return max(1, Int(ceil(remaining / 86400)))
+    }
+
+    public var proAccessBadgeTitle: String {
+        isProTrialActive ? "Pro Trial" : "Pro"
+    }
+
+    public var proAccessDetail: String? {
+        if let days = proTrialDaysRemaining {
+            return days == 1 ? "1 day left" : "\(days) days left"
+        }
+        if hasExpiredProTrial {
+            return "Trial ended"
+        }
+        return nil
+    }
+
     public var displayPriceLabel: String {
         appStoreDisplayPrice ?? defaultDisplayPrice
     }
@@ -144,6 +201,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public let appName: String
     public let purchaseBackend: PurchaseBackend
     public let directCopy: DirectCopy?
+    public let proTrial: ProTrialConfiguration?
     private nonisolated static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
     private nonisolated static let sparkleFeedURLInfoPlistKey = "SUFeedURL"
     private nonisolated static let fallbackLogCategory = "License"
@@ -298,7 +356,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private let offlineGraceDays: TimeInterval = 30
 
     private let keychain: KeychainServiceProtocol
+    private let userDefaults: UserDefaults
     private let logger: Logger
+    private var isForceFreeMode = false
     #if canImport(StoreKit)
         @ObservationIgnored private var hasConfiguredAppStoreObservation = false
         @ObservationIgnored private var appStoreTransactionUpdatesTask: Task<Void, Never>?
@@ -310,13 +370,17 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         appName: String,
         checkoutURL: URL,
         keychain: KeychainServiceProtocol? = nil,
-        directCopy: DirectCopy? = nil
+        directCopy: DirectCopy? = nil,
+        proTrial: ProTrialConfiguration? = nil,
+        userDefaults: UserDefaults = .standard
     ) {
         self.init(
             appName: appName,
             purchaseBackend: Self.inferredPurchaseBackend(appName: appName, directCheckoutURL: checkoutURL),
             directCopy: directCopy,
-            keychain: keychain
+            keychain: keychain,
+            proTrial: proTrial,
+            userDefaults: userDefaults
         )
     }
 
@@ -324,12 +388,17 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         appName: String,
         purchaseBackend: PurchaseBackend,
         directCopy: DirectCopy? = nil,
-        keychain: KeychainServiceProtocol? = nil
+        keychain: KeychainServiceProtocol? = nil,
+        proTrial: ProTrialConfiguration? = nil,
+        userDefaults: UserDefaults = .standard
     ) {
         self.appName = appName
         self.purchaseBackend = purchaseBackend
         self.directCopy = directCopy
+        self.proTrial = proTrial
         self.keychain = keychain ?? KeychainService(service: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())")
+        self.userDefaults = userDefaults
+        self.proTrialStartedAt = Self.storedTrialStartedAt(userDefaults: userDefaults, key: Self.trialStartedAtKey(appName: appName, configuration: proTrial))
         logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())", category: "License")
     }
 
@@ -346,6 +415,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public func checkCachedLicense() {
         let environment = ProcessInfo.processInfo.environment
         let arguments = ProcessInfo.processInfo.arguments
+        isForceFreeMode = false
         debugLog(
             "checkCachedLicense backend=\(String(describing: distributionChannel)) " +
                 "forceFree=\(environment["SANEAPPS_FORCE_FREE_MODE"] == "1" || arguments.contains("--force-free-mode")) " +
@@ -353,6 +423,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         )
         // Review override: force free mode regardless of build type or stored license.
         if environment["SANEAPPS_FORCE_FREE_MODE"] == "1" || arguments.contains("--force-free-mode") {
+            isForceFreeMode = true
             isLicensed = false
             licenseEmail = nil
             hasCompletedPurchaseStateRefresh = true
@@ -416,8 +487,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             isLicensed = false
             licenseEmail = nil
             hasCompletedPurchaseStateRefresh = true
+            startProTrialIfNeeded()
             debugLog("no cached key")
-            logger.info("No cached unlock credential — locked")
+            logger.info("\(self.isProTrialActive ? "No cached unlock credential — Pro trial active" : "No cached unlock credential — locked", privacy: .public)")
             return
         }
 
@@ -442,6 +514,36 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         hasCompletedPurchaseStateRefresh = true
         Task {
             await revalidate(key: storedKey)
+        }
+    }
+
+    private nonisolated static func trialStartedAtKey(appName: String, configuration: ProTrialConfiguration?) -> String? {
+        guard let configuration else { return nil }
+        let prefix = configuration.storageKeyPrefix ?? "saneui.\(appName.lowercased()).pro_trial"
+        return "\(prefix).started_at"
+    }
+
+    private nonisolated static func storedTrialStartedAt(userDefaults: UserDefaults, key: String?) -> Date? {
+        guard let key, userDefaults.object(forKey: key) != nil else { return nil }
+        return Date(timeIntervalSince1970: userDefaults.double(forKey: key))
+    }
+
+    private func trialEndDate(startedAt: Date, durationDays: Int) -> Date {
+        startedAt.addingTimeInterval(TimeInterval(durationDays) * 86400)
+    }
+
+    private func startProTrialIfNeeded(now: Date = Date()) {
+        guard let proTrial,
+              proTrial.automaticallyStarts,
+              case .direct = purchaseBackend,
+              let startedAtKey = Self.trialStartedAtKey(appName: appName, configuration: proTrial)
+        else { return }
+
+        if proTrialStartedAt == nil {
+            proTrialStartedAt = now
+            userDefaults.set(now.timeIntervalSince1970, forKey: startedAtKey)
+            let name = appName.lowercased()
+            Task.detached { await EventTracker.logOnce("pro_trial_started", app: name) }
         }
     }
 
