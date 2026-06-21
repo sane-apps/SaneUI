@@ -229,6 +229,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 }
                 .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
+                .accessibilityIdentifier("saneui-license-enter-key")
+                .accessibilityLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
             }
 
             if let error = licenseService.validationError ?? licenseService.purchaseError {
@@ -263,6 +265,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 }
                 .buttonStyle(SaneActionButtonStyle(destructive: true))
                 .controlSize(.small)
+                .accessibilityIdentifier("saneui-license-deactivate")
+                .accessibilityLabel(labels.directManagementLabel ?? licenseService.accessManagementLabel)
             }
         }
     }
@@ -344,6 +348,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
             }
             .buttonStyle(SaneActionButtonStyle())
             .controlSize(.small)
+            .accessibilityIdentifier("saneui-license-enter-key")
+            .accessibilityLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
         }
     }
 

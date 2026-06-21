@@ -1668,6 +1668,10 @@ struct LicenseSettingsLayoutTests {
         #expect(source.contains("ViewThatFits(in: .horizontal)"))
         #expect(source.contains("fittedActionLabel"))
         #expect(source.contains(".minimumScaleFactor(0.84)"))
+        #expect(source.contains("accessibilityIdentifier(\"saneui-license-enter-key\")"))
+        #expect(source.contains("accessibilityIdentifier(\"saneui-license-deactivate\")"))
+        #expect(source.contains(".accessibilityLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)"))
+        #expect(source.contains(".accessibilityLabel(labels.directManagementLabel ?? licenseService.accessManagementLabel)"))
     }
 }
 
