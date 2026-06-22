@@ -765,6 +765,22 @@ struct SharedLicenseUIPolicyTests {
         #expect(!source.contains("Button(licenseService.alternateUnlockLabel)"))
     }
 
+    @Test("Welcome gate cross-sell stays direct and excludes weak-fit apps")
+    func welcomeGateCrossSellStaysDirectAndFocused() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("!licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase"))
+        #expect(source.contains("case \"saneclick\""))
+        #expect(source.contains("case \"saneclip\""))
+        #expect(source.contains("case \"sanehosts\""))
+        #expect(!source.contains("companion(\"SaneSales\""))
+        #expect(!source.contains("companion(\"SaneVideo\""))
+    }
+
     @Test("License entry supports shared close and back behavior")
     func licenseEntrySupportsSharedCloseAndBackBehavior() throws {
         let source = try String(

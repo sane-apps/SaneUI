@@ -233,6 +233,14 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
 /// First-install onboarding flow with Free vs Pro comparison.
 /// Shown once on first launch.
 public struct WelcomeGateView: View {
+    private struct CompanionApp: Identifiable {
+        let name: String
+        let detail: String
+        let url: URL
+
+        var id: String { name }
+    }
+
     let appName: String
     let appIcon: String
     let freeFeatures: [(icon: String, text: String)]
@@ -1092,6 +1100,11 @@ public struct WelcomeGateView: View {
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 9))
                 .padding(.top, 4)
+
+                if shouldShowCompanionApps {
+                    companionAppsView
+                        .padding(.top, 6)
+                }
             } else {
                 Text("— Mr. Sane")
                     .font(.system(size: 14, weight: .medium))
@@ -1109,6 +1122,76 @@ public struct WelcomeGateView: View {
             return "\(dayText) of Pro is unlocked. No credit card required.\nBasic stays free if you do not upgrade."
         }
         return "All features unlocked.\nI couldn't do this without you."
+    }
+
+    private var shouldShowCompanionApps: Bool {
+        !licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase && !companionApps.isEmpty
+    }
+
+    private var companionApps: [CompanionApp] {
+        switch appName.lowercased() {
+        case "saneclick":
+            return [
+                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=saneclick-app"),
+                companion("SaneClip", "Private clipboard history", "https://saneclip.com?ref=saneclick-app"),
+                companion("SaneHosts", "Block trackers system-wide", "https://sanehosts.com?ref=saneclick-app")
+            ]
+        case "saneclip":
+            return [
+                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=saneclip-app"),
+                companion("SaneClick", "Automate Finder actions", "https://saneclick.com?ref=saneclip-app"),
+                companion("SaneHosts", "Block trackers system-wide", "https://sanehosts.com?ref=saneclip-app")
+            ]
+        case "sanehosts":
+            return [
+                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=sanehosts-app"),
+                companion("SaneClick", "Automate Finder actions", "https://saneclick.com?ref=sanehosts-app"),
+                companion("SaneClip", "Private clipboard history", "https://saneclip.com?ref=sanehosts-app")
+            ]
+        default:
+            return []
+        }
+    }
+
+    private func companion(_ name: String, _ detail: String, _ url: String) -> CompanionApp {
+        CompanionApp(name: name, detail: detail, url: URL(string: url)!)
+    }
+
+    private var companionAppsView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Works well with")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+            HStack(spacing: 8) {
+                ForEach(companionApps) { app in
+                    Button {
+                        SanePlatform.open(app.url)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(app.name)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                            Text(app.detail)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                    }
+                    .buttonStyle(.plain)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.white.opacity(0.06))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: 520)
     }
 
     private var selectionView: some View {
