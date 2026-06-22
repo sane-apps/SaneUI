@@ -1071,7 +1071,7 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.green)
 
-            Text(licenseService.isProTrialActive ? "Pro Trial Active" : "Pro Activated")
+            Text(licenseService.isProTrialActive ? "Enjoy Your Pro Trial" : "Pro Activated")
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
@@ -1106,7 +1106,7 @@ public struct WelcomeGateView: View {
     private var proActivatedMessage: String {
         if let days = licenseService.proTrialDaysRemaining {
             let dayText = days == 1 ? "1 day" : "\(days) days"
-            return "All Pro features are unlocked for \(dayText).\nBuy once to keep Pro after the trial."
+            return "\(dayText) of Pro is unlocked. No credit card required.\nBasic stays free if you do not upgrade."
         }
         return "All features unlocked.\nI couldn't do this without you."
     }
