@@ -258,6 +258,7 @@ public struct WelcomeGateView: View {
     @State private var selectedTier: Tier = .pro
     @State private var showingLicenseEntry = false
     @State private var permissionGrantedStates: [Bool]
+    @State private var outboundActionInFlight = false
     private let autoDismissOnPro: Bool
     private let secondaryCompletionActionLabel: String?
     private let secondaryCompletionAccessibilityIdentifier: String?
@@ -1091,14 +1092,17 @@ public struct WelcomeGateView: View {
 
             if licenseService.isProTrialActive {
                 Button("Keep Pro — \(licenseService.displayPriceLabel)") {
-                    if let url = licenseService.checkoutURL {
-                        SanePlatform.open(url)
-                    }
-                    Task.detached {
-                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                    runSingleOutboundAction {
+                        if let url = licenseService.checkoutURL {
+                            SanePlatform.open(url)
+                        }
+                        Task.detached {
+                            await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                        }
                     }
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 9))
+                .disabled(outboundActionInFlight)
                 .padding(.top, 4)
 
                 if shouldShowCompanionApps {
@@ -1132,21 +1136,21 @@ public struct WelcomeGateView: View {
         switch appName.lowercased() {
         case "saneclick":
             return [
-                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=saneclick-app"),
-                companion("SaneClip", "Private clipboard history", "https://saneclip.com?ref=saneclick-app"),
-                companion("SaneHosts", "Block trackers system-wide", "https://sanehosts.com?ref=saneclick-app")
+                companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclick-app"),
+                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=saneclick-app"),
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclick-app")
             ]
         case "saneclip":
             return [
-                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=saneclip-app"),
-                companion("SaneClick", "Automate Finder actions", "https://saneclick.com?ref=saneclip-app"),
-                companion("SaneHosts", "Block trackers system-wide", "https://sanehosts.com?ref=saneclip-app")
+                companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclip-app"),
+                companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=saneclip-app"),
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclip-app")
             ]
         case "sanehosts":
             return [
-                companion("SaneBar", "Clean up your menu bar", "https://sanebar.com?ref=sanehosts-app"),
-                companion("SaneClick", "Automate Finder actions", "https://saneclick.com?ref=sanehosts-app"),
-                companion("SaneClip", "Private clipboard history", "https://saneclip.com?ref=sanehosts-app")
+                companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=sanehosts-app"),
+                companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=sanehosts-app"),
+                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=sanehosts-app")
             ]
         default:
             return []
@@ -1159,13 +1163,15 @@ public struct WelcomeGateView: View {
 
     private var companionAppsView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Works well with")
+            Text("Also useful")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
             HStack(spacing: 8) {
                 ForEach(companionApps) { app in
                     Button {
-                        SanePlatform.open(app.url)
+                        runSingleOutboundAction {
+                            SanePlatform.open(app.url)
+                        }
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(app.name)
@@ -1207,48 +1213,7 @@ public struct WelcomeGateView: View {
                     price: resolvedProTierPrice,
                     features: proFeatures,
                     actions: {
-                        AnyView(VStack(spacing: 6) {
-                            Button {
-                                Task.detached {
-                                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                                }
-                                if licenseService.usesAppStorePurchase {
-                                    Task { await licenseService.purchasePro() }
-                                } else if licenseService.usesSetappPurchase {
-                                    return
-                                } else if let url = licenseService.checkoutURL {
-                                    SanePlatform.open(url)
-                                    Task.detached {
-                                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
-                                    }
-                                }
-                            } label: {
-                                Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 9, horizontalPadding: 14, verticalPadding: 7))
-                            .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
-
-                            if licenseService.usesAppStorePurchase {
-                            Button("Restore Purchases") {
-                                Task { await licenseService.restorePurchases() }
-                            }
-                            .buttonStyle(OnboardingSecondaryButtonStyle())
-                            .font(.system(size: 13))
-                            .disabled(licenseService.isPurchasing)
-                            } else if licenseService.usesSetappPurchase {
-                                Text("Managed by Setapp")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.white)
-                            } else {
-                                Button(licenseService.alternateEntryLabel) {
-                                    showingLicenseEntry = true
-                                }
-                                .buttonStyle(OnboardingSecondaryButtonStyle())
-                                    .font(.system(size: 13))
-                            }
-                        })
+                        AnyView(proTierActions)
                     }
                 )
 
@@ -1260,6 +1225,60 @@ public struct WelcomeGateView: View {
                 )
             }
             .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var proTierActions: some View {
+        VStack(spacing: 6) {
+            if licenseService.usesSetappPurchase {
+                Text("Included with Setapp")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Button {
+                    runSingleOutboundAction {
+                        if licenseService.usesAppStorePurchase {
+                            Task.detached {
+                                await EventTracker.log("app_store_purchase_clicked", app: appName.lowercased())
+                            }
+                            Task { await licenseService.purchasePro() }
+                        } else if let url = licenseService.checkoutURL {
+                            SanePlatform.open(url)
+                            Task.detached {
+                                await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                                await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                            }
+                        }
+                    }
+                } label: {
+                    Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 9, horizontalPadding: 14, verticalPadding: 7))
+                .disabled(licenseService.isPurchasing || outboundActionInFlight)
+            }
+
+            if licenseService.usesAppStorePurchase {
+                Button("Restore Purchases") {
+                    Task { await licenseService.restorePurchases() }
+                }
+                .buttonStyle(OnboardingSecondaryButtonStyle())
+                .font(.system(size: 13))
+                .disabled(licenseService.isPurchasing)
+            } else if licenseService.usesSetappPurchase {
+                Text("Pro access is managed by Setapp.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white)
+            } else {
+                Button(licenseService.alternateEntryLabel) {
+                    showingLicenseEntry = true
+                }
+                .buttonStyle(OnboardingSecondaryButtonStyle())
+                .font(.system(size: 13))
+            }
         }
     }
 
@@ -1351,7 +1370,7 @@ public struct WelcomeGateView: View {
                 Button("Back") {
                     navigateForward = false
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        currentPage -= 1
+                        currentPage = max(0, currentPage - 1)
                     }
                 }
                 .buttonStyle(.plain)
@@ -1365,7 +1384,7 @@ public struct WelcomeGateView: View {
                 Button("Next") {
                     navigateForward = true
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        currentPage += 1
+                        currentPage = min(totalPages - 1, currentPage + 1)
                     }
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle())
@@ -1400,6 +1419,18 @@ public struct WelcomeGateView: View {
         )
     }
 
+    private func runSingleOutboundAction(_ action: @escaping () -> Void) {
+        guard !outboundActionInFlight else { return }
+        outboundActionInFlight = true
+        action()
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await MainActor.run {
+                outboundActionInFlight = false
+            }
+        }
+    }
+
     private func completeOnboarding(useSecondaryAction: Bool = false) {
         if useSecondaryAction {
             onSecondaryCompletion?()
@@ -1418,18 +1449,22 @@ public struct WelcomeGateView: View {
         ) {
         case .purchasePro:
             if licenseService.usesAppStorePurchase {
-                Task.detached {
-                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                runSingleOutboundAction {
+                    Task.detached {
+                        await EventTracker.log("app_store_purchase_clicked", app: appName.lowercased())
+                    }
+                    Task { await licenseService.purchasePro() }
                 }
-                Task { await licenseService.purchasePro() }
                 return
             }
         case .openCheckout:
             if let url = licenseService.checkoutURL {
-                SanePlatform.open(url)
-                Task.detached {
-                    await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                    await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                runSingleOutboundAction {
+                    SanePlatform.open(url)
+                    Task.detached {
+                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                    }
                 }
             }
         case .complete:

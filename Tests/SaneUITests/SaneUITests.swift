@@ -777,8 +777,27 @@ struct SharedLicenseUIPolicyTests {
         #expect(source.contains("case \"saneclick\""))
         #expect(source.contains("case \"saneclip\""))
         #expect(source.contains("case \"sanehosts\""))
+        #expect(source.contains("Text(\"Also useful\")"))
+        #expect(source.contains("runSingleOutboundAction"))
         #expect(!source.contains("companion(\"SaneSales\""))
         #expect(!source.contains("companion(\"SaneVideo\""))
+        #expect(!source.contains("Text(\"Works well with\")"))
+    }
+
+    @Test("Welcome gate keeps Setapp purchase card channel-correct")
+    func welcomeGateKeepsSetappPurchaseCardChannelCorrect() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("if licenseService.usesSetappPurchase"))
+        #expect(source.contains("Text(\"Included with Setapp\")"))
+        #expect(source.contains("Text(\"Pro access is managed by Setapp.\")"))
+        #expect(source.contains("EventTracker.log(\"app_store_purchase_clicked\""))
+        #expect(source.contains("currentPage = max(0, currentPage - 1)"))
+        #expect(source.contains("currentPage = min(totalPages - 1, currentPage + 1)"))
     }
 
     @Test("License entry supports shared close and back behavior")
@@ -1567,6 +1586,49 @@ struct PurchaseBackendInferenceTests {
             #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanesales"))
         case .appStore, .setapp:
             Issue.record("Direct bundle with Sparkle unexpectedly inferred App Store purchase backend")
+        }
+    }
+
+    @Test("Explicit direct bundle marker overrides AppStoreProductID without Sparkle")
+    @MainActor
+    func explicitDirectBundleMarkerOverridesAppStoreProductIDWithoutSparkle() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("app")
+        let contentsURL = bundleURL.appendingPathComponent("Contents", isDirectory: true)
+        let infoURL = contentsURL.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: contentsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundleURL) }
+
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.saneapps.directbundle",
+            "AppStoreProductID": "com.saneapps.direct.pro",
+            "SaneDistributionChannel": "direct"
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: info,
+            format: .xml,
+            options: 0
+        )
+        try data.write(to: infoURL)
+
+        guard let bundle = Bundle(url: bundleURL) else {
+            Issue.record("Expected temporary app bundle to load")
+            return
+        }
+
+        let backend = LicenseService.inferredPurchaseBackend(
+            appName: "SaneSales",
+            directCheckoutURL: LicenseService.directCheckoutURL(appSlug: "sanesales"),
+            bundle: bundle
+        )
+
+        switch backend {
+        case let .direct(checkoutURL):
+            #expect(checkoutURL == LicenseService.directCheckoutURL(appSlug: "sanesales"))
+        case .appStore, .setapp:
+            Issue.record("Explicit direct marker should override AppStoreProductID without Sparkle")
         }
     }
 

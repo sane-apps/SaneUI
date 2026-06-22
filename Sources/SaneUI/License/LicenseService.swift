@@ -206,6 +206,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public let directCopy: DirectCopy?
     public let proTrial: ProTrialConfiguration?
     private nonisolated static let appStoreProductIDInfoPlistKey = "AppStoreProductID"
+    private nonisolated static let distributionChannelInfoPlistKey = "SaneDistributionChannel"
     private nonisolated static let sparkleFeedURLInfoPlistKey = "SUFeedURL"
     private nonisolated static let fallbackLogCategory = "License"
     private nonisolated static func ascii(_ bytes: [UInt8]) -> String {
@@ -299,6 +300,20 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         infoPlistString(appStoreProductIDInfoPlistKey, bundle: bundle)
     }
 
+    public nonisolated static func runtimeDistributionChannel(bundle: Bundle = .main) -> SaneDistributionChannel? {
+        guard let rawValue = infoPlistString(distributionChannelInfoPlistKey, bundle: bundle) else { return nil }
+        switch rawValue.lowercased() {
+        case "direct":
+            return .direct
+        case "appstore", "app-store", "app_store":
+            return .appStore
+        case "setapp":
+            return .setapp
+        default:
+            return nil
+        }
+    }
+
     private nonisolated static func hasSparkleFramework(bundle: Bundle = .main) -> Bool {
         let candidatePaths = [
             bundle.privateFrameworksPath.map { "\($0)/Sparkle.framework" },
@@ -309,6 +324,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     public nonisolated static func isRuntimeAppStoreBuild(bundle: Bundle = .main) -> Bool {
+        if let explicitChannel = runtimeDistributionChannel(bundle: bundle) {
+            return explicitChannel == .appStore
+        }
         guard runtimeAppStoreProductID(bundle: bundle) != nil else { return false }
         if hasSparkleFramework(bundle: bundle) { return false }
         let sparkleFeedURL = infoPlistString(sparkleFeedURLInfoPlistKey, bundle: bundle)
