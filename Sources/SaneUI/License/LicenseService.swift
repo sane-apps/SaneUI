@@ -61,6 +61,7 @@ public enum SaneDistributionChannel: Sendable {
 public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     var isPro: Bool { get }
     var isProTrialActive: Bool { get }
+    var hasExpiredProTrial: Bool { get }
     var licenseEmail: String? { get }
     var isValidating: Bool { get }
     var isPurchasing: Bool { get }
@@ -86,9 +87,10 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     func deactivate()
 }
 
-/// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain.
+/// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain,
+/// and can start a direct-download Pro trial before falling back to Basic.
 ///
-/// Unlike SaneBar's freemium model, this is a full gate: no purchase = no app.
+/// App Store and Setapp builds use their platform purchase state instead of direct trials.
 /// Initialize with app-specific name and checkout URL.
 ///
 /// ```swift

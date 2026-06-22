@@ -76,6 +76,10 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
         func unlockProLabel(price: String?) -> String {
             "\(unlockProPrefix) \(price ?? fallbackPriceLabel)"
         }
+
+        func keepProLabel(price: String?) -> String {
+            "Keep Pro — \(price ?? fallbackPriceLabel)"
+        }
     }
 
     @Bindable var licenseService: Service
@@ -341,7 +345,11 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    fittedActionLabel(labels.unlockProLabel(price: licenseService.displayPriceLabel))
+                    fittedActionLabel(
+                        licenseService.isProTrialActive
+                            ? labels.keepProLabel(price: licenseService.displayPriceLabel)
+                            : labels.unlockProLabel(price: licenseService.displayPriceLabel)
+                    )
                 }
             }
         }
@@ -411,7 +419,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     }
 
     private var proAccessDetail: String? {
-        guard licenseService.isPro else { return nil }
+        guard licenseService.isPro || licenseService.hasExpiredProTrial else { return nil }
         return licenseService.proAccessDetail
     }
 }
