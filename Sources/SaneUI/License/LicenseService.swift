@@ -60,6 +60,7 @@ public enum SaneDistributionChannel: Sendable {
 @MainActor
 public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     var isPro: Bool { get }
+    var isProTrialActive: Bool { get }
     var licenseEmail: String? { get }
     var isValidating: Bool { get }
     var isPurchasing: Bool { get }

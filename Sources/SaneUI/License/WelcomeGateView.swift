@@ -682,7 +682,7 @@ public struct WelcomeGateView: View {
                         (Text("Basic ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
                             .font(.system(size: 30, weight: .bold, design: .serif))
 
-                        Text("Start free with the core clipboard workflow: history, search, pinning, screenshots, and optional private sync.")
+                        Text("After the Pro trial, Basic keeps the core clipboard workflow: history, search, pinning, screenshots, and optional private sync.")
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
@@ -1065,6 +1065,10 @@ public struct WelcomeGateView: View {
             proActivatedView
                 .padding(.horizontal, 24)
                 .padding(.vertical, 8)
+        } else if licenseService.hasExpiredProTrial {
+            expiredTrialView
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
         } else {
             selectionView
                 .padding(.horizontal, 24)
@@ -1123,9 +1127,128 @@ public struct WelcomeGateView: View {
     private var proActivatedMessage: String {
         if let days = licenseService.proTrialDaysRemaining {
             let dayText = days == 1 ? "1 day" : "\(days) days"
-            return "\(dayText) of Pro is unlocked. No credit card required.\nBasic stays free if you do not upgrade."
+            return "\(dayText) of Pro is unlocked. No credit card required.\nBasic remains free after the trial."
         }
         return "All features unlocked.\nI couldn't do this without you."
+    }
+
+    private var expiredTrialView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+
+            Image(systemName: "clock.badge.exclamationmark.fill")
+                .font(.system(size: 42))
+                .foregroundStyle(saneAccentGradient)
+
+            Text("Your Pro Trial Ended")
+                .font(.system(size: 28, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+
+            Text("Basic is still free. Unlock Pro to keep the advanced tools you tried.")
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(alignment: .top, spacing: 12) {
+                trialOutcomeCard(
+                    title: "Keep Pro",
+                    subtitle: "One-time — yours forever",
+                    features: expiredTrialProFeatures,
+                    isHighlighted: true
+                )
+
+                trialOutcomeCard(
+                    title: "Continue with Basic",
+                    subtitle: freeTierPrice ?? "$0 forever",
+                    features: Array(freeFeatures.prefix(4)),
+                    isHighlighted: false
+                )
+            }
+            .padding(.horizontal, 20)
+
+            if !licenseService.usesSetappPurchase {
+                Button("Unlock Pro — \(licenseService.displayPriceLabel)") {
+                    runSingleOutboundAction {
+                        if licenseService.usesAppStorePurchase {
+                            Task.detached {
+                                await EventTracker.log("app_store_purchase_clicked", app: appName.lowercased())
+                            }
+                            Task { await licenseService.purchasePro() }
+                        } else if let url = licenseService.checkoutURL {
+                            SanePlatform.open(url)
+                            Task.detached {
+                                await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                                await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 9))
+                .disabled(licenseService.isPurchasing || outboundActionInFlight)
+            }
+
+            Spacer()
+        }
+    }
+
+    private var expiredTrialProFeatures: [(icon: String, text: String)] {
+        Array(
+            proFeatures
+                .filter { feature in
+                    let text = feature.text.lowercased()
+                    return !text.contains("14 days") && !text.contains("everything in basic")
+                }
+                .prefix(5)
+        )
+    }
+
+    private func trialOutcomeCard(
+        title: String,
+        subtitle: String,
+        features: [(icon: String, text: String)],
+        isHighlighted: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white)
+            }
+
+            Rectangle()
+                .fill(Color.white.opacity(0.15))
+                .frame(height: 0.5)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
+                    HStack(alignment: .top, spacing: 7) {
+                        Image(systemName: feature.icon)
+                            .font(.system(size: 12))
+                            .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
+                            .frame(width: 14)
+                        Text(feature.text)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 164, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(cardBg)
+                .shadow(color: isHighlighted ? saneAccent.opacity(0.18) : .clear, radius: 10, x: 0, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isHighlighted ? saneAccentSoft : saneAccent.opacity(0.2), lineWidth: isHighlighted ? 2 : 1)
+        )
     }
 
     private var shouldShowCompanionApps: Bool {
@@ -1412,7 +1535,10 @@ public struct WelcomeGateView: View {
     }
 
     private var finalPrimaryButtonLabel: String {
-        WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
+        if !licenseService.isPro, licenseService.hasExpiredProTrial {
+            return "Continue with Basic"
+        }
+        return WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,
             selectedTier: selectedTier,
             channel: licenseService.distributionChannel
@@ -1447,6 +1573,8 @@ public struct WelcomeGateView: View {
             selectedTier: selectedTier,
             channel: licenseService.distributionChannel
         ) {
+        case _ where !licenseService.isPro && licenseService.hasExpiredProTrial:
+            break
         case .purchasePro:
             if licenseService.usesAppStorePurchase {
                 runSingleOutboundAction {

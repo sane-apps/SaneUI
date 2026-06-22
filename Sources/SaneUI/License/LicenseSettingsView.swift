@@ -192,6 +192,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
             }
+        } else if licenseService.isProTrialActive {
+            directTrialActions
         } else {
             Button {
                 licenseService.deactivate()
@@ -257,6 +259,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 Text(labels.managedBySetappLabel)
                     .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white)
+            } else if licenseService.isProTrialActive {
+                directTrialActions
             } else {
                 Button {
                     licenseService.deactivate()
@@ -267,6 +271,22 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .controlSize(.small)
                 .accessibilityIdentifier("saneui-license-deactivate")
                 .accessibilityLabel(labels.directManagementLabel ?? licenseService.accessManagementLabel)
+            }
+        }
+    }
+
+    private var directTrialActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                unlockProButton
+                secondaryUnlockAction
+            }
+
+            VStack(alignment: .trailing, spacing: 8) {
+                unlockProButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                secondaryUnlockAction
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
     }
