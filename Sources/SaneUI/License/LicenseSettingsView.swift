@@ -387,12 +387,12 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     }
 
     private var proBadgeTitle: String {
-        (licenseService as? LicenseService)?.proAccessBadgeTitle ?? labels.proBadgeTitle
+        licenseService.proAccessBadgeTitle
     }
 
     private var proAccessDetail: String? {
         guard licenseService.isPro else { return nil }
-        return (licenseService as? LicenseService)?.proAccessDetail
+        return licenseService.proAccessDetail
     }
 }
 #endif

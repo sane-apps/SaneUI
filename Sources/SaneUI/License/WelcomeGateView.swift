@@ -370,6 +370,7 @@ public struct WelcomeGateView: View {
         }
         .onChange(of: licenseService.isPro) { _, newValue in
             guard autoDismissOnPro, newValue else { return }
+            guard !licenseService.isProTrialActive else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 Task.detached {
                     await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())

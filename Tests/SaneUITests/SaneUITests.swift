@@ -165,9 +165,14 @@ struct RuntimeEnvironmentPolicyTests {
             isDebugBuild: true
         ))
         #expect(!KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: false))
-        #expect(KeychainService.shouldBypassKeychain(
+        #expect(!KeychainService.shouldBypassKeychain(
             environment: [:],
             arguments: ["SaneApp", "--sane-no-keychain"],
+            isDebugBuild: false
+        ))
+        #expect(!KeychainService.shouldBypassKeychain(
+            environment: ["SANEAPPS_DISABLE_KEYCHAIN": "1"],
+            arguments: [],
             isDebugBuild: false
         ))
     }
@@ -383,6 +388,17 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("onPageChange: onPageChange"))
     }
 
+    @Test("Welcome window does not auto-dismiss active Pro trials")
+    func welcomeWindowDoesNotAutoDismissActiveProTrials() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("guard !licenseService.isProTrialActive else { return }"))
+    }
+
     @Test("Pro user always lands on Get Started")
     func proUserLabel() {
         let label = WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
@@ -480,16 +496,16 @@ struct SaneLicenseServiceTests {
         #expect(service.accessManagementLabel == "Deactivate Pro")
     }
 
-    @Test("SaneVideo direct public testing price is discounted")
+    @Test("SaneVideo direct price matches the SaneApps Pro price")
     @MainActor
-    func saneVideoDirectPublicTestingPriceIsDiscounted() {
+    func saneVideoDirectPriceMatchesSaneAppsProPrice() {
         let service = LicenseService(
             appName: "SaneVideo",
             checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanevideo"),
             keychain: MockKeychainService()
         )
 
-        #expect(service.displayPriceLabel == "$3.49")
+        #expect(service.displayPriceLabel == "$14.99")
     }
 
     @Test("Opt-in direct Pro trial starts automatically without a cached license")
@@ -500,12 +516,13 @@ struct SaneLicenseServiceTests {
         let suiteName = "tests.saneui.protrial.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
+        let keychain = MockKeychainService()
 
         let service = LicenseService(
             appName: "SaneHosts",
             checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
-            keychain: MockKeychainService(),
-            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            keychain: keychain,
+            proTrial: .init(storageKeyPrefix: "tests.sanehosts.trial"),
             userDefaults: defaults
         )
 
@@ -515,8 +532,9 @@ struct SaneLicenseServiceTests {
         #expect(service.isPro)
         #expect(service.isProTrialActive)
         #expect(service.proAccessBadgeTitle == "Pro Trial")
-        #expect(service.proTrialDaysRemaining == 30)
+        #expect(service.proTrialDaysRemaining == 14)
         #expect(defaults.object(forKey: "tests.sanehosts.trial.started_at") != nil)
+        #expect(try keychain.string(forKey: "tests.sanehosts.trial.started_at") != nil)
     }
 
     @Test("Expired Pro trial falls back to Basic")
@@ -527,13 +545,43 @@ struct SaneLicenseServiceTests {
         let suiteName = "tests.saneui.expiredtrial.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(Date().addingTimeInterval(-31 * 86400).timeIntervalSince1970, forKey: "tests.sanehosts.trial.started_at")
+        let keychain = MockKeychainService()
+        try keychain.set(String(Date().addingTimeInterval(-15 * 86400).timeIntervalSince1970), forKey: "tests.sanehosts.trial.started_at")
 
         let service = LicenseService(
             appName: "SaneHosts",
             checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
-            keychain: MockKeychainService(),
-            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            keychain: keychain,
+            proTrial: .init(storageKeyPrefix: "tests.sanehosts.trial"),
+            userDefaults: defaults
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.isLicensed)
+        #expect(!service.isPro)
+        #expect(!service.isProTrialActive)
+        #expect(service.hasExpiredProTrial)
+        #expect(service.proAccessDetail == "Trial ended")
+    }
+
+    @Test("Pro trial last-seen timestamp prevents clock rollback extension")
+    @MainActor
+    func proTrialLastSeenTimestampPreventsClockRollbackExtension() throws {
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
+        defer { unsetenv("SANEAPPS_FORCE_LICENSE_CHECK") }
+        let suiteName = "tests.saneui.rollbacktrial.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let keychain = MockKeychainService()
+        try keychain.set(String(Date().addingTimeInterval(-13 * 86400).timeIntervalSince1970), forKey: "tests.sanehosts.trial.started_at")
+        try keychain.set(String(Date().addingTimeInterval(2 * 86400).timeIntervalSince1970), forKey: "tests.sanehosts.trial.last_seen_at")
+
+        let service = LicenseService(
+            appName: "SaneHosts",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
+            keychain: keychain,
+            proTrial: .init(storageKeyPrefix: "tests.sanehosts.trial"),
             userDefaults: defaults
         )
 
@@ -563,7 +611,7 @@ struct SaneLicenseServiceTests {
             appName: "SaneHosts",
             checkoutURL: LicenseService.directCheckoutURL(appSlug: "sanehosts"),
             keychain: MockKeychainService(),
-            proTrial: .init(durationDays: 30, storageKeyPrefix: "tests.sanehosts.trial"),
+            proTrial: .init(storageKeyPrefix: "tests.sanehosts.trial"),
             userDefaults: defaults
         )
 
@@ -1290,6 +1338,14 @@ struct LicenseValidationErrorTests {
             json: ["error": "Invalid license key."]
         )
         #expect(message == "Invalid license key.")
+    }
+
+    @Test("License metadata must match the app product")
+    @MainActor
+    func licenseMetadataMustMatchAppProduct() {
+        #expect(LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: "SaneVideo", variantName: "Pro"))
+        #expect(!LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: "SaneBar", variantName: "Pro"))
+        #expect(!LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: nil, variantName: nil))
     }
 }
 

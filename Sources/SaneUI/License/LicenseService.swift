@@ -74,6 +74,8 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     var distributionChannel: SaneDistributionChannel { get }
     var usesAppStorePurchase: Bool { get }
     var usesSetappPurchase: Bool { get }
+    var proAccessBadgeTitle: String { get }
+    var proAccessDetail: String? { get }
 
     func checkCachedLicense()
     func preloadAppStoreProduct() async
@@ -127,7 +129,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         public let automaticallyStarts: Bool
         public let storageKeyPrefix: String?
 
-        public init(durationDays: Int = 30, automaticallyStarts: Bool = true, storageKeyPrefix: String? = nil) {
+        public init(durationDays: Int = 14, automaticallyStarts: Bool = true, storageKeyPrefix: String? = nil) {
             self.durationDays = max(1, durationDays)
             self.automaticallyStarts = automaticallyStarts
             self.storageKeyPrefix = storageKeyPrefix
@@ -142,6 +144,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     public private(set) var isPurchasing: Bool = false
     public private(set) var hasCompletedPurchaseStateRefresh: Bool = false
     public private(set) var proTrialStartedAt: Date?
+    private var proTrialLastSeenAt: Date?
     public var validationError: String?
     public var purchaseError: String?
     public private(set) var appStoreDisplayPrice: String?
@@ -154,7 +157,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
               let proTrial,
               let startedAt = proTrialStartedAt
         else { return false }
-        return Date() < trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
+        return effectiveTrialNow() < trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
     }
 
     public var hasExpiredProTrial: Bool {
@@ -163,7 +166,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
               let proTrial,
               let startedAt = proTrialStartedAt
         else { return false }
-        return Date() >= trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
+        return effectiveTrialNow() >= trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
     }
 
     public var proTrialDaysRemaining: Int? {
@@ -174,7 +177,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         let remaining = trialEndDate(
             startedAt: proTrialStartedAt,
             durationDays: proTrial.durationDays
-        ).timeIntervalSince(Date())
+        ).timeIntervalSince(effectiveTrialNow())
         return max(1, Int(ceil(remaining / 86400)))
     }
 
@@ -252,8 +255,6 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             "$9.99"
         case "sanesales":
             "$9.99"
-        case "sanevideo":
-            "$3.49"
         case "sanebar", "saneclip", "sanehosts":
             "$14.99"
         default:
@@ -398,7 +399,22 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         self.proTrial = proTrial
         self.keychain = keychain ?? KeychainService(service: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())")
         self.userDefaults = userDefaults
-        self.proTrialStartedAt = Self.storedTrialStartedAt(userDefaults: userDefaults, key: Self.trialStartedAtKey(appName: appName, configuration: proTrial))
+        let trialStartedAtKey = Self.trialStartedAtKey(appName: appName, configuration: proTrial)
+        let now = Date()
+        self.proTrialStartedAt = Self.storedTrialDate(
+            userDefaults: userDefaults,
+            keychain: self.keychain,
+            key: trialStartedAtKey,
+            now: now,
+            rejectsFutureDate: true
+        )
+        self.proTrialLastSeenAt = Self.storedTrialDate(
+            userDefaults: userDefaults,
+            keychain: self.keychain,
+            key: Self.trialLastSeenAtKey(startedAtKey: trialStartedAtKey),
+            now: now,
+            rejectsFutureDate: false
+        )
         logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.saneapps.\(appName.lowercased())", category: "License")
     }
 
@@ -488,6 +504,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             licenseEmail = nil
             hasCompletedPurchaseStateRefresh = true
             startProTrialIfNeeded()
+            updateTrialLastSeenAt()
             debugLog("no cached key")
             logger.info("\(self.isProTrialActive ? "No cached unlock credential — Pro trial active" : "No cached unlock credential — locked", privacy: .public)")
             return
@@ -523,9 +540,39 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         return "\(prefix).started_at"
     }
 
-    private nonisolated static func storedTrialStartedAt(userDefaults: UserDefaults, key: String?) -> Date? {
-        guard let key, userDefaults.object(forKey: key) != nil else { return nil }
-        return Date(timeIntervalSince1970: userDefaults.double(forKey: key))
+    private nonisolated static func trialLastSeenAtKey(startedAtKey: String?) -> String? {
+        guard let startedAtKey else { return nil }
+        return startedAtKey.replacingOccurrences(of: ".started_at", with: ".last_seen_at")
+    }
+
+    private nonisolated static func storedTrialDate(userDefaults: UserDefaults, keychain: KeychainServiceProtocol, key: String?, now: Date, rejectsFutureDate: Bool) -> Date? {
+        guard let key else { return nil }
+        if let stored = try? keychain.string(forKey: key),
+           let timestamp = TimeInterval(stored),
+           let date = saneTrialDate(timestamp: timestamp, now: now, rejectsFutureDate: rejectsFutureDate) {
+            return date
+        }
+        guard userDefaults.object(forKey: key) != nil else { return nil }
+        guard let date = saneTrialDate(timestamp: userDefaults.double(forKey: key), now: now, rejectsFutureDate: rejectsFutureDate) else { return nil }
+        if SaneRuntimeEnvironment.isTestRun() {
+            return date
+        }
+        do {
+            try keychain.set(String(date.timeIntervalSince1970), forKey: key)
+            return date
+        } catch {
+            return nil
+        }
+    }
+
+    private nonisolated static func saneTrialDate(timestamp: TimeInterval, now: Date, rejectsFutureDate: Bool) -> Date? {
+        guard timestamp.isFinite, timestamp > 0 else { return nil }
+        let date = Date(timeIntervalSince1970: timestamp)
+        // ponytail: tolerate clock skew; future starts reset instead of granting endless Pro.
+        if rejectsFutureDate, date > now.addingTimeInterval(5 * 60) {
+            return nil
+        }
+        return date
     }
 
     private func trialEndDate(startedAt: Date, durationDays: Int) -> Date {
@@ -541,10 +588,26 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
         if proTrialStartedAt == nil {
             proTrialStartedAt = now
+            try? keychain.set(String(now.timeIntervalSince1970), forKey: startedAtKey)
             userDefaults.set(now.timeIntervalSince1970, forKey: startedAtKey)
+            updateTrialLastSeenAt(now: now)
             let name = appName.lowercased()
             Task.detached { await EventTracker.logOnce("pro_trial_started", app: name) }
         }
+    }
+
+    private func effectiveTrialNow() -> Date {
+        let now = Date()
+        guard let proTrialLastSeenAt else { return now }
+        return max(now, proTrialLastSeenAt)
+    }
+
+    private func updateTrialLastSeenAt(now: Date = Date()) {
+        guard let key = Self.trialLastSeenAtKey(startedAtKey: Self.trialStartedAtKey(appName: appName, configuration: proTrial)) else { return }
+        let effectiveNow = max(now, proTrialLastSeenAt ?? now)
+        proTrialLastSeenAt = effectiveNow
+        try? keychain.set(String(effectiveNow.timeIntervalSince1970), forKey: key)
+        userDefaults.set(effectiveNow.timeIntervalSince1970, forKey: key)
     }
 
     private func debugLog(_ message: String) {
@@ -696,6 +759,12 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         do {
             let result = try await validateWithLemonSqueezy(key: trimmed)
             if result.valid {
+                guard Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) else {
+                    validationError = "This code is for a different SaneApps product."
+                    logger.info("License validation rejected because product did not match \(self.appName, privacy: .public)")
+                    isValidating = false
+                    return
+                }
                 try keychain.set(trimmed, forKey: Keys.licenseKey)
                 if let email = result.email {
                     try keychain.set(email, forKey: Keys.licenseEmail)
@@ -867,7 +936,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private func revalidate(key: String) async {
         do {
             let result = try await validateWithLemonSqueezy(key: key)
-            if result.valid {
+            if result.valid, Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) {
                 try? keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
                 isLicensed = true
                 logger.info("Background revalidation succeeded")
@@ -885,6 +954,23 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         let valid: Bool
         let email: String?
         let error: String?
+        let productName: String?
+        let variantName: String?
+    }
+
+    static func licenseProductMatchesApp(appName: String, productName: String?, variantName: String?) -> Bool {
+        let appToken = normalizedProductToken(appName)
+        guard !appToken.isEmpty else { return true }
+        let productToken = productName.map(normalizedProductToken) ?? ""
+        let variantToken = variantName.map(normalizedProductToken) ?? ""
+        guard !productToken.isEmpty || !variantToken.isEmpty else { return false }
+        return productToken.contains(appToken) || variantToken.contains(appToken)
+    }
+
+    private static func normalizedProductToken(_ value: String) -> String {
+        value
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
     }
 
     static func validationFailureMessage(statusCode: Int, mimeType: String?, body: String, json: [String: Any]?) -> String {
@@ -907,7 +993,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
-            return ValidationResult(valid: false, email: nil, error: "Unexpected response")
+            return ValidationResult(valid: false, email: nil, error: "Unexpected response", productName: nil, variantName: nil)
         }
 
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -915,10 +1001,12 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             let valid = json?["valid"] as? Bool ?? false
             let meta = json?["meta"] as? [String: Any]
             let email = meta?["customer_email"] as? String
-            return ValidationResult(valid: valid, email: email, error: nil)
+            let productName = meta?["product_name"] as? String
+            let variantName = meta?["variant_name"] as? String
+            return ValidationResult(valid: valid, email: email, error: nil, productName: productName, variantName: variantName)
         }
         let responseBody = String(data: data, encoding: .utf8) ?? ""
         let error = Self.validationFailureMessage(statusCode: http.statusCode, mimeType: http.value(forHTTPHeaderField: "Content-Type"), body: responseBody, json: json)
-        return ValidationResult(valid: false, email: nil, error: error)
+        return ValidationResult(valid: false, email: nil, error: error, productName: nil, variantName: nil)
     }
 }
