@@ -474,7 +474,7 @@ public struct WelcomeGateView: View {
     private var welcomeSummary: String {
         switch appSlug {
         case "sanehosts":
-            return "Block ads, trackers, malware, and distractions system-wide on your Mac."
+            return "Block ads, trackers, malware, and distractions across your Mac."
         case "saneclick":
             return "Run useful Finder actions from right-click, without leaving your workflow."
         case "sanesales":
