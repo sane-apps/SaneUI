@@ -139,6 +139,9 @@ Image(systemName: SaneIcons.settings)   // gear
 ## Shared UI Rules
 
 - Shared settings text should be bright white and at least `13pt`.
+- Helper, highlight, badge, status, and subsection text also must be at least `13pt` with strong contrast.
+- Settings and right-click menu items should be ordered from the customer's most likely/common need to the least likely/most advanced need.
+- Settings sections should use plain language, balanced spacing, and visual symmetry.
 - App repos should extend SaneUI instead of redefining `SaneSparkleRow`, update eligibility, move-to-Applications, settings chrome, standard menus, About panes, permission guidance, or license panes locally.
 - Bug reporting in shared settings surfaces should route through GitHub-backed diagnostics, not `mailto:` links.
 - Status-bar and Dock menus should use `SaneStandardMenu.addCoreUtilityItems` so Settings, License, Check for Updates, About / Report a Bug, optional What's New, and Quit stay in a consistent order.

@@ -26,6 +26,25 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
     }
 }
 
+@Test("CompactToggle uses a labeled switch row so the whole setting is clickable")
+func compactToggleUsesLabeledSwitchRow() throws {
+    let source = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Components/Row.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("Button {"))
+    #expect(source.contains("isOn.toggle()"))
+    #expect(source.contains("private var switchIndicator: some View"))
+    #expect(source.contains("Capsule()"))
+    #expect(source.contains("Circle()"))
+    #expect(source.contains(".buttonStyle(.plain)"))
+    #expect(source.contains(".accessibilityLabel(label)"))
+    #expect(source.contains(".accessibilityValue(isOn ? \"On\" : \"Off\")"))
+    #expect(!source.contains("Toggle(\"\", isOn:"))
+}
+
 #if canImport(AppKit)
     @MainActor
     private final class MenuTarget: NSObject {
@@ -397,6 +416,41 @@ struct WelcomeGateFlowPolicyTests {
         )
 
         #expect(source.contains("guard !licenseService.isProTrialActive else { return }"))
+    }
+
+    @Test("Companion recommendations use app-specific visual cards")
+    func companionRecommendationsUseVisualCards() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private struct CompanionAppCard: View"))
+        #expect(source.contains("Bundle.module.url(forResource: resourceName, withExtension: \"png\")"))
+        #expect(source.contains("private struct CompanionIconImage: View"))
+        #expect(source.contains("iconResourceName: theme.iconResourceName"))
+        #expect(source.contains("Text(\"More helpful SaneApps\")"))
+        #expect(source.contains("Text(\"Open\")"))
+        #expect(source.contains("\"SaneBarIcon\""))
+        #expect(source.contains("\"SaneClickIcon\""))
+        #expect(source.contains("\"SaneClipIcon\""))
+        #expect(source.contains("\"SaneHostsIcon\""))
+        #expect(!source.contains(".font(.system(size: 11))"))
+    }
+
+    @Test("Onboarding primary buttons use the shared selected-control gradient")
+    func onboardingPrimaryButtonsUseSelectedControlGradient() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("SaneGlassRoundedBackground("))
+        #expect(source.contains("tint: SanePanelChrome.accentTeal"))
+        #expect(source.contains("edgeTint: SanePanelChrome.accentHighlight"))
+        #expect(!source.contains("colors: [saneAccentSoft.opacity(0.98), saneAccent.opacity(0.98)]"))
     }
 
     @Test("Pro user always lands on Get Started")
@@ -777,11 +831,12 @@ struct SharedLicenseUIPolicyTests {
         #expect(source.contains("case \"saneclick\""))
         #expect(source.contains("case \"saneclip\""))
         #expect(source.contains("case \"sanehosts\""))
-        #expect(source.contains("Text(\"Also useful\")"))
+        #expect(source.contains("Text(\"More helpful SaneApps\")"))
         #expect(source.contains("runSingleOutboundAction"))
         #expect(!source.contains("companion(\"SaneSales\""))
         #expect(!source.contains("companion(\"SaneVideo\""))
         #expect(!source.contains("Text(\"Works well with\")"))
+        #expect(!source.contains("Text(\"Also useful\")"))
     }
 
     @Test("Welcome gate keeps Setapp purchase card channel-correct")
@@ -1381,6 +1436,15 @@ struct LicenseValidationErrorTests {
         #expect(LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: "SaneVideo", variantName: "Pro"))
         #expect(!LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: "SaneBar", variantName: "Pro"))
         #expect(!LicenseService.licenseProductMatchesApp(appName: "SaneVideo", productName: nil, variantName: nil))
+    }
+
+    @Test("License input extracts forwarded receipt keys")
+    @MainActor
+    func licenseInputExtractsForwardedReceiptKeys() {
+        let key = "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE"
+        #expect(LicenseService.normalizedLicenseKeyInput("License key:\n\(key)\u{200B}") == key)
+        #expect(LicenseService.normalizedLicenseKeyInput("aaaaaaaa–bbbb–4ccc–8ddd–eeeeeeeeeeee") == key)
+        #expect(LicenseService.normalizedLicenseKeyInput("  \(key.prefix(8)) \n-\tBBBB-4CCC-8DDD-EEEEEEEEEEEE  ") == key)
     }
 }
 

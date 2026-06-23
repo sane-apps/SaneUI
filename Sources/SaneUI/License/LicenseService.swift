@@ -768,7 +768,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return
         }
 
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = Self.normalizedLicenseKeyInput(key)
         guard !trimmed.isEmpty else {
             validationError = "Please enter your code."
             return
@@ -992,6 +992,29 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         value
             .lowercased()
             .filter { $0.isLetter || $0.isNumber }
+    }
+
+    static func normalizedLicenseKeyInput(_ value: String) -> String {
+        let dashNormalized = value
+            .replacingOccurrences(of: "\u{2010}", with: "-")
+            .replacingOccurrences(of: "\u{2011}", with: "-")
+            .replacingOccurrences(of: "\u{2012}", with: "-")
+            .replacingOccurrences(of: "\u{2013}", with: "-")
+            .replacingOccurrences(of: "\u{2014}", with: "-")
+            .replacingOccurrences(of: "\u{2212}", with: "-")
+            .replacingOccurrences(of: "\u{200B}", with: "")
+            .replacingOccurrences(of: "\u{200C}", with: "")
+            .replacingOccurrences(of: "\u{200D}", with: "")
+            .replacingOccurrences(of: "\u{FEFF}", with: "")
+
+        let pattern = /[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/
+        if let match = dashNormalized.firstMatch(of: pattern) {
+            return String(match.output).uppercased()
+        }
+
+        return dashNormalized
+            .filter { !$0.isWhitespace && !$0.isNewline }
+            .uppercased()
     }
 
     static func validationFailureMessage(statusCode: Int, mimeType: String?, body: String, json: [String: Any]?) -> String {

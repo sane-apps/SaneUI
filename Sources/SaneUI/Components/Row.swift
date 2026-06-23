@@ -92,23 +92,39 @@ public struct CompactToggle: View {
     }
 
     public var body: some View {
-        HStack {
-            if let icon = icon {
-                Image(systemName: icon)
-                    .foregroundStyle(iconColor)
-                    .frame(width: 20)
+        Button {
+            isOn.toggle()
+        } label: {
+            HStack {
+                if let icon {
+                    Image(systemName: icon)
+                        .foregroundStyle(iconColor)
+                        .frame(width: 20)
+                }
+                Text(label)
+                    .foregroundStyle(.white)
+                Spacer()
+                switchIndicator
             }
-            Text(label)
-                .foregroundStyle(.white)
-            Spacer()
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .tint(SanePanelChrome.accentStart)
         }
+        .controlSize(.small)
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn ? "On" : "Off")
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+    }
+
+    private var switchIndicator: some View {
+        Capsule()
+            .fill(isOn ? SanePanelChrome.accentStart : Color.white.opacity(0.22))
+            .overlay(alignment: isOn ? .trailing : .leading) {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 18, height: 18)
+                    .padding(3)
+            }
+            .frame(width: 44, height: 24)
     }
 }
 
