@@ -26,12 +26,24 @@ public struct KeychainError: LocalizedError {
 /// to avoid password prompts during development and CI.
 public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable {
     private let service: String
+    private let accessGroup: String?
     private let isTestEnvironment: Bool
     private let isKeychainBypassed: Bool
     private let fallbackDefaults: UserDefaults
 
-    public init(service: String = Bundle.main.bundleIdentifier ?? "com.saneapps.app") {
+    /// - Parameter accessGroup: When non-nil, items are stored in the modern
+    ///   data-protection keychain under this Team-ID-prefixed access group
+    ///   (e.g. "M78L6FXD48.com.mrsane.SaneHosts"). This avoids the legacy
+    ///   login-keychain ACL prompt that fires when a Developer ID app's code
+    ///   signature changes between the build that wrote an item and the build
+    ///   that reads it. When nil (default), behavior is unchanged and items
+    ///   stay in the legacy login keychain.
+    public init(
+        service: String = Bundle.main.bundleIdentifier ?? "com.saneapps.app",
+        accessGroup: String? = nil
+    ) {
         self.service = service
+        self.accessGroup = accessGroup
         // Keep no-keychain fallback data in the app's own defaults domain.
         // Sandboxed macOS builds do not reliably persist arbitrary suite names here.
         fallbackDefaults = .standard
@@ -41,7 +53,7 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             arguments: ProcessInfo.processInfo.arguments
         )
         debugLog(
-            "init service=\(service) bundle=\(Bundle.main.bundleIdentifier ?? "nil") test=\(isTestEnvironment) bypass=\(isKeychainBypassed)"
+            "init service=\(service) accessGroup=\(accessGroup ?? "nil") bundle=\(Bundle.main.bundleIdentifier ?? "nil") test=\(isTestEnvironment) bypass=\(isKeychainBypassed)"
         )
     }
 
@@ -81,20 +93,18 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             debugLog("read bool fallback key=\(fallbackKey(key)) value=\(value)")
             return value
         }
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: key,
-            kSecMatchLimit: kSecMatchLimitOne,
-            kSecReturnData: true,
-            kSecUseAuthenticationContext: nonInteractiveAuthenticationContext()
-        ]
+        var query = baseQuery(account: key)
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        query[kSecReturnData] = true
+        query[kSecUseAuthenticationContext] = nonInteractiveAuthenticationContext()
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess else { throw KeychainError(status: status) }
-        guard let data = result as? Data else { return nil }
-        return data.first == 1
+        if status == errSecSuccess, let data = result as? Data { return data.first == 1 }
+        if status == errSecItemNotFound {
+            if let data = migrateFromLegacyIfNeeded(account: key) { return data.first == 1 }
+            return nil
+        }
+        throw KeychainError(status: status)
     }
 
     public func set(_ value: Bool, forKey key: String) throws {
@@ -114,20 +124,22 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             debugLog("read string fallback key=\(fallbackKey(key)) value=\(value ?? "nil")")
             return value
         }
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: key,
-            kSecMatchLimit: kSecMatchLimitOne,
-            kSecReturnData: true,
-            kSecUseAuthenticationContext: nonInteractiveAuthenticationContext()
-        ]
+        var query = baseQuery(account: key)
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        query[kSecReturnData] = true
+        query[kSecUseAuthenticationContext] = nonInteractiveAuthenticationContext()
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess else { throw KeychainError(status: status) }
-        guard let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        if status == errSecSuccess, let data = result as? Data {
+            return String(data: data, encoding: .utf8)
+        }
+        if status == errSecItemNotFound {
+            if let data = migrateFromLegacyIfNeeded(account: key) {
+                return String(data: data, encoding: .utf8)
+            }
+            return nil
+        }
+        throw KeychainError(status: status)
     }
 
     public func set(_ value: String, forKey key: String) throws {
@@ -146,11 +158,7 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             writeFallbackValue(nil, forKey: fallbackKey(key))
             return
         }
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: key
-        ]
+        let query = baseQuery(account: key)
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError(status: status)
@@ -159,12 +167,57 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
 
     // MARK: - Private
 
-    private func upsert(data: Data, forKey key: String) throws {
-        let query: [CFString: Any] = [
+    /// Builds the shared item attributes, opting the operation into the
+    /// data-protection keychain + access group when one is configured.
+    /// Exposed (non-private) for unit testing of the query shape.
+    static func makeBaseQuery(service: String, account: String, accessGroup: String?) -> [CFString: Any] {
+        var query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
-            kSecAttrAccount: key
+            kSecAttrAccount: account
         ]
+        if let accessGroup {
+            query[kSecUseDataProtectionKeychain] = true
+            query[kSecAttrAccessGroup] = accessGroup
+        }
+        return query
+    }
+
+    private func baseQuery(account: String) -> [CFString: Any] {
+        Self.makeBaseQuery(service: service, account: account, accessGroup: accessGroup)
+    }
+
+    /// One-time migration: when this service is configured for the
+    /// data-protection keychain but an item is only present in the legacy login
+    /// keychain (written by a pre-accessGroup build), copy it across so future
+    /// reads are silent. Returns the recovered data if a migration happened.
+    ///
+    /// The legacy read intentionally allows interaction. On a machine whose
+    /// legacy ACL no longer matches the current signature it may surface one
+    /// final keychain prompt, which rescues the stored value; on healthy
+    /// machines (or after the user chose "Always Allow") it is silent. After
+    /// this runs once the value lives in the data-protection keychain and the
+    /// prompt never returns. The legacy copy is intentionally left in place to
+    /// avoid a delete-time ACL prompt; it simply goes dormant.
+    private func migrateFromLegacyIfNeeded(account: String) -> Data? {
+        guard accessGroup != nil else { return nil }
+        let legacyQuery: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecReturnData: true
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(legacyQuery as CFDictionary, &result)
+        guard status == errSecSuccess, let data = result as? Data else { return nil }
+        try? upsert(data: data, forKey: account)
+        debugLog("migrated key=\(account) from legacy login keychain")
+        return data
+    }
+
+    private func upsert(data: Data, forKey key: String) throws {
+        let query = baseQuery(account: key)
         let attributes: [CFString: Any] = [
             kSecValueData: data,
             kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock

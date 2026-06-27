@@ -1,5 +1,6 @@
 import Foundation
 @testable import SaneUI
+import Security
 import Testing
 #if canImport(AppKit)
     import AppKit
@@ -16,10 +17,22 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
     private var bools: [String: Bool] = [:]
     private var strings: [String: String] = [:]
 
-    func bool(forKey key: String) throws -> Bool? { bools[key] }
-    func set(_ value: Bool, forKey key: String) throws { bools[key] = value }
-    func string(forKey key: String) throws -> String? { strings[key] }
-    func set(_ value: String, forKey key: String) throws { strings[key] = value }
+    func bool(forKey key: String) throws -> Bool? {
+        bools[key]
+    }
+
+    func set(_ value: Bool, forKey key: String) throws {
+        bools[key] = value
+    }
+
+    func string(forKey key: String) throws -> String? {
+        strings[key]
+    }
+
+    func set(_ value: String, forKey key: String) throws {
+        strings[key] = value
+    }
+
     func delete(_ key: String) throws {
         bools.removeValue(forKey: key)
         strings.removeValue(forKey: key)
@@ -195,6 +208,28 @@ struct RuntimeEnvironmentPolicyTests {
             isDebugBuild: false
         ))
     }
+
+    @Test("Access group opts items into the data-protection keychain; nil keeps legacy behavior")
+    func accessGroupSelectsDataProtectionKeychain() {
+        let legacy = KeychainService.makeBaseQuery(
+            service: "com.mrsane.SaneHosts",
+            account: "license_key",
+            accessGroup: nil
+        )
+        #expect(legacy[kSecAttrService] as? String == "com.mrsane.SaneHosts")
+        #expect(legacy[kSecAttrAccount] as? String == "license_key")
+        #expect(legacy[kSecUseDataProtectionKeychain] == nil)
+        #expect(legacy[kSecAttrAccessGroup] == nil)
+
+        let modern = KeychainService.makeBaseQuery(
+            service: "com.mrsane.SaneHosts",
+            account: "license_key",
+            accessGroup: "M78L6FXD48.com.mrsane.SaneHosts"
+        )
+        #expect(modern[kSecAttrService] as? String == "com.mrsane.SaneHosts")
+        #expect(modern[kSecUseDataProtectionKeychain] as? Bool == true)
+        #expect(modern[kSecAttrAccessGroup] as? String == "M78L6FXD48.com.mrsane.SaneHosts")
+    }
 }
 
 @Suite("Settings Localization")
@@ -202,8 +237,13 @@ struct SettingsLocalizationTests {
     private enum DemoSettingsTab: String, SaneSettingsTab {
         case general = "General"
 
-        var icon: String { "gearshape" }
-        var iconColor: Color { .white }
+        var icon: String {
+            "gearshape"
+        }
+
+        var iconColor: Color {
+            .white
+        }
     }
 
     @Test("Settings tabs default to their raw title")
@@ -1271,8 +1311,8 @@ struct SaneBackgroundAppDefaultsTests {
     }
 
     @Test("Default login prompt is offered only from an eligible unregistered install")
-    func defaultLoginPromptOfferPolicy() {
-        let defaults = UserDefaults(suiteName: #function)!
+    func defaultLoginPromptOfferPolicy() throws {
+        let defaults = try #require(UserDefaults(suiteName: #function))
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
@@ -1310,8 +1350,8 @@ struct SaneBackgroundAppDefaultsTests {
 
     @Test("Accepted default login prompt registers the app")
     @MainActor
-    func acceptedDefaultLoginPromptRegistersTheApp() {
-        let defaults = UserDefaults(suiteName: #function)!
+    func acceptedDefaultLoginPromptRegistersTheApp() throws {
+        let defaults = try #require(UserDefaults(suiteName: #function))
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
@@ -1340,8 +1380,8 @@ struct SaneBackgroundAppDefaultsTests {
 
     @Test("Declined default login prompt does not register")
     @MainActor
-    func declinedDefaultLoginPromptDoesNotRegister() {
-        let defaults = UserDefaults(suiteName: #function)!
+    func declinedDefaultLoginPromptDoesNotRegister() throws {
+        let defaults = try #require(UserDefaults(suiteName: #function))
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
@@ -1380,7 +1420,7 @@ struct SaneBackgroundAppDefaultsTests {
 
     @Test("Explicit login item choice is recorded")
     func explicitLoginItemChoiceIsRecorded() throws {
-        let defaults = UserDefaults(suiteName: #function)!
+        let defaults = try #require(UserDefaults(suiteName: #function))
         defaults.removePersistentDomain(forName: #function)
         defer { defaults.removePersistentDomain(forName: #function) }
 
