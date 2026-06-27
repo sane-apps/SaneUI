@@ -1,6 +1,22 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-05-15
+Last updated: 2026-06-22
+
+## 2026-06-22 Companion App Cross-Sell Cards
+
+- Updated shared `WelcomeGateView` companion recommendations from plain text tiles to app-specific visual cards with the real bundled app icons, bright 13pt+ copy, stronger outlines, hover lift, and an explicit "Open" cue.
+- Removed the temporary `SaneUICatalog` preview after visual QA so internal Basic/Pro/Setapp catalog controls do not remain part of the workflow.
+- Verification: Mini `swift test` passed 115 tests.
+- Visual receipt: `/Users/sj/Desktop/Screenshots/SaneUI/cross-sell-real-icons-onboarding-20260622-220726.png`
+- Visual QA note: rejected earlier captures because one included internal catalog Basic/Pro/Setapp controls, another showed blank icon placeholders, and another used lower-contrast teal buttons. Final capture uses real app icons and the shared selected-control glass gradient for primary buttons.
+- Related note: the unrelated SaneBar customer UI sweep failed because an onboarding welcome sheet covered License settings during the license-entry probe; failure screenshot saved at `/Users/sj/Desktop/Screenshots/SaneBar/customer-ui-license-entry-missing-20260622-210650.png`.
+
+## 2026-06-22 14-Day Pro Trial Welcome Gate
+
+- Updated shared `WelcomeGateView` copy/state to match the direct-download relaunch model: users start in Pro Trial, Basic is only the automatic fallback after the trial, and expired trials show "Keep Pro" plus "Continue with Basic" instead of a first-run Basic-vs-Pro choice.
+- Existing paid Pro users remain outside the trial downgrade path; this is copy/state behavior around trial onboarding and expiration.
+- Visual receipt: `/Users/sj/SaneApps/infra/SaneProcess/outputs/final-review-2026-06-22/visual-audit.md`
+- Verification: focused SaneUI render screenshot pass completed during final review; SaneBar Mini verify later passed after rendering app-local setup screenshots.
 
 ## 2026-05-25 Optional Pro Trial Support
 
