@@ -1204,41 +1204,14 @@ struct SaneInstallLocationTests {
     }
 }
 
-@Suite("Sparkle Check Frequency")
-struct SaneSparkleCheckFrequencyTests {
-    @Test("Daily interval resolves to daily")
-    func dailyIntervalResolvesToDaily() {
-        #expect(SaneSparkleCheckFrequency.resolve(updateCheckInterval: 60 * 60 * 24) == .daily)
-    }
-
-    @Test("Weekly interval resolves to weekly")
-    func weeklyIntervalResolvesToWeekly() {
-        #expect(SaneSparkleCheckFrequency.resolve(updateCheckInterval: 60 * 60 * 24 * 7) == .weekly)
-    }
-
-    @Test("Short legacy intervals normalize to daily")
-    func shortLegacyIntervalsNormalizeToDaily() {
-        #expect(SaneSparkleCheckFrequency.normalizedInterval(from: 60 * 60 * 6) == SaneSparkleCheckFrequency.daily.interval)
-    }
-
-    @Test("Sparkle row exposes an optional recovery action for bad install locations")
-    func sparkleRowRecoveryActionSource() throws {
-        let source = try String(
-            contentsOf: URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .appendingPathComponent("Sources/SaneUI/Components/SaneSparkleRow.swift"),
-            encoding: .utf8
-        )
-
-        #expect(source.contains("recoveryActionLabel"))
-        #expect(source.contains("onRecoveryAction"))
-        #expect(source.contains("Button(recoveryActionLabel)"))
-        #expect(source.contains(".font(.system(size: 13"))
-        #expect(!source.contains(".font(.caption)"))
-    }
-}
+// SaneSparkleRow + SaneSparkleCheckFrequency moved OUT of the shared SaneUI
+// library (2026-07-01): Setapp's archive scanner rightly forbids Sparkle
+// settings-UI symbols in Setapp binaries, and a shared-library type reaches
+// every consumer's binary regardless of app-side #if gating. The component
+// now lives in Sources/SaneUICatalog (demo) and as channel-gated app-local
+// copies in direct-channel apps (SaneClip UI/Settings/SaneSparkleRow.swift;
+// SaneBar will need the same copy when it next bumps its SaneUI pin).
+// Behavioral enum tests moved with the code (SaneClip Tests).
 
 @Suite("Update Eligibility")
 struct SaneUpdateEligibilityTests {
