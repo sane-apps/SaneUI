@@ -197,12 +197,12 @@ struct RuntimeEnvironmentPolicyTests {
             isDebugBuild: true
         ))
         #expect(!KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: false))
-        #expect(!KeychainService.shouldBypassKeychain(
+        #expect(KeychainService.shouldBypassKeychain(
             environment: [:],
             arguments: ["SaneApp", "--sane-no-keychain"],
             isDebugBuild: false
         ))
-        #expect(!KeychainService.shouldBypassKeychain(
+        #expect(KeychainService.shouldBypassKeychain(
             environment: ["SANEAPPS_DISABLE_KEYCHAIN": "1"],
             arguments: [],
             isDebugBuild: false

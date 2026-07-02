@@ -63,11 +63,11 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         isDebugBuild: Bool = isDebugBuild
     ) -> Bool {
         let debugBypass = isDebugBuild && environment["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG"] != "1"
-        let explicitDebugBypass = isDebugBuild && (
+        let explicitAutomationBypass = (
             environment["SANEAPPS_DISABLE_KEYCHAIN"] == "1" ||
                 arguments.contains("--sane-no-keychain")
         )
-        return debugBypass || explicitDebugBypass
+        return debugBypass || explicitAutomationBypass
     }
 
     private static var isDebugBuild: Bool {

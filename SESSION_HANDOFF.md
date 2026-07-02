@@ -1,6 +1,21 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-06-22
+Last updated: 2026-07-02
+
+## 2026-07-02 Signed Automation Keychain Bypass
+
+- Fixed `KeychainService.shouldBypassKeychain` so explicit automation bypasses
+  (`--sane-no-keychain` and `SANEAPPS_DISABLE_KEYCHAIN=1`) work in signed
+  Release/Developer ID builds, not only DEBUG builds.
+- This was required for SaneClip Glenn #994 Pro-mode proof: `sane_test.rb`
+  correctly wrote `test-pro` into `com.saneclip.app`, but the signed app still
+  used Keychain until SaneUI honored the no-keychain runtime flags.
+- SaneClip verified this through the local monorepo SaneUI path during Mini
+  proof; public SaneClip releases must pin the pushed SaneUI commit instead of
+  shipping a local package reference.
+- Verification: `swift test` passed 117 SaneUI tests; SaneClip Mini
+  `./scripts/SaneMaster.rb verify --timeout 900 --no-grant-permissions` passed
+  189 tests after adopting local SaneUI.
 
 ## 2026-06-22 Companion App Cross-Sell Cards
 
