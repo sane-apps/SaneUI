@@ -1,10 +1,13 @@
+import SaneUI
 import SwiftUI
 
 public enum SaneSparkleCheckFrequency: String, CaseIterable, Identifiable, Sendable {
     case daily
     case weekly
 
-    public var id: String { rawValue }
+    public var id: String {
+        rawValue
+    }
 
     public var title: String {
         title(labels: .default)
@@ -71,17 +74,21 @@ public struct SaneSparkleRow: View {
             self.weeklyTitle = weeklyTitle
         }
 
+        /// Demo/catalog target only — plain literals, no localization catalog
+        /// ownership here (the real .xcstrings entries live in the SaneUI
+        /// target; shipping apps supply their own Labels via app-local copies
+        /// of this component, e.g. SaneClip's UI/Settings/SaneSparkleRow.swift).
         public static let `default` = Labels(
-            automaticCheckLabel: String(localized: "saneui.sparkle.automatic_check_label", defaultValue: "Check for updates automatically", bundle: .module),
-            automaticCheckHelp: String(localized: "saneui.sparkle.automatic_check_help", defaultValue: "Periodically check for new versions", bundle: .module),
-            checkFrequencyLabel: String(localized: "saneui.sparkle.check_frequency_label", defaultValue: "Check frequency", bundle: .module),
-            checkFrequencyHelp: String(localized: "saneui.sparkle.check_frequency_help", defaultValue: "Choose how often automatic update checks run", bundle: .module),
-            actionsLabel: String(localized: "saneui.sparkle.actions_label", defaultValue: "Actions", bundle: .module),
-            checkingLabel: String(localized: "saneui.sparkle.checking_label", defaultValue: "Checking...", bundle: .module),
-            checkNowLabel: String(localized: "saneui.sparkle.check_now_label", defaultValue: "Check Now", bundle: .module),
-            checkNowHelp: String(localized: "saneui.sparkle.check_now_help", defaultValue: "Check for updates right now", bundle: .module),
-            dailyTitle: String(localized: "saneui.sparkle.daily_title", defaultValue: "Daily", bundle: .module),
-            weeklyTitle: String(localized: "saneui.sparkle.weekly_title", defaultValue: "Weekly", bundle: .module)
+            automaticCheckLabel: "Check for updates automatically",
+            automaticCheckHelp: "Periodically check for new versions",
+            checkFrequencyLabel: "Check frequency",
+            checkFrequencyHelp: "Choose how often automatic update checks run",
+            actionsLabel: "Actions",
+            checkingLabel: "Checking...",
+            checkNowLabel: "Check Now",
+            checkNowHelp: "Check for updates right now",
+            dailyTitle: "Daily",
+            weeklyTitle: "Weekly"
         )
     }
 
