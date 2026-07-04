@@ -88,7 +88,7 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
 }
 
 /// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain,
-/// and can start a direct-download Pro trial before falling back to Basic.
+/// and can start a direct-download Pro trial before the paid gate takes over.
 ///
 /// App Store and Setapp builds use their platform purchase state instead of direct trials.
 /// Initialize with app-specific name and checkout URL.

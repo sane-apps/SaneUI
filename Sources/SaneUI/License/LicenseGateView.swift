@@ -14,6 +14,7 @@ public struct LicenseGateView: View {
     @State private var licenseKey = ""
     @State private var showKeyEntry = false
     @State private var showSuccess = false
+    private static let donationURL = URL(string: "https://github.com/sponsors/MrSaneApps")!
 
     /// - Parameters:
     ///   - licenseService: The license service instance to validate against.
@@ -38,7 +39,7 @@ public struct LicenseGateView: View {
                     .transition(.opacity)
             }
         }
-        .frame(minWidth: 420, minHeight: 460)
+        .frame(minWidth: 460, minHeight: 620)
         .onAppear {
             lockWindow()
         }
@@ -73,11 +74,11 @@ public struct LicenseGateView: View {
     // MARK: - Gate View
 
     private var gateView: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        VStack(spacing: 20) {
+            Spacer(minLength: 12)
 
             Image(systemName: appIcon)
-                .font(.system(size: 64))
+                .font(.system(size: 56))
                 .foregroundStyle(Color.saneAccent)
                 .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
@@ -85,23 +86,45 @@ public struct LicenseGateView: View {
                 .font(.largeTitle.bold())
                 .foregroundStyle(.white)
 
-            VStack(spacing: 8) {
-                Text("Thank you for trying \(licenseService.appName).")
-                    .font(.title3)
+            VStack(spacing: 14) {
+                Text("Mr. Sane here. I need to share an insane stat with you all.")
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
 
-                Text("Your free trial has ended.")
-                    .font(.title3)
+                Text("Across SaneApps Mac apps, there have been over 100,000 downloads in the last 180 days. Fewer than 0.5% resulted in a purchase.")
+                    .font(.body.weight(.medium))
                     .foregroundStyle(.white)
 
-                Text("To continue using \(licenseService.appName), please purchase a license.")
+                Text("Despite the many kind reviews and steady downloads, that is not sustainable.")
                     .font(.body)
                     .foregroundStyle(.white)
-                    .padding(.top, 4)
+
+                VStack(spacing: 4) {
+                    Text("\"The worker is worthy of his wages.\"")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .italic()
+
+                    Text("1 Timothy 5:18")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+                .padding(.vertical, 2)
+
+                Text("If you love what I do and believe in privacy-first Mac apps, here's how you can help.")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.white)
+
+                Text("Sincerely,\nMr. Sane")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.top, 2)
             }
             .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 520)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             VStack(spacing: 12) {
                 Button {
@@ -118,11 +141,7 @@ public struct LicenseGateView: View {
                             .controlSize(.small)
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text(licenseService.usesSetappPurchase
-                             ? "Managed by Setapp"
-                             : (licenseService.usesAppStorePurchase
-                                 ? "Unlock Pro — \(licenseService.displayPriceLabel)"
-                                 : "Buy Now — \(licenseService.displayPriceLabel)"))
+                        Text(primaryPurchaseLabel)
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -131,6 +150,17 @@ public struct LicenseGateView: View {
                 .buttonStyle(SaneActionButtonStyle(prominent: true))
                 .controlSize(.large)
                 .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
+
+                if showsDirectSupportActions {
+                    Button {
+                        NSWorkspace.shared.open(Self.donationURL)
+                    } label: {
+                        Text("Donate")
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
+                }
 
                 if licenseService.usesAppStorePurchase {
                     Button {
@@ -154,12 +184,21 @@ public struct LicenseGateView: View {
                             showKeyEntry = true
                         }
                     } label: {
-                        Text(licenseService.alternateEntryLabel)
+                        Text("Enter License")
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(SaneActionButtonStyle())
                     .controlSize(.small)
                 }
+
+                Button {
+                    NSApplication.shared.terminate(nil)
+                } label: {
+                    Text("Quit")
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(SaneActionButtonStyle())
+                .controlSize(.small)
 
                 if let error = licenseService.purchaseError {
                     Text(error)
@@ -169,7 +208,7 @@ public struct LicenseGateView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .frame(maxWidth: 280)
+            .frame(maxWidth: 320)
 
             Text(licenseService.usesSetappPurchase
                  ? "This Setapp build unlocks through Setapp."
@@ -179,9 +218,23 @@ public struct LicenseGateView: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
 
-            Spacer()
+            Spacer(minLength: 12)
         }
         .padding(32)
+    }
+
+    private var showsDirectSupportActions: Bool {
+        !licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase
+    }
+
+    private var primaryPurchaseLabel: String {
+        if licenseService.usesSetappPurchase {
+            return "Managed by Setapp"
+        }
+        if licenseService.usesAppStorePurchase {
+            return "Unlock Pro — \(licenseService.displayPriceLabel)"
+        }
+        return "Buy Pro"
     }
 
     // MARK: - Key Entry View

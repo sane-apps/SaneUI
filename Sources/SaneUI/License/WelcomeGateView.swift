@@ -1246,7 +1246,7 @@ public struct WelcomeGateView: View {
     private var proActivatedMessage: String {
         if let days = licenseService.proTrialDaysRemaining {
             let dayText = days == 1 ? "1 day" : "\(days) days"
-            return "\(dayText) of Pro is unlocked. No credit card required.\nBasic remains free after the trial."
+            return "\(dayText) of Pro is unlocked. No credit card required.\nPro is required after the trial."
         }
         return "All features unlocked.\nI couldn't do this without you."
     }
@@ -1263,28 +1263,20 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("Basic is still free. Unlock Pro to keep the advanced tools you tried.")
+            Text("Your trial has ended. Pro is required to keep using these tools.")
                 .font(.system(size: 15))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(alignment: .top, spacing: 12) {
-                trialOutcomeCard(
-                    title: "Keep Pro",
-                    subtitle: "One-time — yours forever",
-                    features: expiredTrialProFeatures,
-                    isHighlighted: true
-                )
-
-                trialOutcomeCard(
-                    title: "Continue with Basic",
-                    subtitle: freeTierPrice ?? "$0 forever",
-                    features: Array(freeFeatures.prefix(4)),
-                    isHighlighted: false
-                )
-            }
+            trialOutcomeCard(
+                title: "Keep Pro",
+                subtitle: "One-time — yours forever",
+                features: expiredTrialProFeatures,
+                isHighlighted: true
+            )
             .padding(.horizontal, 20)
+            .frame(maxWidth: 420)
 
             if !licenseService.usesSetappPurchase {
                 Button("Unlock Pro — \(licenseService.displayPriceLabel)") {
@@ -1663,7 +1655,7 @@ public struct WelcomeGateView: View {
 
     private var finalPrimaryButtonLabel: String {
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
-            return "Continue with Basic"
+            return "Buy Pro"
         }
         return WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,

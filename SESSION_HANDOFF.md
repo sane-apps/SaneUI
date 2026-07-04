@@ -1,6 +1,18 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-07-02
+Last updated: 2026-07-04
+
+## 2026-07-04 Direct Trial Hard Paywall
+
+- Updated the shared direct-trial policy: paid SaneApps Mac apps now show the
+  shared `LicenseGateView` after a 14-day trial expires instead of falling back
+  to Basic.
+- `LicenseGateView` now carries the Mr. Sane sustainability message, the
+  aggregate 100K+/0.5% conversion stat, Buy Pro, Donate, Enter License, and
+  Quit actions. Donation stays direct-download only so App Store/Setapp builds
+  do not inherit external support links.
+- SaneBar remains the open-source exception: its sponsor ask stays donation-only
+  and must not gate app use.
 
 ## 2026-07-02 Signed Automation Keychain Bypass
 
@@ -28,7 +40,10 @@ Last updated: 2026-07-02
 
 ## 2026-06-22 14-Day Pro Trial Welcome Gate
 
-- Updated shared `WelcomeGateView` copy/state to match the direct-download relaunch model: users start in Pro Trial, Basic is only the automatic fallback after the trial, and expired trials show "Keep Pro" plus "Continue with Basic" instead of a first-run Basic-vs-Pro choice.
+- Historical note: this originally made Basic the automatic fallback after the
+  trial, with expired trials showing "Keep Pro" plus a Basic continuation path.
+  The July 4 hard-paywall policy supersedes that fallback for paid SaneApps Mac
+  apps.
 - Existing paid Pro users remain outside the trial downgrade path; this is copy/state behavior around trial onboarding and expiration.
 - Visual receipt: `/Users/sj/SaneApps/infra/SaneProcess/outputs/final-review-2026-06-22/visual-audit.md`
 - Verification: focused SaneUI render screenshot pass completed during final review; SaneBar Mini verify later passed after rendering app-local setup screenshots.

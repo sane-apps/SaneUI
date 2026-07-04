@@ -631,9 +631,9 @@ struct SaneLicenseServiceTests {
         #expect(try keychain.string(forKey: "tests.sanehosts.trial.started_at") != nil)
     }
 
-    @Test("Expired Pro trial falls back to Basic")
+    @Test("Expired Pro trial removes Pro access")
     @MainActor
-    func expiredProTrialFallsBackToBasic() throws {
+    func expiredProTrialRemovesProAccess() throws {
         setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
         defer { unsetenv("SANEAPPS_FORCE_LICENSE_CHECK") }
         let suiteName = "tests.saneui.expiredtrial.\(UUID().uuidString)"
@@ -845,6 +845,28 @@ struct SharedLicenseUIPolicyTests {
 
         #expect(source.contains("Text(licenseService.alternateEntryLabel)"))
         #expect(!source.contains("Text(licenseService.alternateUnlockLabel)"))
+    }
+
+    @Test("License gate asks for support after expired direct trial")
+    func licenseGateAsksForSupportAfterExpiredDirectTrial() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Mr. Sane here. I need to share an insane stat with you all."))
+        #expect(source.contains("Across SaneApps Mac apps"))
+        #expect(source.contains("Fewer than 0.5% resulted in a purchase."))
+        #expect(source.contains("\\\"The worker is worthy of his wages.\\\""))
+        #expect(source.contains("1 Timothy 5:18"))
+        #expect(source.contains("github.com/sponsors/MrSaneApps"))
+        #expect(source.contains("!licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase"))
+        #expect(source.contains("return \"Buy Pro\""))
+        #expect(source.contains("Text(\"Donate\")"))
+        #expect(source.contains("Text(\"Enter License\")"))
+        #expect(source.contains("Text(\"Quit\")"))
+        #expect(!source.contains("To continue using \\(licenseService.appName), please purchase a license."))
     }
 
     @Test("Welcome gate uses entry label for direct key flow")
