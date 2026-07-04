@@ -1,4 +1,3 @@
-import SaneUI
 import SwiftUI
 
 public enum SaneSparkleCheckFrequency: String, CaseIterable, Identifiable, Sendable {
@@ -74,10 +73,8 @@ public struct SaneSparkleRow: View {
             self.weeklyTitle = weeklyTitle
         }
 
-        /// Demo/catalog target only — plain literals, no localization catalog
-        /// ownership here (the real .xcstrings entries live in the SaneUI
-        /// target; shipping apps supply their own Labels via app-local copies
-        /// of this component, e.g. SaneClip's UI/Settings/SaneSparkleRow.swift).
+        /// Generic defaults. Shipping apps may supply app-specific localized
+        /// labels when they need product-specific copy.
         public static let `default` = Labels(
             automaticCheckLabel: "Check for updates automatically",
             automaticCheckHelp: "Periodically check for new versions",
