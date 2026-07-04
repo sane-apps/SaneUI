@@ -856,9 +856,11 @@ struct SharedLicenseUIPolicyTests {
         )
 
         #expect(source.contains("Mr. Sane here. I need to share an insane stat with you all."))
-        #expect(source.contains("Across SaneApps Mac apps"))
-        #expect(source.contains("Fewer than 0.5% resulted in a purchase."))
+        #expect(source.contains("Across SaneApps Mac apps: 100,000+ downloads in 180 days."))
+        #expect(source.contains("Fewer than 0.5% led to purchases."))
+        #expect(source.contains("Kind reviews mean a lot, but they can't sustain these apps."))
         #expect(source.contains("\\\"The worker is worthy of his wages.\\\""))
+        #expect(source.contains("Sincerely,"))
         #expect(source.contains("1 Timothy 5:18"))
         #expect(source.contains("github.com/sponsors/MrSaneApps"))
         #expect(source.contains("!licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase"))

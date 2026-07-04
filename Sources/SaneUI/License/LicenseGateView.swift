@@ -74,141 +74,82 @@ public struct LicenseGateView: View {
     // MARK: - Gate View
 
     private var gateView: some View {
-        VStack(spacing: 20) {
-            Spacer(minLength: 12)
+        VStack {
+            Spacer(minLength: 18)
 
+            VStack(spacing: 22) {
+                gateHeader
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 24) {
+                        supportMessage
+                        purchaseActions
+                    }
+
+                    VStack(spacing: 20) {
+                        supportMessage
+                        purchaseActions
+                    }
+                }
+            }
+            .padding(.horizontal, 34)
+            .padding(.vertical, 28)
+            .frame(maxWidth: 760)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.30))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.24), radius: 24, x: 0, y: 12)
+
+            Spacer(minLength: 18)
+        }
+        .padding(32)
+    }
+
+    private var gateHeader: some View {
+        VStack(spacing: 12) {
             Image(systemName: appIcon)
-                .font(.system(size: 56))
+                .font(.system(size: 48))
                 .foregroundStyle(Color.saneAccent)
                 .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
             Text(licenseService.appName)
-                .font(.largeTitle.bold())
+                .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
+        }
+    }
 
-            VStack(spacing: 14) {
-                Text("Mr. Sane here. I need to share an insane stat with you all.")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-
-                Text("Across SaneApps Mac apps, there have been over 100,000 downloads in the last 180 days. Fewer than 0.5% resulted in a purchase.")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.white)
-
-                Text("Despite the many kind reviews and steady downloads, that is not sustainable.")
-                    .font(.body)
-                    .foregroundStyle(.white)
-
-                VStack(spacing: 4) {
-                    Text("\"The worker is worthy of his wages.\"")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .italic()
-
-                    Text("1 Timothy 5:18")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
-                .padding(.vertical, 2)
-
-                Text("If you love what I do and believe in privacy-first Mac apps, here's how you can help.")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.white)
-
-                Text("Sincerely,\nMr. Sane")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.top, 2)
-            }
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 520)
-
-            Spacer(minLength: 4)
-
-            VStack(spacing: 12) {
-                Button {
-                    if licenseService.usesAppStorePurchase {
-                        Task { await licenseService.purchasePro() }
-                    } else if licenseService.usesSetappPurchase {
-                        return
-                    } else if let url = licenseService.checkoutURL {
-                        NSWorkspace.shared.open(url)
-                    }
-                } label: {
-                    if licenseService.isPurchasing {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text(primaryPurchaseLabel)
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                    }
-                }
-                .buttonStyle(SaneActionButtonStyle(prominent: true))
-                .controlSize(.large)
-                .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
-
-                if showsDirectSupportActions {
-                    Button {
-                        NSWorkspace.shared.open(Self.donationURL)
-                    } label: {
-                        Text("Donate")
-                            .foregroundStyle(.white)
-                    }
-                    .buttonStyle(SaneActionButtonStyle())
-                    .controlSize(.small)
-                }
-
+    private var purchaseActions: some View {
+        VStack(spacing: 12) {
+            Button {
                 if licenseService.usesAppStorePurchase {
-                    Button {
-                        Task { await licenseService.restorePurchases() }
-                    } label: {
-                        Text("Restore Purchases")
-                            .foregroundStyle(.white)
-                    }
-                    .buttonStyle(SaneActionButtonStyle())
-                    .controlSize(.small)
-                    .disabled(licenseService.isPurchasing)
+                    Task { await licenseService.purchasePro() }
                 } else if licenseService.usesSetappPurchase {
-                    Text(licenseService.distributionChannel.purchaseManagementMessage)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    return
+                } else if let url = licenseService.checkoutURL {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                if licenseService.isPurchasing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(maxWidth: .infinity)
                 } else {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showKeyEntry = true
-                        }
-                    } label: {
-                        Text("Enter License")
-                            .foregroundStyle(.white)
-                    }
-                    .buttonStyle(SaneActionButtonStyle())
-                    .controlSize(.small)
-                }
-
-                Button {
-                    NSApplication.shared.terminate(nil)
-                } label: {
-                    Text("Quit")
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(SaneActionButtonStyle())
-                .controlSize(.small)
-
-                if let error = licenseService.purchaseError {
-                    Text(error)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(primaryPurchaseLabel)
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                 }
             }
-            .frame(maxWidth: 320)
+            .buttonStyle(SaneActionButtonStyle(prominent: true))
+            .controlSize(.large)
+            .disabled(licenseService.isPurchasing || licenseService.usesSetappPurchase)
+
+            secondaryActions
 
             Text(licenseService.usesSetappPurchase
                  ? "This Setapp build unlocks through Setapp."
@@ -217,10 +158,131 @@ public struct LicenseGateView: View {
                      : "\(licenseService.displayPriceLabel) \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Spacer(minLength: 12)
+            if let error = licenseService.purchaseError {
+                Text(error)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(32)
+        .frame(width: 230)
+    }
+
+    private var supportMessage: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            messageLine("Mr. Sane here. I need to share an insane stat with you all.", weight: .semibold)
+            messageLine("Across SaneApps Mac apps: 100,000+ downloads in 180 days.", weight: .medium)
+            messageLine("Fewer than 0.5% led to purchases.", weight: .medium)
+            messageLine("Kind reviews mean a lot, but they can't sustain these apps.", weight: .regular)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\"The worker is worthy of his wages.\"")
+                    .font(.system(size: 15, weight: .semibold))
+                    .italic()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+
+                Text("1 Timothy 5:18")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .padding(.leading, 12)
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(Color.saneAccent)
+                    .frame(width: 3)
+            }
+
+            messageLine("If you love privacy-first Mac apps, here's how you can help.", weight: .medium)
+
+            VStack(alignment: .leading, spacing: 2) {
+                messageLine("Sincerely,", weight: .medium)
+                messageLine("Mr. Sane", weight: .semibold)
+            }
+        }
+        .foregroundStyle(.white)
+        .lineSpacing(3)
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 430, alignment: .leading)
+    }
+
+    private func messageLine(_ text: String, weight: Font.Weight) -> some View {
+        Text(text)
+            .font(.system(size: 15, weight: weight))
+            .lineLimit(1)
+            .minimumScaleFactor(0.9)
+    }
+
+    @ViewBuilder
+    private var secondaryActions: some View {
+        if licenseService.usesSetappPurchase {
+            Text(licenseService.distributionChannel.purchaseManagementMessage)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if licenseService.usesAppStorePurchase {
+            VStack(spacing: 10) {
+                Button {
+                    Task { await licenseService.restorePurchases() }
+                } label: {
+                    Text("Restore Purchases")
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SaneActionButtonStyle())
+                .controlSize(.small)
+                .disabled(licenseService.isPurchasing)
+
+                quitButton
+            }
+        } else {
+            VStack(spacing: 10) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showKeyEntry = true
+                    }
+                } label: {
+                    Text("Enter License")
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SaneActionButtonStyle())
+                .controlSize(.small)
+
+                HStack(spacing: 10) {
+                    if showsDirectSupportActions {
+                        Button {
+                            NSWorkspace.shared.open(Self.donationURL)
+                        } label: {
+                            Text("Donate")
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(SaneActionButtonStyle())
+                        .controlSize(.small)
+                    }
+
+                    quitButton
+                }
+            }
+        }
+    }
+
+    private var quitButton: some View {
+        Button {
+            NSApplication.shared.terminate(nil)
+        } label: {
+            Text("Quit")
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(SaneActionButtonStyle())
+        .controlSize(.small)
     }
 
     private var showsDirectSupportActions: Bool {
