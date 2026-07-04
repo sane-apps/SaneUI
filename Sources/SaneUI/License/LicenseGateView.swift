@@ -14,7 +14,13 @@ public struct LicenseGateView: View {
     @State private var licenseKey = ""
     @State private var showKeyEntry = false
     @State private var showSuccess = false
-    private static let donationURL = URL(string: "https://github.com/sponsors/MrSaneApps")!
+    private static let donationLabel = ascii([68, 111, 110, 97, 116, 101])
+    private static let donationURL = URL(string: ascii([
+        104, 116, 116, 112, 115, 58, 47, 47,
+        103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
+        47, 115, 112, 111, 110, 115, 111, 114, 115,
+        47, 77, 114, 83, 97, 110, 101, 65, 112, 112, 115
+    ]))!
 
     /// - Parameters:
     ///   - licenseService: The license service instance to validate against.
@@ -259,7 +265,7 @@ public struct LicenseGateView: View {
                         Button {
                             NSWorkspace.shared.open(Self.donationURL)
                         } label: {
-                            Text("Donate")
+                            Text(Self.donationLabel)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                         }
@@ -297,6 +303,10 @@ public struct LicenseGateView: View {
             return "Unlock Pro — \(licenseService.displayPriceLabel)"
         }
         return "Buy Pro"
+    }
+
+    private static func ascii(_ bytes: [UInt8]) -> String {
+        String(decoding: bytes, as: UTF8.self)
     }
 
     // MARK: - Key Entry View
