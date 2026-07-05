@@ -232,10 +232,68 @@ private struct ControlsCatalogView: View {
     }
 }
 
+private enum CatalogSparkleCheckFrequency: String, CaseIterable, Identifiable {
+    case daily
+    case weekly
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .daily: "Daily"
+        case .weekly: "Weekly"
+        }
+    }
+}
+
+private struct CatalogSparkleRow: View {
+    @Binding var automaticallyChecks: Bool
+    @Binding var checkFrequency: CatalogSparkleCheckFrequency
+    @State private var isChecking = false
+
+    var body: some View {
+        CompactToggle(label: "Check for updates automatically", isOn: $automaticallyChecks)
+            .help("Periodically check for new versions")
+
+        CompactDivider()
+
+        CompactRow("Check frequency") {
+            Picker("", selection: $checkFrequency) {
+                ForEach(CatalogSparkleCheckFrequency.allCases) { frequency in
+                    Text(frequency.title).tag(frequency)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 170)
+            .disabled(!automaticallyChecks)
+        }
+        .help("Choose how often automatic update checks run")
+
+        CompactDivider()
+
+        CompactRow("Actions") {
+            Button(isChecking ? "Checking..." : "Check Now") {
+                guard !isChecking else { return }
+                isChecking = true
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1))
+                    isChecking = false
+                }
+            }
+            .buttonStyle(SaneActionButtonStyle())
+            .disabled(isChecking)
+            .help("Check for updates right now")
+        }
+    }
+}
+
 private struct SettingsCatalogView: View {
     @State private var showDockIcon = false
     @State private var automaticallyChecks = true
-    @State private var checkFrequency: SaneSparkleCheckFrequency = .daily
+    @State private var checkFrequency: CatalogSparkleCheckFrequency = .daily
 
     var body: some View {
         CompactSection("Startup", icon: "power", iconColor: .orange) {
@@ -254,10 +312,9 @@ private struct SettingsCatalogView: View {
         }
 
         CompactSection("Software Updates", icon: "arrow.triangle.2.circlepath", iconColor: .saneAccent) {
-            SaneSparkleRow(
+            CatalogSparkleRow(
                 automaticallyChecks: $automaticallyChecks,
-                checkFrequency: $checkFrequency,
-                onCheckNow: {}
+                checkFrequency: $checkFrequency
             )
         }
 

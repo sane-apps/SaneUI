@@ -83,7 +83,7 @@ Last updated: 2026-07-04
 
 - 2026-05-08/09 shared SaneUI hardening is active in the working tree:
   - `SaneApplicationMover` is the shared move-to-Applications implementation for direct-download apps, with copy-then-relaunch behavior, destination verification, user Applications fallback, and loop prevention.
-  - `SaneUpdateEligibility` and `SaneSparkleRow` make update controls unavailable outside `/Applications` or `~/Applications` instead of letting Sparkle fail later.
+  - `SaneUpdateEligibility` makes update controls unavailable outside `/Applications` or `~/Applications` instead of letting Sparkle fail later; Sparkle settings rows stay app-local and channel-gated.
   - `SaneStandardMenu.addCoreUtilityItems` is the shared customer-critical utility menu contract for background apps: Settings, License, Check for Updates, About / Report a Bug, optional What's New, optional app utilities, then Quit.
   - `SaneFeedbackView` supports diagnostics-backed in-app bug reports with media attachments, explicit close/cancel escape paths, and an attachment package for selected media.
   - `SaneLoginItemToggle` centralizes launch-at-login UI.
@@ -110,7 +110,7 @@ Last updated: 2026-07-04
 
 ## Known Follow-Up
 
-- Replace remaining app-local updater/settings clones with the shared catalog-backed SaneUI surfaces.
+- Replace remaining app-local settings clones with shared catalog-backed SaneUI surfaces, but keep Sparkle updater controls app-local for channel hygiene.
 - Adopt shared settings/About/license/update surfaces in SaneVideo and SaneSync where guard scans still flag local implementations.
 - Extend `SaneStandardMenu` coverage from label/order into update item enablement/help/state so menus do not repeat update eligibility logic app-by-app.
 - Add broader SaneProcess source scanning for local `TabView` settings/About/license surfaces and permission API to Info.plist/privacy manifest coverage.

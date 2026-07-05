@@ -1243,6 +1243,32 @@ struct SaneInstallLocationTests {
 // SaneBar will need the same copy when it next bumps its SaneUI pin).
 // Behavioral enum tests moved with the code (SaneClip Tests).
 
+@Test("Shared SaneUI library does not publish Sparkle settings UI symbols")
+func sharedLibraryDoesNotPublishSparkleSettingsSymbols() throws {
+    let sourceRoot = saneUIPackageRootURL().appendingPathComponent("Sources/SaneUI")
+    let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey]
+    guard let enumerator = FileManager.default.enumerator(
+        at: sourceRoot,
+        includingPropertiesForKeys: Array(resourceKeys)
+    ) else {
+        Issue.record("Unable to enumerate \(sourceRoot.path)")
+        return
+    }
+
+    var matches: [String] = []
+    for case let url as URL in enumerator where url.pathExtension == "swift" {
+        let values = try url.resourceValues(forKeys: resourceKeys)
+        guard values.isRegularFile == true else { continue }
+
+        let source = try String(contentsOf: url, encoding: .utf8)
+        if source.contains("SaneSparkleRow") || source.contains("SaneSparkleCheckFrequency") {
+            matches.append(url.path.replacingOccurrences(of: sourceRoot.path + "/", with: ""))
+        }
+    }
+
+    #expect(matches.isEmpty, "Sparkle settings UI must stay app-local, not in SaneUI: \(matches.joined(separator: ", "))")
+}
+
 @Suite("Update Eligibility")
 struct SaneUpdateEligibilityTests {
     @Test("Release bundle in Applications is update eligible")

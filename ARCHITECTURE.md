@@ -8,7 +8,7 @@ SaneUI is a Swift Package that provides the shared source of truth for SaneApps 
 
 - visual primitives: backgrounds, colors, icons
 - shared settings shell: tabs, sections, rows, toggles
-- shared settings surfaces: About, license, updater, feedback, permissions
+- shared settings surfaces: About, license, feedback, permissions
 - shared behavior helpers: standard menus, launch-at-login, app storage, move-to-Applications, update eligibility
 - a standalone visual catalog used to inspect the current design system
 
@@ -35,7 +35,6 @@ SaneUI is a Swift Package that provides the shared source of truth for SaneApps 
 | SaneAboutLicenseCatalog | Shared About/license catalog data | `Sources/SaneUI/Components/SaneAboutLicenseCatalog.swift` |
 | LicenseSettingsView | Shared license surface | `Sources/SaneUI/License/LicenseSettingsView.swift` |
 | KeychainService | Shared license Keychain storage | `Sources/SaneUI/License/KeychainService.swift` |
-| SaneSparkleRow | Shared direct-update surface | `Sources/SaneUI/Components/SaneSparkleRow.swift` |
 | SaneUpdateEligibility | Shared update/move-to-Applications eligibility | `Sources/SaneUI/Components/SaneUpdateEligibility.swift` |
 | SaneApplicationMover | Shared copy-to-Applications flow | `Sources/SaneUI/Components/SaneApplicationMover.swift` |
 | SaneStandardMenu | Shared status-bar/Dock utility menu contract | `Sources/SaneUI/Components/SaneStandardMenu.swift` |
@@ -53,7 +52,7 @@ SaneUI stays mostly view-driven. It has light app-facing state only where shared
 
 - license state via `LicenseService`
 - license key persistence via `KeychainService`
-- updater preferences via `SaneSparkleRow`
+- update/install eligibility via `SaneUpdateEligibility`
 - diagnostics export via `SaneDiagnosticsService`
 - app-owned file locations via `SaneAppStorage`
 - launch-at-login state via `SaneLoginItemToggle`

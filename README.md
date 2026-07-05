@@ -1,6 +1,6 @@
 # SaneUI
 
-A shared SwiftUI design system for SaneApps. This is the source of truth for shared settings, About, license, updater, permissions, launch-at-login, move-to-Applications, standard menus, colors, and button styling.
+A shared SwiftUI design system for SaneApps. This is the source of truth for shared settings, About, license, permissions, launch-at-login, move-to-Applications, standard menus, colors, and button styling.
 
 ## Features
 
@@ -8,7 +8,7 @@ A shared SwiftUI design system for SaneApps. This is the source of truth for sha
 - Semantic color system with adaptive tokens
 - Shared SF Symbol constants
 - Shared settings shell (`SaneSettingsContainer`, `CompactSection`, `CompactRow`)
-- Shared settings surfaces (`SaneAboutView`, `LicenseSettingsView`, `SaneSparkleRow`)
+- Shared settings surfaces (`SaneAboutView`, `LicenseSettingsView`)
 - Shared standard menus (`SaneStandardMenu`) for status-bar and Dock utility actions
 - Shared direct-download install/update helpers (`SaneApplicationMover`, `SaneUpdateEligibility`)
 - Shared launch-at-login and app storage helpers (`SaneLoginItemToggle`, `SaneAppStorage`)
@@ -142,7 +142,7 @@ Image(systemName: SaneIcons.settings)   // gear
 - Helper, highlight, badge, status, and subsection text also must be at least `13pt` with strong contrast.
 - Settings and right-click menu items should be ordered from the customer's most likely/common need to the least likely/most advanced need.
 - Settings sections should use plain language, balanced spacing, and visual symmetry.
-- App repos should extend SaneUI instead of redefining `SaneSparkleRow`, update eligibility, move-to-Applications, settings chrome, standard menus, About panes, permission guidance, or license panes locally.
+- App repos should extend SaneUI instead of redefining update eligibility, move-to-Applications, settings chrome, standard menus, About panes, permission guidance, or license panes locally. Direct-channel Sparkle settings rows stay app-local and channel-gated.
 - Bug reporting in shared settings surfaces should route through GitHub-backed diagnostics, not `mailto:` links.
 - Status-bar and Dock menus should use `SaneStandardMenu.addCoreUtilityItems` so Settings, License, Check for Updates, About / Report a Bug, optional What's New, and Quit stay in a consistent order.
 

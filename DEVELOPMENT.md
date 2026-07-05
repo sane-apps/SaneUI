@@ -117,7 +117,7 @@ SaneUI/
 ## Adding a New Component
 
 1. Extend the existing shared surface if one already exists.
-2. If the component is shared settings/About/license/updater UI, update the catalog too.
+2. If the component is shared settings/About/license UI, update the catalog too.
 3. Add focused tests in `Tests/SaneUITests/`.
 4. Run `swift test`.
 5. Verify at least one consuming app if the change alters shared behavior.
@@ -126,7 +126,7 @@ Shared surfaces that should stay centralized:
 
 - settings shell and rows: `SaneSettingsContainer`, `CompactSection`, `CompactRow`
 - customer utility menus: `SaneStandardMenu.addCoreUtilityItems`
-- update/install recovery: `SaneSparkleRow`, `SaneUpdateEligibility`, `SaneApplicationMover`
+- update/install recovery: `SaneUpdateEligibility`, `SaneApplicationMover`
 - support surfaces: `SaneAboutView`, `SaneFeedbackView`, `SaneAboutLicenseCatalog`
 - permissions and startup controls: `SanePermissionGuidanceView`, `SaneLoginItemToggle`
 - storage and license persistence: `SaneAppStorage`, `KeychainService`
@@ -140,6 +140,7 @@ Diagnostics copied into GitHub issue bodies must pass through `SaneDiagnosticRep
 Shared About/license/update UI is reused by direct, App Store, and Setapp builds. Before adding links or copy here, check the consuming channel:
 
 - App Store builds must not expose GitHub Sponsors, crypto donation, external purchase, Sparkle update, or direct license-key unlock paths.
+- Sparkle settings UI must stay app-local and channel-gated; SaneUI may expose update/install eligibility helpers, but not `SaneSparkleRow`-style controls.
 - Direct-download builds may show direct purchase/update surfaces when the app config explicitly enables them.
 - Review shared About/license changes in `Sources/SaneUICatalog/SaneUICatalogApp.swift` and rerun the consuming app's `SaneMaster.rb appstore_preflight` before App Store submission.
 
