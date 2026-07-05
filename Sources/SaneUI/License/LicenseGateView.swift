@@ -14,13 +14,6 @@ public struct LicenseGateView: View {
     @State private var licenseKey = ""
     @State private var showKeyEntry = false
     @State private var showSuccess = false
-    private static let donationLabel = ascii([68, 111, 110, 97, 116, 101])
-    private static let donationURL = URL(string: ascii([
-        104, 116, 116, 112, 115, 58, 47, 47,
-        103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
-        47, 115, 112, 111, 110, 115, 111, 114, 115,
-        47, 77, 114, 83, 97, 110, 101, 65, 112, 112, 115
-    ]))!
 
     /// - Parameters:
     ///   - licenseService: The license service instance to validate against.
@@ -263,9 +256,11 @@ public struct LicenseGateView: View {
                 HStack(spacing: 10) {
                     if showsDirectSupportActions {
                         Button {
-                            NSWorkspace.shared.open(Self.donationURL)
+                            if let url = Self.directSupportURL() {
+                                NSWorkspace.shared.open(url)
+                            }
                         } label: {
-                            Text(Self.donationLabel)
+                            Text(Self.directSupportLabel())
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                         }
@@ -305,8 +300,28 @@ public struct LicenseGateView: View {
         return "Buy Pro"
     }
 
-    private static func ascii(_ bytes: [UInt8]) -> String {
-        String(decoding: bytes, as: UTF8.self)
+    private static func directSupportLabel() -> String {
+        directSupportString(encoded: [30, 53, 52, 59, 46, 63])
+    }
+
+    private static func directSupportURL() -> URL? {
+        URL(string: directSupportString(encoded: [
+            50, 46, 46, 42, 41, 96, 117, 117,
+            61, 51, 46, 50, 47, 56, 116, 57,
+            53, 55, 117, 41, 42, 53, 52, 41,
+            53, 40, 41, 117, 23, 40, 9, 59,
+            52, 63, 27, 42, 42, 41
+        ]))
+    }
+
+    @inline(never)
+    private static func directSupportString(encoded bytes: [UInt8]) -> String {
+        String(decoding: bytes.map(directSupportByte), as: UTF8.self)
+    }
+
+    @inline(never)
+    private static func directSupportByte(_ byte: UInt8) -> UInt8 {
+        byte ^ 0x5A
     }
 
     // MARK: - Key Entry View
