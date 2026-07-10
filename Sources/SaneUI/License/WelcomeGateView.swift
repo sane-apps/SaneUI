@@ -361,6 +361,7 @@ public struct WelcomeGateView: View {
     }
 
     let appName: String
+    /// SF Symbol on iOS, or an asset-catalog image name on macOS.
     let appIcon: String
     let freeFeatures: [(icon: String, text: String)]
     let proFeatures: [(icon: String, text: String)]
@@ -698,7 +699,12 @@ public struct WelcomeGateView: View {
     private var welcomePage: some View {
         VStack(spacing: 20) {
             #if os(macOS)
-                if let nsIcon = NSApp.applicationIconImage {
+                if let bundledIcon = NSImage(named: NSImage.Name(appIcon)) {
+                    Image(nsImage: bundledIcon)
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
+                } else if let nsIcon = NSApp.applicationIconImage {
                     Image(nsImage: nsIcon)
                         .resizable()
                         .frame(width: 80, height: 80)
@@ -1094,7 +1100,7 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 26, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("Turn on only the access \(appName) needs for capture and fast paste workflows.")
+            Text("Turn on only the access \(appName) needs for its optional workflows.")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
