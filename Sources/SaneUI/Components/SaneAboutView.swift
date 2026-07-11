@@ -19,6 +19,16 @@ import SwiftUI
 /// )
 /// ```
 public struct SaneAboutView: View {
+    public struct ActionLink: Sendable {
+        public let title: String
+        public let url: URL
+
+        public init(title: String, url: URL) {
+            self.title = title
+            self.url = url
+        }
+    }
+
     public struct Labels: Sendable {
         public let githubButtonTitle: String
         public let licensesButtonTitle: String
@@ -78,6 +88,8 @@ public struct SaneAboutView: View {
     private let diagnosticsService: SaneDiagnosticsService?
     private let licenses: [LicenseEntry]
     private let feedbackExtraAttachments: [(icon: String, label: String)]
+    private let primaryAction: ActionLink?
+    private let supportAction: ActionLink?
     private let labels: Labels
     private let versionLineText: String?
     private let identitySymbolName: String?
@@ -120,6 +132,8 @@ public struct SaneAboutView: View {
         diagnosticsService: SaneDiagnosticsService? = nil,
         licenses: [LicenseEntry] = [],
         feedbackExtraAttachments: [(icon: String, label: String)] = [],
+        primaryAction: ActionLink? = nil,
+        supportAction: ActionLink? = nil,
         labels: Labels = .default,
         versionLineText: String? = nil,
         identitySymbolName: String? = nil,
@@ -130,6 +144,8 @@ public struct SaneAboutView: View {
         self.diagnosticsService = diagnosticsService
         self.licenses = licenses
         self.feedbackExtraAttachments = feedbackExtraAttachments
+        self.primaryAction = primaryAction
+        self.supportAction = supportAction
         self.labels = labels
         self.versionLineText = versionLineText
         self.identitySymbolName = identitySymbolName
@@ -175,8 +191,8 @@ public struct SaneAboutView: View {
                     ],
                     spacing: 10
                 ) {
-                    aboutActionButton(title: labels.githubButtonTitle, icon: "link") {
-                        openURL(SaneAboutViewPolicy.repositoryURL(githubRepo: githubRepo))
+                    aboutActionButton(title: primaryAction?.title ?? labels.githubButtonTitle, icon: "link") {
+                        openURL(primaryAction?.url ?? SaneAboutViewPolicy.repositoryURL(githubRepo: githubRepo))
                     }
 
                     if !licenses.isEmpty {
@@ -189,8 +205,8 @@ public struct SaneAboutView: View {
                         openBugReporter()
                     }
 
-                    aboutActionButton(title: labels.viewIssuesButtonTitle, icon: "arrow.up.right.square") {
-                        openURL(SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
+                    aboutActionButton(title: supportAction?.title ?? labels.viewIssuesButtonTitle, icon: "arrow.up.right.square") {
+                        openURL(supportAction?.url ?? SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
                     }
                 }
                 .frame(maxWidth: 420)
@@ -278,7 +294,7 @@ public struct SaneAboutView: View {
             return
         }
 
-        openURL(SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
+        openURL(supportAction?.url ?? SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
     }
 
     private func openURL(_ url: URL?) {

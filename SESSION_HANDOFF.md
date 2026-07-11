@@ -136,3 +136,9 @@ Last updated: 2026-07-04
 - The shared `SaneSettingsContainer` no longer uses `NavigationSplitView` in native `Settings {}` hosts. It now uses a deterministic scrollable button sidebar and explicit detail pane so the compositor paints the visible controls reliably.
 - Selection bindings, selected accessibility traits, SaneUI chrome, and the shared settings-window paste behavior remain covered.
 - Verification: full Mini `swift test` passed 119 tests across 27 suites; `git diff --check` passed. SaneVideo must pin the resulting SaneUI revision and repeat screenshot QA before release.
+
+## 2026-07-10 Public About Destinations
+
+- `SaneAboutView` now accepts optional typed primary/support action links so apps with private repositories can route customers to working public destinations without cloning shared About UI.
+- SaneVideo uses this to label and route the actions to its public Website and Support pages while retaining the diagnostics-backed in-app bug reporter and shared license surface.
+- Verification: full Mini `swift test` passed 120 tests across 27 suites; `git diff --check` passed.

@@ -1880,6 +1880,15 @@ struct SaneAboutViewPolicyTests {
     func issuesURLUsesIssuesRoute() {
         #expect(SaneAboutViewPolicy.issuesURL(githubRepo: "SaneUI")?.absoluteString == "https://github.com/sane-apps/SaneUI/issues")
     }
+
+    @Test("About action links preserve their public destination")
+    func aboutActionLinkPreservesDestination() throws {
+        let destination = try #require(URL(string: "https://sanevideo.com/support"))
+        let link = SaneAboutView.ActionLink(title: "Support", url: destination)
+
+        #expect(link.title == "Support")
+        #expect(link.url == destination)
+    }
 }
 
 @Suite("Feedback Copy")
