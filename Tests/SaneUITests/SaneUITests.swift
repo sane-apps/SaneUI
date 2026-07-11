@@ -55,8 +55,8 @@ func saneVideoOnboardingUsesCreatorSizedCanvas() {
     let defaultSize = WelcomeGateLayoutPolicy.frameSize(appSlug: "saneclick")
     let clipSize = WelcomeGateLayoutPolicy.frameSize(appSlug: "saneclip")
 
-    #expect(videoSize.width >= 780)
-    #expect(videoSize.height >= 640)
+    #expect(videoSize.width >= 800)
+    #expect(videoSize.height >= 700)
     #expect(videoSize.width > defaultSize.width)
     #expect(videoSize.height > defaultSize.height)
     #expect(defaultSize == CGSize(width: 700, height: 520))

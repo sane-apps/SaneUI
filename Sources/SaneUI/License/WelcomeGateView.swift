@@ -54,7 +54,7 @@ enum WelcomeGateLayoutPolicy {
         case "saneclip":
             CGSize(width: 700, height: 620)
         case "sanevideo":
-            CGSize(width: 780, height: 640)
+            CGSize(width: 800, height: 700)
         default:
             CGSize(width: 700, height: 520)
         }
@@ -1164,7 +1164,8 @@ public struct WelcomeGateView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 8)
             }
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1184,8 +1185,8 @@ public struct WelcomeGateView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text(grantedMessage)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.green)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, 2)
@@ -1206,7 +1207,7 @@ public struct WelcomeGateView: View {
 
                 if let actionHint = section.actionHint {
                     Text(actionHint)
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                 }
