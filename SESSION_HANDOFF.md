@@ -115,3 +115,9 @@ Last updated: 2026-07-04
 - Extend `SaneStandardMenu` coverage from label/order into update item enablement/help/state so menus do not repeat update eligibility logic app-by-app.
 - Add broader SaneProcess source scanning for local `TabView` settings/About/license surfaces and permission API to Info.plist/privacy manifest coverage.
 - Keep the catalog current whenever shared settings/About/license/update/permissions layout changes.
+## 2026-07-10 Native Settings Rendering Fix
+
+- Real SaneVideo runtime screenshots on macOS 26 showed a blank Settings window even though the accessibility tree contained every sidebar row and detail control.
+- The shared `SaneSettingsContainer` no longer uses `NavigationSplitView` in native `Settings {}` hosts. It now uses a deterministic scrollable button sidebar and explicit detail pane so the compositor paints the visible controls reliably.
+- Selection bindings, selected accessibility traits, SaneUI chrome, and the shared settings-window paste behavior remain covered.
+- Verification: full Mini `swift test` passed 119 tests across 27 suites; `git diff --check` passed. SaneVideo must pin the resulting SaneUI revision and repeat screenshot QA before release.

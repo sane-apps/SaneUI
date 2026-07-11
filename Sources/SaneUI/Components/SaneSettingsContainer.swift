@@ -102,17 +102,15 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     }
 
     public var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             sidebar
-        } detail: {
-            ZStack {
-                SaneGradientBackground(style: .panel)
-
-                detail(selection.wrappedValue ?? defaultTab)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(width: 1)
+            detail(selection.wrappedValue ?? defaultTab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(SaneGradientBackground(style: .panel))
         }
-        .navigationSplitViewStyle(.balanced)
         .groupBoxStyle(GlassGroupBoxStyle())
         .tint(SanePanelChrome.accentStart)
         .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
@@ -131,30 +129,45 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     }
 
     private var sidebar: some View {
-        List(Array(Tab.allCases), id: \.id, selection: selection) { tab in
-            NavigationLink(value: tab) {
-                Label {
-                    Text(tab.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                } icon: {
-                    Image(systemName: tab.icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(tab.iconColor)
-                        .frame(width: 20)
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: 3) {
+                ForEach(Array(Tab.allCases), id: \.id) { tab in
+                    Button {
+                        selection.wrappedValue = tab
+                    } label: {
+                        Label {
+                            Text(tab.title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                        } icon: {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(tab.iconColor)
+                                .frame(width: 20)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.34) : .clear)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .saneHelp(tab.title)
+                    .accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])
                 }
             }
-            .saneHelp(tab.title)
+            .padding(8)
         }
-        .listStyle(.sidebar)
-        .scrollIndicators(.never)
-        .scrollContentBackground(.hidden)
-        .navigationSplitViewColumnWidth(
-            min: SaneSettingsWindowMetrics.sidebarMinWidth,
-            ideal: SaneSettingsWindowMetrics.sidebarIdealWidth,
-            max: SaneSettingsWindowMetrics.sidebarMaxWidth
+        .frame(
+            minWidth: SaneSettingsWindowMetrics.sidebarMinWidth,
+            idealWidth: SaneSettingsWindowMetrics.sidebarIdealWidth,
+            maxWidth: SaneSettingsWindowMetrics.sidebarMaxWidth,
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
         .background(
             ZStack {

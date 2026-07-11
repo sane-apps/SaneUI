@@ -372,19 +372,20 @@ struct ReadableHelpStandardTests {
 
     @Suite("Settings Container")
     struct SettingsContainerTests {
-        @Test("Settings sidebar uses native List selection")
-        func settingsSidebarUsesNativeListSelection() throws {
+        @Test("Settings sidebar uses deterministic button selection")
+        func settingsSidebarUsesDeterministicButtonSelection() throws {
             let source = try String(
                 contentsOf: saneUIPackageRootURL()
                     .appendingPathComponent("Sources/SaneUI/Components/SaneSettingsContainer.swift"),
                 encoding: .utf8
             )
 
-            #expect(source.contains("NavigationSplitView"))
-            #expect(source.contains("List(Array(Tab.allCases), id: \\.id, selection: selection)"))
-            #expect(source.contains("NavigationLink(value: tab)"))
-            #expect(source.contains(".listStyle(.sidebar)"))
-            #expect(source.contains(".navigationSplitViewColumnWidth"))
+            #expect(source.contains("HStack(spacing: 0)"))
+            #expect(source.contains("ScrollView(.vertical, showsIndicators: false)"))
+            #expect(source.contains("Button {\n                        selection.wrappedValue = tab"))
+            #expect(source.contains(".accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])"))
+            #expect(source.contains(".background(SaneGradientBackground(style: .panel))"))
+            #expect(!source.contains("NavigationSplitView"))
             #expect(source.contains("public final class SaneSettingsWindow: NSWindow"))
             #expect(source.contains("override public func performKeyEquivalent(with event: NSEvent)"))
             #expect(source.contains("forwardPasteToFirstResponder()"))
