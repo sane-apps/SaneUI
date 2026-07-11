@@ -5,6 +5,49 @@ import SwiftUI
     import UIKit
 #endif
 
+enum WelcomeGateCopy {
+    static func coreSubtitle(appSlug: String) -> String {
+        switch appSlug {
+        case "sanehosts":
+            "One-click protection: choose level, activate, done"
+        case "sanevideo":
+            "Record, polish, and export in one local workflow"
+        default:
+            "Capture, find, and paste in seconds"
+        }
+    }
+
+    static func proLead(appSlug: String) -> String {
+        switch appSlug {
+        case "sanehosts":
+            "Advanced features for power users who need deeper control."
+        case "sanevideo":
+            "Keep the complete local creator workflow after your trial."
+        default:
+            "Set once, then copy/paste stays clean and consistent."
+        }
+    }
+
+    static func proTitle(appSlug: String) -> String {
+        switch appSlug {
+        case "sanehosts": "Advanced Features"
+        case "sanevideo": "Creator Tools"
+        default: "Power Features"
+        }
+    }
+
+    static func proSubtitle(appSlug: String) -> String {
+        switch appSlug {
+        case "sanehosts":
+            "Profiles, presets, merge, import, and bulk tools"
+        case "sanevideo":
+            "Captions, templates, smart polish, and flexible export"
+        default:
+            "Automation, privacy, and control"
+        }
+    }
+}
+
 // Onboarding palette and controls aligned with SaneBar.
 private let cardBg = Color(red: 0.08, green: 0.10, blue: 0.18)
 private let saneAccentDeep = Color.saneAccentDeep
@@ -670,34 +713,19 @@ public struct WelcomeGateView: View {
     }
 
     private var coreCardSubtitle: String {
-        switch appSlug {
-        case "sanehosts":
-            return "One-click protection: choose level, activate, done"
-        default:
-            return "Capture, find, and paste in seconds"
-        }
+        WelcomeGateCopy.coreSubtitle(appSlug: appSlug)
     }
 
     private var proLeadText: String {
-        switch appSlug {
-        case "sanehosts":
-            return "Advanced features for power users who need deeper control."
-        default:
-            return "Set once, then copy/paste stays clean and consistent."
-        }
+        WelcomeGateCopy.proLead(appSlug: appSlug)
     }
 
     private var proCardTitle: String {
-        appSlug == "sanehosts" ? "Advanced Features" : "Power Features"
+        WelcomeGateCopy.proTitle(appSlug: appSlug)
     }
 
     private var proCardSubtitle: String {
-        switch appSlug {
-        case "sanehosts":
-            return "Profiles, presets, merge, import, and bulk tools"
-        default:
-            return "Automation, privacy, and control"
-        }
+        WelcomeGateCopy.proSubtitle(appSlug: appSlug)
     }
 
     private var welcomePage: some View {

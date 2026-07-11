@@ -39,6 +39,16 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
     }
 }
 
+@Test("SaneVideo onboarding copy describes video creation instead of clipboard behavior")
+func saneVideoOnboardingCopyUsesVideoSemantics() {
+    #expect(WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo") == "Record, polish, and export in one local workflow")
+    #expect(WelcomeGateCopy.proLead(appSlug: "sanevideo") == "Keep the complete local creator workflow after your trial.")
+    #expect(WelcomeGateCopy.proTitle(appSlug: "sanevideo") == "Creator Tools")
+    #expect(WelcomeGateCopy.proSubtitle(appSlug: "sanevideo") == "Captions, templates, smart polish, and flexible export")
+    #expect(!WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo").contains("paste"))
+    #expect(!WelcomeGateCopy.proLead(appSlug: "sanevideo").contains("copy"))
+}
+
 @Test("CompactToggle uses a labeled switch row so the whole setting is clickable")
 func compactToggleUsesLabeledSwitchRow() throws {
     let source = try String(
@@ -64,7 +74,6 @@ func compactToggleUsesLabeledSwitchRow() throws {
         @objc func action() {}
     }
 
-    @Suite("Standard Menu Contract")
     @MainActor
     struct StandardMenuContractTests {
         @Test("Core utility items keep customer-critical actions in one shared order")
@@ -99,7 +108,7 @@ func compactToggleUsesLabeledSwitchRow() throws {
                 "Check for Updates...",
                 "About / Report a Bug...",
                 "Restart Finder",
-                "Quit SaneClick"
+                "Quit SaneClick",
             ])
             #expect(menu.item(withTitle: "Check for Updates...")?.isEnabled == false)
             #expect(SaneStandardMenu.coreUtilityOrder == [
@@ -107,7 +116,7 @@ func compactToggleUsesLabeledSwitchRow() throws {
                 "License...",
                 "Check for Updates...",
                 "About / Report a Bug...",
-                "What's New..."
+                "What's New...",
             ])
         }
 
@@ -131,7 +140,6 @@ func compactToggleUsesLabeledSwitchRow() throws {
     }
 #endif
 
-@Suite("Runtime Environment Policy")
 struct RuntimeEnvironmentPolicyTests {
     @Test("Normal app launch is not treated as a test run")
     func normalAppLaunch() {
@@ -191,7 +199,7 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(KeychainService.shouldBypassKeychain(
             environment: [
                 "SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1",
-                "SANEAPPS_DISABLE_KEYCHAIN": "1"
+                "SANEAPPS_DISABLE_KEYCHAIN": "1",
             ],
             arguments: [],
             isDebugBuild: true
@@ -232,7 +240,6 @@ struct RuntimeEnvironmentPolicyTests {
     }
 }
 
-@Suite("Settings Localization")
 struct SettingsLocalizationTests {
     private enum DemoSettingsTab: String, SaneSettingsTab {
         case general = "General"
@@ -283,7 +290,6 @@ struct SettingsLocalizationTests {
     }
 }
 
-@Suite("Readable Help Standard")
 struct ReadableHelpStandardTests {
     @Test("SaneUI exposes native hover help with matching accessibility hint")
     func saneHelpUsesAppleNativeHelp() throws {
@@ -328,7 +334,6 @@ struct ReadableHelpStandardTests {
 }
 
 #if canImport(AppKit)
-    @Suite("Permission Guidance")
     struct PermissionGuidanceTests {
         @Test("System Settings destinations use Apple preference URLs")
         func systemSettingsDestinationsUsePreferenceURLs() {
@@ -353,7 +358,6 @@ struct ReadableHelpStandardTests {
         }
     }
 
-    @Suite("App Storage")
     struct AppStorageTests {
         @Test("Shared storage helper keeps app internals out of Documents")
         func sharedStorageHelperAvoidsDocuments() throws {
@@ -370,7 +374,6 @@ struct ReadableHelpStandardTests {
         }
     }
 
-    @Suite("Settings Container")
     struct SettingsContainerTests {
         @Test("Settings sidebar uses deterministic button selection")
         func settingsSidebarUsesDeterministicButtonSelection() throws {
@@ -401,7 +404,6 @@ struct ReadableHelpStandardTests {
         }
     }
 
-    @Suite("About License Catalog")
     struct AboutLicenseCatalogTests {
         @Test("Common license entries are centralized")
         func commonLicenseEntriesAreCentralized() {
@@ -412,7 +414,6 @@ struct ReadableHelpStandardTests {
     }
 #endif
 
-@Suite("Welcome Gate Flow Policy")
 struct WelcomeGateFlowPolicyTests {
     @Test("Welcome gate accepts tier copy overrides")
     @MainActor
@@ -582,7 +583,6 @@ struct WelcomeGateFlowPolicyTests {
     }
 }
 
-@Suite("License Service")
 struct SaneLicenseServiceTests {
     @Test("Direct defaults use simple access labels")
     @MainActor
@@ -816,7 +816,6 @@ struct SaneLicenseServiceTests {
     }
 }
 
-@Suite("Shared License UI Policy")
 struct SharedLicenseUIPolicyTests {
     @Test("Shared upsell uses entry label for direct key path")
     func sharedUpsellUsesEntryLabelForDirectKeyPath() throws {
@@ -1008,7 +1007,6 @@ struct SharedLicenseUIPolicyTests {
 }
 
 #if canImport(AppKit)
-    @Suite("Settings Icon Semantics")
     struct SaneSettingsIconSemanticTests {
         @Test("Shared settings semantics keep stable colors")
         func sharedSettingsSemanticsKeepStableColors() {
@@ -1029,7 +1027,7 @@ struct SharedLicenseUIPolicyTests {
                 hex(SaneSettingsIconSemantic.general.color),
                 hex(SaneSettingsIconSemantic.shortcuts.color),
                 hex(SaneSettingsIconSemantic.license.color),
-                hex(SaneSettingsIconSemantic.about.color)
+                hex(SaneSettingsIconSemantic.about.color),
             ]
 
             #expect(Set(coreHexes).count == coreHexes.count)
@@ -1053,7 +1051,6 @@ struct SharedLicenseUIPolicyTests {
     }
 #endif
 
-@Suite("Event Tracker")
 struct SaneEventTrackerTests {
     @Test("Telemetry payload includes version, channel, tier, and update target")
     func telemetryPayloadIncludesDimensions() {
@@ -1123,7 +1120,6 @@ struct SaneEventTrackerTests {
     }
 }
 
-@Suite("Install Location")
 struct SaneInstallLocationTests {
     @Test("Treats /Applications as installed")
     func systemApplicationsPathIsInstalled() {
@@ -1156,7 +1152,7 @@ struct SaneInstallLocationTests {
 
         #expect(candidates.map(\.url.path) == [
             "/Applications/SaneBar.app",
-            "/Users/tester/Applications/SaneBar.app"
+            "/Users/tester/Applications/SaneBar.app",
         ])
     }
 
@@ -1277,7 +1273,6 @@ func sharedLibraryDoesNotPublishSparkleSettingsSymbols() throws {
     #expect(matches.isEmpty, "Sparkle settings UI must stay app-local, not in SaneUI: \(matches.joined(separator: ", "))")
 }
 
-@Suite("Update Eligibility")
 struct SaneUpdateEligibilityTests {
     @Test("Release bundle in Applications is update eligible")
     func releaseBundleInApplicationsIsEligible() {
@@ -1324,7 +1319,6 @@ struct SaneUpdateEligibilityTests {
     }
 }
 
-@Suite("Background App Defaults")
 struct SaneBackgroundAppDefaultsTests {
     @Test("Background apps default to hidden Dock icon and consented login prompt")
     func defaultPolicyValues() {
@@ -1481,7 +1475,6 @@ struct SaneBackgroundAppDefaultsTests {
     }
 }
 
-@Suite("License Validation Errors")
 struct LicenseValidationErrorTests {
     @Test("Cloudflare challenge is treated as server failure")
     @MainActor
@@ -1525,7 +1518,6 @@ struct LicenseValidationErrorTests {
     }
 }
 
-@Suite("Diagnostics Reporting")
 struct DiagnosticsReportingTests {
     @Test("Markdown includes environment and settings summary")
     func markdownIncludesEnvironmentAndSettings() {
@@ -1536,7 +1528,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok")
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok"),
             ],
             settingsSummary: "showDockIcon: false",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1559,7 +1551,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com")
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com"),
             ],
             settingsSummary: "exportPath: /Users/alex/Projects/PrivateClient\napiKey: sk_test_12345678901234567890",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1642,7 +1634,6 @@ struct DiagnosticsReportingTests {
     }
 }
 
-@Suite("Purchase Backend Inference")
 struct PurchaseBackendInferenceTests {
     @Test("Bundle without AppStoreProductID stays direct")
     @MainActor
@@ -1658,7 +1649,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "SUFeedURL": "https://example.com/appcast.xml"
+            "SUFeedURL": "https://example.com/appcast.xml",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1702,7 +1693,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
-            "AppStoreProductID": "com.saneapps.direct.pro"
+            "AppStoreProductID": "com.saneapps.direct.pro",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1745,7 +1736,7 @@ struct PurchaseBackendInferenceTests {
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
             "AppStoreProductID": "com.saneapps.direct.pro",
-            "SaneDistributionChannel": "direct"
+            "SaneDistributionChannel": "direct",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1787,7 +1778,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.appstorebundle",
-            "AppStoreProductID": "com.saneapps.sales.pro"
+            "AppStoreProductID": "com.saneapps.sales.pro",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1816,7 +1807,6 @@ struct PurchaseBackendInferenceTests {
     }
 }
 
-@Suite("About View Policy")
 struct SaneAboutViewPolicyTests {
     @Test("App Store builds hide support section")
     func appStoreBuildHidesSupportSection() {
@@ -1851,7 +1841,7 @@ struct SaneAboutViewPolicyTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "CFBundleShortVersionString": "9.9.9"
+            "CFBundleShortVersionString": "9.9.9",
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1891,7 +1881,6 @@ struct SaneAboutViewPolicyTests {
     }
 }
 
-@Suite("Feedback Copy")
 struct SaneFeedbackCopyTests {
     @Test("Privacy line matches shared standard")
     func privacyLineMatchesSharedStandard() {
@@ -1939,7 +1928,6 @@ struct SaneFeedbackCopyTests {
     }
 }
 
-@Suite("License Settings Layout")
 struct LicenseSettingsLayoutTests {
     @Test("Panel actions use adaptive fitted labels")
     func panelActionsUseAdaptiveFittedLabels() throws {
@@ -1961,7 +1949,6 @@ struct LicenseSettingsLayoutTests {
     }
 }
 
-@Suite("Distribution Channel Policy")
 struct SaneDistributionChannelTests {
     @Test("Direct channel keeps support and in-app updates")
     func directPolicy() {
@@ -1991,7 +1978,6 @@ struct SaneDistributionChannelTests {
     }
 
     @MainActor
-    @Suite("Standard Menu Policy")
     struct SaneStandardMenuPolicyTests {
         @Test("Settings item uses the shared title and command shortcut")
         func settingsItemUsesSharedTitleAndShortcut() {
@@ -2065,7 +2051,6 @@ struct SaneDistributionChannelTests {
     }
 #endif
 
-@Suite("Shared Gradient Background")
 struct SaneGradientBackgroundTests {
     @Test("Panel gradient stays calmer than standard")
     func panelGradientUsesLowerOpacity() {
