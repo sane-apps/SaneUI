@@ -90,7 +90,7 @@ public struct WelcomeGatePermissionConfig {
             refreshGranted: refreshGranted,
             action: action
         )
-        self.sections = [section]
+        sections = [section]
         self.bullets = bullets
         self.grantedMessage = grantedMessage
         self.actionLabel = actionLabel
@@ -104,13 +104,13 @@ public struct WelcomeGatePermissionConfig {
         self.title = title
         self.sections = sections
         let first = sections.first ?? Section(title: title, bullets: [])
-        self.bullets = first.bullets
-        self.grantedMessage = first.grantedMessage
-        self.actionLabel = first.actionLabel
-        self.actionHint = first.actionHint
-        self.initiallyGranted = sections.allSatisfy(\.initiallyGranted)
-        self.refreshGranted = nil
-        self.action = first.action
+        bullets = first.bullets
+        grantedMessage = first.grantedMessage
+        actionLabel = first.actionLabel
+        actionHint = first.actionHint
+        initiallyGranted = sections.allSatisfy(\.initiallyGranted)
+        refreshGranted = nil
+        action = first.action
     }
 }
 
@@ -249,7 +249,9 @@ public struct WelcomeGateView: View {
         let accent: Color
         let url: URL
 
-        var id: String { name }
+        var id: String {
+            name
+        }
     }
 
     private struct CompanionAppCard: View {
@@ -270,7 +272,7 @@ public struct WelcomeGateView: View {
                                     .stroke(Color.white.opacity(0.24), lineWidth: 1)
                             )
                             .shadow(color: Color.black.opacity(0.18), radius: 3, x: 0, y: 2)
-                        .frame(width: 38, height: 38)
+                            .frame(width: 38, height: 38)
 
                         Spacer(minLength: 0)
 
@@ -299,7 +301,7 @@ public struct WelcomeGateView: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     .padding(.top, 1)
@@ -312,7 +314,7 @@ public struct WelcomeGateView: View {
                             LinearGradient(
                                 colors: [
                                     Color.white.opacity(isHovered ? 0.13 : 0.09),
-                                    app.accent.opacity(isHovered ? 0.18 : 0.10)
+                                    app.accent.opacity(isHovered ? 0.18 : 0.10),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -339,7 +341,8 @@ public struct WelcomeGateView: View {
         var body: some View {
             #if canImport(AppKit)
                 if let url = Bundle.module.url(forResource: resourceName, withExtension: "png"),
-                   let image = NSImage(contentsOf: url) {
+                   let image = NSImage(contentsOf: url)
+                {
                     Image(nsImage: image)
                         .resizable()
                 } else {
@@ -348,7 +351,8 @@ public struct WelcomeGateView: View {
             #elseif canImport(UIKit)
                 if let url = Bundle.module.url(forResource: resourceName, withExtension: "png"),
                    let data = try? Data(contentsOf: url),
-                   let image = UIImage(data: data) {
+                   let image = UIImage(data: data)
+                {
                     Image(uiImage: image)
                         .resizable()
                 } else {
@@ -432,7 +436,7 @@ public struct WelcomeGateView: View {
             bullets: [
                 ("video.slash.fill", "No screen recording."),
                 ("eye.slash.fill", "No screenshots."),
-                ("icloud.slash", "No data collected.")
+                ("icloud.slash", "No data collected."),
             ],
             grantedMessage: "You're all set. No extra setup is required here."
         )
@@ -547,7 +551,7 @@ public struct WelcomeGateView: View {
                 ("keyboard", "Use hotkeys: Cmd+Shift+V opens history, Cmd+Control+1-9 pastes fast."),
                 ("cursorarrow.motionlines", "Choose where history opens: menu bar icon or mouse cursor."),
                 ("app.fill", "Source-app labels and colors help you scan quickly."),
-                ("iphone", "Use the iPhone companion with iCloud sync.")
+                ("iphone", "Use the iPhone companion with iCloud sync."),
             ]
         }
         if appSlug == "sanehosts" {
@@ -555,7 +559,7 @@ public struct WelcomeGateView: View {
                 ("shield.checkered", "Choose your protection level."),
                 ("checkmark.circle.fill", "Click Activate once."),
                 ("gearshape.2.fill", "SaneHosts safely updates your hosts file."),
-                ("bolt.horizontal.circle", "System-wide blocking starts immediately.")
+                ("bolt.horizontal.circle", "System-wide blocking starts immediately."),
             ]
         }
         return freeFeatures
@@ -572,7 +576,7 @@ public struct WelcomeGateView: View {
                 ("lock.shield.fill", "Protect history at rest with AES-256-GCM encryption."),
                 ("exclamationmark.shield.fill", "Detect sensitive data and auto-purge on your schedule."),
                 ("arrow.up.arrow.down.circle", "Export and import history when moving devices or backing up."),
-                ("link.badge.plus", "Use Integrations, Shortcuts, and webhooks for automation.")
+                ("link.badge.plus", "Use Integrations, Shortcuts, and webhooks for automation."),
             ]
         }
         if appSlug == "sanehosts" {
@@ -581,7 +585,7 @@ public struct WelcomeGateView: View {
                 ("arrow.down.circle", "Install downloadable presets in one click."),
                 ("arrow.triangle.merge", "Merge profiles into a single ruleset."),
                 ("checklist", "Run bulk operations across large entry sets."),
-                ("square.and.arrow.down", "Import profiles from files or URLs.")
+                ("square.and.arrow.down", "Import profiles from files or URLs."),
             ]
         }
         return proFeatures.filter { !$0.text.localizedCaseInsensitiveContains("everything in basic") }
@@ -643,7 +647,7 @@ public struct WelcomeGateView: View {
             return [
                 ("clipboard", "Basic keeps your last 50 clips searchable, pinnable, and easy to recover."),
                 ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
-                ("text.viewfinder", "Pro adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls.")
+                ("text.viewfinder", "Pro adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls."),
             ]
         }
         if appSlug == "sanehosts" {
@@ -768,7 +772,6 @@ public struct WelcomeGateView: View {
         .padding(32)
     }
 
-    @ViewBuilder
     private var dontSkipPage: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -989,7 +992,7 @@ public struct WelcomeGateView: View {
                     rows: [
                         ("1", "Choose protection level"),
                         ("2", "Click Enable Protection"),
-                        ("3", "Done")
+                        ("3", "Done"),
                     ]
                 )
                 .frame(width: 250)
@@ -999,7 +1002,7 @@ public struct WelcomeGateView: View {
                     bullets: [
                         "System-wide blocking starts",
                         "Hosts file updates safely",
-                        "DNS cache flushes automatically"
+                        "DNS cache flushes automatically",
                     ]
                 )
                 .frame(width: 250)
@@ -1048,7 +1051,6 @@ public struct WelcomeGateView: View {
 
     // MARK: - Page 5: Sane Philosophy
 
-    @ViewBuilder
     private var sanePromisePage: some View {
         VStack(spacing: 20) {
             Text("Our Sane Philosophy")
@@ -1121,7 +1123,6 @@ public struct WelcomeGateView: View {
         }
     }
 
-    @ViewBuilder
     private func permissionSection(_ section: WelcomeGatePermissionConfig.Section, isGranted: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(section.title)
@@ -1143,7 +1144,8 @@ public struct WelcomeGateView: View {
                 }
                 .padding(.top, 2)
             } else if let actionLabel = section.actionLabel,
-                      let action = section.action {
+                      let action = section.action
+            {
                 Button {
                     action()
                 } label: {
@@ -1158,7 +1160,7 @@ public struct WelcomeGateView: View {
 
                 if let actionHint = section.actionHint {
                     Text(actionHint)
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1332,7 +1334,7 @@ public struct WelcomeGateView: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
                 Text(subtitle)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
             }
 
@@ -1344,11 +1346,11 @@ public struct WelcomeGateView: View {
                 ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
                     HStack(alignment: .top, spacing: 7) {
                         Image(systemName: feature.icon)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
                             .frame(width: 14)
                         Text(feature.text)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1378,19 +1380,19 @@ public struct WelcomeGateView: View {
             return [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclick-app"),
                 companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=saneclick-app"),
-                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclick-app")
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclick-app"),
             ]
         case "saneclip":
             return [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclip-app"),
                 companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=saneclip-app"),
-                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclip-app")
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclip-app"),
             ]
         case "sanehosts":
             return [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=sanehosts-app"),
                 companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=sanehosts-app"),
-                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=sanehosts-app")
+                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=sanehosts-app"),
             ]
         default:
             return []
@@ -1476,7 +1478,6 @@ public struct WelcomeGateView: View {
         }
     }
 
-    @ViewBuilder
     private var proTierActions: some View {
         VStack(spacing: 6) {
             if licenseService.usesSetappPurchase {
@@ -1982,7 +1983,7 @@ public struct WelcomeGateView: View {
                 colors: [
                     Color.blue.opacity(0.06),
                     Color.indigo.opacity(0.04),
-                    Color.clear
+                    Color.clear,
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -2038,105 +2039,108 @@ private struct PromisePillarCard: View {
 
 // MARK: - Welcome Window (standalone for menu bar apps)
 
-/// Creates a standalone NSWindow for the welcome screen.
-/// Used by menu bar apps (SaneClip, etc.) that don't have a main WindowGroup.
+// Creates a standalone NSWindow for the welcome screen.
+// Used by menu bar apps (SaneClip, etc.) that don't have a main WindowGroup.
 #if os(macOS)
-@MainActor
-public enum WelcomeWindow {
-    private static var window: NSWindow?
-    private static var delegate: WindowDelegate?
-    private static var priorActivationPolicy: NSApplication.ActivationPolicy?
+    @MainActor
+    public enum WelcomeWindow {
+        private static var window: NSWindow?
+        private static var delegate: WindowDelegate?
+        private static var priorActivationPolicy: NSApplication.ActivationPolicy?
 
-    public static func show(
-        appName: String,
-        appIcon: String,
-        freeFeatures: [(icon: String, text: String)],
-        proFeatures: [(icon: String, text: String)],
-        permissionConfig: WelcomeGatePermissionConfig? = nil,
-        licenseService: LicenseService,
-        initialPage: Int = 0,
-        onPageChange: ((Int) -> Void)? = nil,
-        onDismiss: @escaping () -> Void = {}
-    ) {
-        if let existingWindow = window {
-            if existingWindow.isMiniaturized {
-                existingWindow.deminiaturize(nil)
+        public static func show(
+            appName: String,
+            appIcon: String,
+            freeFeatures: [(icon: String, text: String)],
+            proFeatures: [(icon: String, text: String)],
+            permissionConfig: WelcomeGatePermissionConfig? = nil,
+            licenseService: LicenseService,
+            initialPage: Int = 0,
+            onPageChange: ((Int) -> Void)? = nil,
+            onDismiss: @escaping () -> Void = {}
+        ) {
+            if let existingWindow = window {
+                if existingWindow.isMiniaturized {
+                    existingWindow.deminiaturize(nil)
+                }
+                existingWindow.collectionBehavior = existingWindow.collectionBehavior.union([.moveToActiveSpace])
+                existingWindow.orderFrontRegardless()
+                existingWindow.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                return
             }
-            existingWindow.collectionBehavior = existingWindow.collectionBehavior.union([.moveToActiveSpace])
-            existingWindow.orderFrontRegardless()
-            existingWindow.makeKeyAndOrderFront(nil)
+
+            if NSApp.activationPolicy() != .regular {
+                priorActivationPolicy = NSApp.activationPolicy()
+                NSApp.setActivationPolicy(.regular)
+            }
+
             NSApp.activate(ignoringOtherApps: true)
-            return
+
+            let welcomeView = WelcomeGateView(
+                appName: appName,
+                appIcon: appIcon,
+                freeFeatures: freeFeatures,
+                proFeatures: proFeatures,
+                permissionConfig: permissionConfig,
+                licenseService: licenseService,
+                initialPage: initialPage,
+                onPageChange: onPageChange
+            )
+
+            let hostingView = NSHostingView(rootView: welcomeView)
+
+            let win = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 700, height: 520),
+                styleMask: [.titled, .closable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
+            win.contentView = hostingView
+            win.appearance = NSAppearance(named: .darkAqua)
+            win.title = "Welcome to \(appName)"
+            win.titleVisibility = .hidden
+            win.titlebarAppearsTransparent = true
+            win.isMovableByWindowBackground = true
+            win.backgroundColor = .windowBackgroundColor
+            win.isReleasedWhenClosed = false
+            win.collectionBehavior = win.collectionBehavior.union([.moveToActiveSpace])
+            win.center()
+
+            let windowDelegate = WindowDelegate(onClose: {
+                window = nil
+                WelcomeWindow.delegate = nil
+                if let priorPolicy = priorActivationPolicy {
+                    NSApp.setActivationPolicy(priorPolicy)
+                    priorActivationPolicy = nil
+                }
+                onDismiss()
+            })
+            win.delegate = windowDelegate
+            WelcomeWindow.delegate = windowDelegate
+
+            win.orderFrontRegardless()
+            win.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+
+            window = win
         }
 
-        if NSApp.activationPolicy() != .regular {
-            priorActivationPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-        }
-
-        NSApp.activate(ignoringOtherApps: true)
-
-        let welcomeView = WelcomeGateView(
-            appName: appName,
-            appIcon: appIcon,
-            freeFeatures: freeFeatures,
-            proFeatures: proFeatures,
-            permissionConfig: permissionConfig,
-            licenseService: licenseService,
-            initialPage: initialPage,
-            onPageChange: onPageChange
-        )
-
-        let hostingView = NSHostingView(rootView: welcomeView)
-
-        let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 700, height: 520),
-            styleMask: [.titled, .closable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        win.contentView = hostingView
-        win.appearance = NSAppearance(named: .darkAqua)
-        win.title = "Welcome to \(appName)"
-        win.titleVisibility = .hidden
-        win.titlebarAppearsTransparent = true
-        win.isMovableByWindowBackground = true
-        win.backgroundColor = .windowBackgroundColor
-        win.isReleasedWhenClosed = false
-        win.collectionBehavior = win.collectionBehavior.union([.moveToActiveSpace])
-        win.center()
-
-        let windowDelegate = WindowDelegate(onClose: {
+        public static func close() {
+            window?.close()
             window = nil
-            WelcomeWindow.delegate = nil
-            if let priorPolicy = priorActivationPolicy {
-                NSApp.setActivationPolicy(priorPolicy)
-                priorActivationPolicy = nil
+            delegate = nil
+        }
+
+        private final class WindowDelegate: NSObject, NSWindowDelegate, @unchecked Sendable {
+            let onClose: () -> Void
+            init(onClose: @escaping () -> Void) {
+                self.onClose = onClose
             }
-            onDismiss()
-        })
-        win.delegate = windowDelegate
-        WelcomeWindow.delegate = windowDelegate
 
-        win.orderFrontRegardless()
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        window = win
-    }
-
-    public static func close() {
-        window?.close()
-        window = nil
-        delegate = nil
-    }
-
-    private final class WindowDelegate: NSObject, NSWindowDelegate, @unchecked Sendable {
-        let onClose: () -> Void
-        init(onClose: @escaping () -> Void) { self.onClose = onClose }
-        func windowWillClose(_: Notification) {
-            DispatchQueue.main.async { self.onClose() }
+            func windowWillClose(_: Notification) {
+                DispatchQueue.main.async { self.onClose() }
+            }
         }
     }
-}
 #endif

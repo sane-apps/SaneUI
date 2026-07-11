@@ -43,7 +43,7 @@
                 101, 102, 101, 114, 101, 110, 99, 101, 115, 58, 99, 111, 109, 46, 97, 112,
                 112, 108, 101, 46, 112, 114, 101, 102, 101, 114, 101, 110, 99, 101, 46,
                 115, 101, 99, 117, 114, 105, 116, 121, 63, 80, 114, 105, 118, 97, 99,
-                121, 95
+                121, 95,
             ], as: UTF8.self)
             return URL(string: prefix + pane)!
         }
@@ -176,9 +176,9 @@
                     ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                         HStack(alignment: .top, spacing: 10) {
                             Text("\(index + 1)")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
+                                .frame(width: 24, height: 24)
                                 .background(
                                     Circle()
                                         .fill(iconColor.opacity(0.32))

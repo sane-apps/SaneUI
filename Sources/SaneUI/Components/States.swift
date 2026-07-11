@@ -48,7 +48,7 @@ public struct SaneEmptyState: View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.34))
+                .foregroundStyle(.white.opacity(0.9))
 
             VStack(spacing: 4) {
                 Text(title)
