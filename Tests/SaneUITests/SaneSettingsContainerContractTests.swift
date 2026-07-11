@@ -22,8 +22,14 @@ import Testing
 
             #expect(source.contains("HStack(spacing: 0)"))
             #expect(source.contains("selection.wrappedValue = tab"))
+            #expect(source.contains("ScrollViewReader { proxy in"))
+            #expect(source.contains("proxy.scrollTo((selection.wrappedValue ?? defaultTab).id, anchor: .center)"))
+            #expect(source.contains(".onChange(of: selection.wrappedValue)"))
             #expect(!source.contains("NavigationSplitView"))
-            #expect(source.contains(".background(SaneGradientBackground(style: .panel))"))
+            #expect(source.contains("private struct SaneSettingsBackground: View"))
+            #expect(source.contains("LinearGradient("))
+            #expect(!source.contains("SaneGradientBackground"))
+            #expect(!source.contains("VisualEffectBlur"))
         }
 
         @Test("Shared settings resize grip is owned by SaneUI")

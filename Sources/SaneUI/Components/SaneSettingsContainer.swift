@@ -71,6 +71,7 @@ public enum SaneSettingsWindowSizingBehavior {
 /// ```
 public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     @State private var internalSelectedTab: Tab?
+    @State private var didRevealInitialSidebarSelection = false
     private let defaultTab: Tab
     private let externalSelection: Binding<Tab?>?
     private let windowSizing: SaneSettingsWindowSizingBehavior
@@ -109,7 +110,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                 .frame(width: 1)
             detail(selection.wrappedValue ?? defaultTab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(SaneGradientBackground(style: .panel))
+                .background(SaneSettingsBackground())
         }
         .groupBoxStyle(GlassGroupBoxStyle())
         .tint(SanePanelChrome.accentStart)
@@ -129,38 +130,50 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     }
 
     private var sidebar: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(alignment: .leading, spacing: 3) {
-                ForEach(Array(Tab.allCases), id: \.id) { tab in
-                    Button {
-                        selection.wrappedValue = tab
-                    } label: {
-                        Label {
-                            Text(tab.title)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.85)
-                        } icon: {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(tab.iconColor)
-                                .frame(width: 20)
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(Tab.allCases), id: \.id) { tab in
+                        Button {
+                            selection.wrappedValue = tab
+                        } label: {
+                            Label {
+                                Text(tab.title)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                            } icon: {
+                                Image(systemName: tab.icon)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(tab.iconColor)
+                                    .frame(width: 20)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.34) : .clear)
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.34) : .clear)
-                        }
+                        .buttonStyle(.plain)
+                        .saneHelp(tab.title)
+                        .accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])
+                        .id(tab.id)
                     }
-                    .buttonStyle(.plain)
-                    .saneHelp(tab.title)
-                    .accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])
                 }
+                .padding(8)
             }
-            .padding(8)
+            .onAppear {
+                guard !didRevealInitialSidebarSelection else { return }
+                didRevealInitialSidebarSelection = true
+                proxy.scrollTo((selection.wrappedValue ?? defaultTab).id, anchor: .center)
+            }
+            .onChange(of: selection.wrappedValue) { _, selectedTab in
+                guard let selectedTab else { return }
+                proxy.scrollTo(selectedTab.id, anchor: .center)
+            }
         }
         .frame(
             minWidth: SaneSettingsWindowMetrics.sidebarMinWidth,
@@ -171,7 +184,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
         )
         .background(
             ZStack {
-                SaneGradientBackground(style: .panel)
+                SaneSettingsBackground()
                 SanePanelChrome.controlNavyDeep.opacity(0.62)
             }
         )
@@ -194,6 +207,21 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
             }
         }
     #endif
+}
+
+/// A pure SwiftUI background for settings hosts. Native `Settings {}` windows
+/// on macOS 26 can intermittently fail to composite NSVisualEffectView-backed
+/// backgrounds over SwiftUI controls, so this intentionally does not use the
+/// shared mesh/blur background.
+private struct SaneSettingsBackground: View {
+    var body: some View {
+        LinearGradient(
+            colors: [SanePalette.navyDeep, SanePalette.tealGlowPanel, SanePalette.navyMid],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
 }
 
 private struct SaneSettingsWindowSizingModifier: ViewModifier {

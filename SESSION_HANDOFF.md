@@ -2,6 +2,21 @@
 
 Last updated: 2026-07-04
 
+## 2026-07-10 Settings Rendering and Selection Visibility
+
+- Replaced `SaneSettingsContainer`'s `NavigationSplitView` with a deterministic
+  `HStack` sidebar/detail layout after SaneVideo's native Settings scene exposed
+  a macOS 26 compositor failure: the accessibility tree contained every control,
+  but the pixels showed only the gradient backgrounds.
+- The shared sidebar now uses explicit accessible buttons and `ScrollViewReader`.
+  It reveals the selected tab on first presentation and on real selection changes,
+  without resetting a user's manual scroll position when selection is unchanged.
+- Settings chrome uses a private pure-SwiftUI linear gradient, not the shared
+  NSVisualEffectView-backed background, to avoid intermittent native Settings
+  host compositing that could paint only the background over live controls.
+- Verification: Mini `swift test` passed 119 tests before the visibility follow-up;
+  rerun the full package suite after integrating this follow-up change.
+
 ## 2026-07-04 Direct Trial Hard Paywall
 
 - Updated the shared direct-trial policy: paid SaneApps Mac apps now show the
