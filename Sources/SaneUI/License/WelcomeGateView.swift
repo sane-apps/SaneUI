@@ -48,6 +48,19 @@ enum WelcomeGateCopy {
     }
 }
 
+enum WelcomeGateLayoutPolicy {
+    static func frameSize(appSlug: String) -> CGSize {
+        switch appSlug {
+        case "saneclip":
+            CGSize(width: 700, height: 620)
+        case "sanevideo":
+            CGSize(width: 780, height: 640)
+        default:
+            CGSize(width: 700, height: 520)
+        }
+    }
+}
+
 // Onboarding palette and controls aligned with SaneBar.
 private let cardBg = Color(red: 0.08, green: 0.10, blue: 0.18)
 private let saneAccentDeep = Color.saneAccentDeep
@@ -495,6 +508,7 @@ public struct WelcomeGateView: View {
     }
 
     public var body: some View {
+        let frameSize = WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)
         VStack(spacing: 0) {
             ZStack {
                 pageContent
@@ -522,7 +536,7 @@ public struct WelcomeGateView: View {
                 .padding(.horizontal, 40)
                 .padding(.bottom, 30)
         }
-        .frame(width: 700, height: appSlug == "saneclip" ? 620 : 520)
+        .frame(width: frameSize.width, height: frameSize.height)
         .background(onboardingBackground)
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
@@ -1121,34 +1135,38 @@ public struct WelcomeGateView: View {
     // MARK: - Page 6: Permissions
 
     private var permissionPage: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 38))
-                .foregroundStyle(saneAccent)
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(spacing: 14) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 38))
+                    .foregroundStyle(saneAccent)
 
-            Text(permissionConfig.title)
-                .font(.system(size: 26, weight: .bold, design: .serif))
-                .foregroundStyle(.white)
+                Text(permissionConfig.title)
+                    .font(.system(size: 26, weight: .bold, design: .serif))
+                    .foregroundStyle(.white)
 
-            Text("Turn on only the access \(appName) needs for its optional workflows.")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Turn on only the access \(appName) needs for its optional workflows.")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: 10) {
-                ForEach(Array(permissionConfig.sections.enumerated()), id: \.offset) { index, section in
-                    permissionSection(
-                        section,
-                        isGranted: permissionGrantedStates.indices.contains(index) ? permissionGrantedStates[index] : section.initiallyGranted
-                    )
+                VStack(spacing: 10) {
+                    ForEach(Array(permissionConfig.sections.enumerated()), id: \.offset) { index, section in
+                        permissionSection(
+                            section,
+                            isGranted: permissionGrantedStates.indices.contains(index) ? permissionGrantedStates[index] : section.initiallyGranted
+                        )
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, 40)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-            .padding(.horizontal, 40)
-            .padding(.top, 14)
-            .padding(.bottom, 8)
+            .padding(.vertical, 12)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func permissionSection(_ section: WelcomeGatePermissionConfig.Section, isGranted: Bool) -> some View {
@@ -2118,8 +2136,11 @@ private struct PromisePillarCard: View {
 
             let hostingView = NSHostingView(rootView: welcomeView)
 
+            let appSlug = appName.lowercased().replacingOccurrences(of: " ", with: "")
+            let frameSize = WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)
+
             let win = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 700, height: 520),
+                contentRect: NSRect(x: 0, y: 0, width: frameSize.width, height: frameSize.height),
                 styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false

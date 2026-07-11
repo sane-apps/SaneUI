@@ -49,6 +49,20 @@ func saneVideoOnboardingCopyUsesVideoSemantics() {
     #expect(!WelcomeGateCopy.proLead(appSlug: "sanevideo").contains("copy"))
 }
 
+@Test("SaneVideo onboarding reserves readable space without shrinking shared apps")
+func saneVideoOnboardingUsesCreatorSizedCanvas() {
+    let videoSize = WelcomeGateLayoutPolicy.frameSize(appSlug: "sanevideo")
+    let defaultSize = WelcomeGateLayoutPolicy.frameSize(appSlug: "saneclick")
+    let clipSize = WelcomeGateLayoutPolicy.frameSize(appSlug: "saneclip")
+
+    #expect(videoSize.width >= 780)
+    #expect(videoSize.height >= 640)
+    #expect(videoSize.width > defaultSize.width)
+    #expect(videoSize.height > defaultSize.height)
+    #expect(defaultSize == CGSize(width: 700, height: 520))
+    #expect(clipSize == CGSize(width: 700, height: 620))
+}
+
 @Test("CompactToggle uses a labeled switch row so the whole setting is clickable")
 func compactToggleUsesLabeledSwitchRow() throws {
     let source = try String(
@@ -415,6 +429,19 @@ struct ReadableHelpStandardTests {
 #endif
 
 struct WelcomeGateFlowPolicyTests {
+    @Test("Permission onboarding scrolls instead of clipping content or controls")
+    func permissionOnboardingUsesBoundedScrolling() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private var permissionPage: some View {\n        ScrollView(.vertical, showsIndicators: true)"))
+        #expect(source.contains(".frame(maxWidth: .infinity, maxHeight: .infinity)"))
+        #expect(source.contains("WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)"))
+    }
+
     @Test("Welcome gate accepts tier copy overrides")
     @MainActor
     func welcomeGateAcceptsTierCopyOverrides() {
