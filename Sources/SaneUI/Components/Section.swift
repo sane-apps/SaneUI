@@ -40,7 +40,7 @@ public struct CompactSection<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 if let icon = icon {
                     Image(systemName: icon)
@@ -50,11 +50,12 @@ public struct CompactSection<Content: View>: View {
                     .font(.headline)
                     .foregroundStyle(.white)
             }
-            .padding(.leading, 4)
+            .padding(.horizontal, 2)
 
             VStack(spacing: 0) {
                 content
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 SaneGlassRoundedBackground(
                     cornerRadius: 10,
@@ -67,6 +68,7 @@ public struct CompactSection<Content: View>: View {
             )
             .padding(.horizontal, 2)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

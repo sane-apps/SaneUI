@@ -1,6 +1,17 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-07-04
+Last updated: 2026-07-11
+
+## 2026-07-11 Settings Grid Alignment
+
+- `CompactSection` now expands both its content card and outer section to the
+  full available grid column. This removes intrinsic-content card widths that
+  made adjacent Settings sections visibly asymmetric.
+- Section header/card rhythm now uses a consistent 7-point gap and aligned
+  horizontal insets.
+- Added a non-tautological render test that draws a short-content section in a
+  400-point column and samples the far edge to prove the real glass card fills
+  the column. Full SaneUI verification passes 124 tests across 27 suites.
 
 ## 2026-07-10 Settings Rendering and Selection Visibility
 

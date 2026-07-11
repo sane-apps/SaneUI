@@ -1,6 +1,7 @@
 import Foundation
 @testable import SaneUI
 import Security
+import SwiftUI
 import Testing
 #if canImport(AppKit)
     import AppKit
@@ -344,6 +345,33 @@ struct ReadableHelpStandardTests {
         #expect(source.contains(".lineLimit(1)"))
         #expect(source.contains(".minimumScaleFactor(0.82)"))
         #expect(source.contains(".fixedSize(horizontal: false, vertical: true)"))
+    }
+
+    @Test("Compact settings card visibly fills its available grid column")
+    @MainActor
+    func compactSectionsFillTheirAvailableColumn() throws {
+        let renderer = ImageRenderer(
+            content: ZStack {
+                Color.red
+                CompactSection("Layout probe", icon: "square.grid.2x2") {
+                    Text("Short content")
+                        .foregroundStyle(.white)
+                        .padding(12)
+                }
+            }
+            .frame(width: 400, height: 110)
+        )
+        renderer.scale = 1
+
+        let image = try #require(renderer.nsImage)
+        let tiff = try #require(image.tiffRepresentation)
+        let bitmap = try #require(NSBitmapImageRep(data: tiff))
+        let farEdgeCardPixel = try #require(bitmap.colorAt(x: 380, y: 30)?.usingColorSpace(.deviceRGB))
+
+        // A collapsed intrinsic-width card leaves this pixel pure red. The
+        // real full-column glass card tints it with visible green/blue light.
+        #expect(farEdgeCardPixel.greenComponent > 0.02)
+        #expect(farEdgeCardPixel.blueComponent > 0.02)
     }
 }
 
