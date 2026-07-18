@@ -67,18 +67,28 @@ struct SaneLicenseServiceSetappGateTests {
         #expect(!service.isValidating)
     }
 
-    @Test("Everything Bundle licenses unlock each included direct Mac app")
+    @Test("SaneApps Bundle licenses unlock each included direct Mac app")
     @MainActor
-    func everythingBundleLicenseMatchesIncludedApp() {
-        #expect(LicenseService.licenseProductMatchesApp(
-            appName: "SaneHosts",
-            productName: "SaneApps Everything Bundle",
-            variantName: nil
-        ))
+    func saneAppsBundleLicenseMatchesIncludedApps() {
+        let productName = "SaneClick SaneClip SaneHosts SaneSales SaneVideo Bundle"
+
+        for appName in ["SaneClick", "SaneClip", "SaneHosts", "SaneSales", "SaneVideo"] {
+            #expect(LicenseService.licenseProductMatchesApp(
+                appName: appName,
+                productName: productName,
+                variantName: nil
+            ))
+        }
+
         #expect(!LicenseService.licenseProductMatchesApp(
             appName: "SaneHosts",
             productName: "SaneClick",
             variantName: "Pro"
+        ))
+        #expect(!LicenseService.licenseProductMatchesApp(
+            appName: "SaneBar",
+            productName: productName,
+            variantName: nil
         ))
     }
 
