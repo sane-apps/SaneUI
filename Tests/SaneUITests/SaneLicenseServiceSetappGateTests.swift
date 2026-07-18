@@ -67,6 +67,21 @@ struct SaneLicenseServiceSetappGateTests {
         #expect(!service.isValidating)
     }
 
+    @Test("Everything Bundle licenses unlock each included direct Mac app")
+    @MainActor
+    func everythingBundleLicenseMatchesIncludedApp() {
+        #expect(LicenseService.licenseProductMatchesApp(
+            appName: "SaneHosts",
+            productName: "SaneApps Everything Bundle",
+            variantName: nil
+        ))
+        #expect(!LicenseService.licenseProductMatchesApp(
+            appName: "SaneHosts",
+            productName: "SaneClick",
+            variantName: "Pro"
+        ))
+    }
+
     @Test("License entry view renders Setapp content before ever considering direct entry")
     func licenseEntryViewGatesDirectContentBehindSetappCheck() throws {
         let source = try String(
