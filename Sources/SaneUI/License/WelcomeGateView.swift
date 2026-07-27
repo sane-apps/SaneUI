@@ -89,6 +89,30 @@ enum WelcomeGateDirectTrialCopy {
     static func purchaseLabel(price: String) -> String {
         "\(purchaseTitle) — \(price)"
     }
+
+    static func completionLabel(
+        isLicensed: Bool,
+        isTrialActive: Bool,
+        hasExpiredTrial: Bool,
+        appName: String
+    ) -> String {
+        if hasExpiredTrial {
+            return purchaseTitle
+        }
+        if isTrialActive {
+            return "Continue Trial"
+        }
+        if isLicensed {
+            return "Start Using \(appName)"
+        }
+        return "Continue"
+    }
+
+    static func summaryFeatures(
+        _ features: [(icon: String, text: String)]
+    ) -> [(icon: String, text: String)] {
+        Array(features.prefix(4))
+    }
 }
 
 enum WelcomeGateLayoutPolicy {
@@ -896,18 +920,18 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(saneAccent)
 
-            Text("Don't skip this.")
+            Text("One quick walkthrough.")
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("It's only a few screens and you'll be\nconfused if you rush through.")
+            Text("See how \(appName) works, what your trial includes,\nand what stays on your device.")
                 .font(.system(size: 17))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("— Mr. Sane")
-                .font(.system(size: 15, weight: .medium, design: .serif))
+            Text("Takes under a minute.")
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white)
 
             Spacer()
@@ -1407,7 +1431,7 @@ public struct WelcomeGateView: View {
                 trialOutcomeCard(
                     title: WelcomeGateDirectTrialCopy.purchaseTitle,
                     subtitle: "One payment — yours forever",
-                    features: directTrialFeatures,
+                    features: WelcomeGateDirectTrialCopy.summaryFeatures(directTrialFeatures),
                     isHighlighted: true
                 )
                 .padding(.horizontal, 20)
@@ -1899,9 +1923,12 @@ public struct WelcomeGateView: View {
 
     private var finalPrimaryButtonLabel: String {
         if usesDirectTrialFlow {
-            return licenseService.hasExpiredProTrial
-                ? WelcomeGateDirectTrialCopy.purchaseTitle
-                : "Get Started"
+            return WelcomeGateDirectTrialCopy.completionLabel(
+                isLicensed: licenseService.isPro,
+                isTrialActive: licenseService.isProTrialActive,
+                hasExpiredTrial: licenseService.hasExpiredProTrial,
+                appName: appName
+            )
         }
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
             return "Buy Pro"

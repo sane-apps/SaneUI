@@ -474,6 +474,35 @@ struct WelcomeGateFlowPolicyTests {
         ) == "Your trial has ended")
         #expect(WelcomeGateDirectTrialCopy.purchaseLabel(price: "$14.99") == "Buy once — $14.99")
 
+        #expect(WelcomeGateDirectTrialCopy.completionLabel(
+            isLicensed: false,
+            isTrialActive: true,
+            hasExpiredTrial: false,
+            appName: "SaneHosts"
+        ) == "Continue Trial")
+        #expect(WelcomeGateDirectTrialCopy.completionLabel(
+            isLicensed: true,
+            isTrialActive: false,
+            hasExpiredTrial: false,
+            appName: "SaneHosts"
+        ) == "Start Using SaneHosts")
+        #expect(WelcomeGateDirectTrialCopy.completionLabel(
+            isLicensed: false,
+            isTrialActive: false,
+            hasExpiredTrial: true,
+            appName: "SaneHosts"
+        ) == "Buy once")
+
+        let summaryFeatures = WelcomeGateDirectTrialCopy.summaryFeatures([
+            ("1.circle", "One"),
+            ("2.circle", "Two"),
+            ("3.circle", "Three"),
+            ("4.circle", "Four"),
+            ("5.circle", "Five"),
+        ])
+        #expect(summaryFeatures.count == 4)
+        #expect(summaryFeatures.map(\.text) == ["One", "Two", "Three", "Four"])
+
         let renderedCopy = [
             WelcomeGateDirectTrialCopy.trialTitle,
             WelcomeGateDirectTrialCopy.purchaseTitle,

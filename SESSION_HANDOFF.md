@@ -10,6 +10,12 @@ Last updated: 2026-07-27
 - App Store and Setapp onboarding branches remain unchanged.
 - Focused neutral-copy/channel tests passed 16/16. Full Mini `swift test`
   passed 132 tests across 28 suites.
+- The second setup screen now explains the walkthrough in positive language
+  instead of scolding customers not to skip it.
+- The direct-trial summary shows four key benefits so the 700x520 shared frame
+  stays unclipped, and its final action says `Continue Trial`.
+- The follow-up focused run passed 16/16 tests; full Mini `swift test` again
+  passed 132 tests across 28 suites.
 - The change is limited to `WelcomeGateView.swift` and its existing test file.
   Unrelated dirty licensing/product-matching work remains uncommitted and
   untouched.
