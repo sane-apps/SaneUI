@@ -41,6 +41,10 @@ public struct LicenseGateView: View {
         .frame(minWidth: 460, minHeight: 620)
         .onAppear {
             lockWindow()
+            let appName = licenseService.appName.lowercased()
+            Task.detached {
+                await EventTracker.log(.paywallSeen, app: appName)
+            }
         }
         .onDisappear {
             // If the gate disappears but the user isn't licensed, quit.
@@ -78,18 +82,7 @@ public struct LicenseGateView: View {
 
             VStack(spacing: 22) {
                 gateHeader
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 24) {
-                        supportMessage
-                        purchaseActions
-                    }
-
-                    VStack(spacing: 20) {
-                        supportMessage
-                        purchaseActions
-                    }
-                }
+                purchaseActions
             }
             .padding(.horizontal, 34)
             .padding(.vertical, 28)
@@ -116,15 +109,25 @@ public struct LicenseGateView: View {
                 .foregroundStyle(Color.saneAccent)
                 .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
-            Text(licenseService.appName)
+            Text("Your 14-day trial has ended")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
+
+            Text("Buy \(licenseService.appName) once to keep using it.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private var purchaseActions: some View {
         VStack(spacing: 12) {
             Button {
+                let appName = licenseService.appName.lowercased()
+                Task.detached {
+                    await EventTracker.log(.checkoutClicked, app: appName)
+                }
                 if licenseService.usesAppStorePurchase {
                     Task { await licenseService.purchasePro() }
                 } else if licenseService.usesSetappPurchase {
@@ -139,7 +142,8 @@ public struct LicenseGateView: View {
                         .frame(maxWidth: .infinity)
                 } else {
                     Text(primaryPurchaseLabel)
-                        .font(.headline)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                 }
@@ -153,7 +157,7 @@ public struct LicenseGateView: View {
             Text(licenseService.usesSetappPurchase
                  ? "This Setapp build unlocks through Setapp."
                  : (licenseService.usesAppStorePurchase
-                     ? "Unlock Pro in-app to continue"
+                     ? "One-time in-app purchase"
                      : "\(licenseService.displayPriceLabel) \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
@@ -168,52 +172,7 @@ public struct LicenseGateView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(width: 230)
-    }
-
-    private var supportMessage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            messageLine("Mr. Sane here. I need to share an insane stat with you all.", weight: .semibold)
-            messageLine("Across SaneApps Mac apps: 100,000+ downloads in 180 days.", weight: .medium)
-            messageLine("Fewer than 0.5% led to purchases.", weight: .medium)
-            messageLine("Kind reviews mean a lot, but they can't sustain these apps.", weight: .regular)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\"The worker is worthy of his wages.\"")
-                    .font(.system(size: 15, weight: .semibold))
-                    .italic()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.9)
-
-                Text("1 Timothy 5:18")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .padding(.leading, 12)
-            .overlay(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.saneAccent)
-                    .frame(width: 3)
-            }
-
-            messageLine("If you love privacy-first Mac apps, here's how you can help.", weight: .medium)
-
-            VStack(alignment: .leading, spacing: 2) {
-                messageLine("Sincerely,", weight: .medium)
-                messageLine("Mr. Sane", weight: .semibold)
-            }
-        }
-        .foregroundStyle(.white)
-        .lineSpacing(3)
-        .multilineTextAlignment(.leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: 430, alignment: .leading)
-    }
-
-    private func messageLine(_ text: String, weight: Font.Weight) -> some View {
-        Text(text)
-            .font(.system(size: 15, weight: weight))
-            .lineLimit(1)
-            .minimumScaleFactor(0.9)
+        .frame(width: 280)
     }
 
     @ViewBuilder
@@ -230,6 +189,7 @@ public struct LicenseGateView: View {
                     Task { await licenseService.restorePurchases() }
                 } label: {
                     Text("Restore Purchases")
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }
@@ -247,38 +207,28 @@ public struct LicenseGateView: View {
                     }
                 } label: {
                     Text("Enter License")
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
 
-                HStack(spacing: 10) {
-                    if showsDirectSupportActions {
-                        Button {
-                            if let url = Self.directSupportURL() {
-                                NSWorkspace.shared.open(url)
-                            }
-                        } label: {
-                            Text(Self.directSupportLabel())
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(SaneActionButtonStyle())
-                        .controlSize(.small)
-                    }
-
-                    quitButton
-                }
+                quitButton
             }
         }
     }
 
     private var quitButton: some View {
         Button {
+            let appName = licenseService.appName.lowercased()
+            Task.detached {
+                await EventTracker.log(.paywallQuit, app: appName)
+            }
             NSApplication.shared.terminate(nil)
         } label: {
             Text("Quit")
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
         }
@@ -286,42 +236,14 @@ public struct LicenseGateView: View {
         .controlSize(.small)
     }
 
-    private var showsDirectSupportActions: Bool {
-        !licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase
-    }
-
     private var primaryPurchaseLabel: String {
         if licenseService.usesSetappPurchase {
             return "Managed by Setapp"
         }
         if licenseService.usesAppStorePurchase {
-            return "Unlock Pro — \(licenseService.displayPriceLabel)"
+            return "Buy \(licenseService.appName) — \(licenseService.displayPriceLabel)"
         }
-        return "Buy Pro"
-    }
-
-    private static func directSupportLabel() -> String {
-        directSupportString(encoded: [30, 53, 52, 59, 46, 63])
-    }
-
-    private static func directSupportURL() -> URL? {
-        URL(string: directSupportString(encoded: [
-            50, 46, 46, 42, 41, 96, 117, 117,
-            61, 51, 46, 50, 47, 56, 116, 57,
-            53, 55, 117, 41, 42, 53, 52, 41,
-            53, 40, 41, 117, 23, 40, 9, 59,
-            52, 63, 27, 42, 42, 41
-        ]))
-    }
-
-    @inline(never)
-    private static func directSupportString(encoded bytes: [UInt8]) -> String {
-        String(decoding: bytes.map(directSupportByte), as: UTF8.self)
-    }
-
-    @inline(never)
-    private static func directSupportByte(_ byte: UInt8) -> UInt8 {
-        byte ^ 0x5A
+        return "Buy \(licenseService.appName)"
     }
 
     // MARK: - Key Entry View

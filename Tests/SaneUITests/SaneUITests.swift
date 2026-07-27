@@ -909,34 +909,52 @@ struct SharedLicenseUIPolicyTests {
         #expect(!source.contains("Text(licenseService.alternateUnlockLabel)"))
     }
 
-    @Test("License gate asks for support after expired direct trial")
-    func licenseGateAsksForSupportAfterExpiredDirectTrial() throws {
+    @Test("License gate uses neutral expired-trial copy and direct action order")
+    func licenseGateUsesNeutralExpiredTrialCopyAndDirectActionOrder() throws {
         let source = try String(
             contentsOf: saneUIPackageRootURL()
                 .appendingPathComponent("Sources/SaneUI/License/LicenseGateView.swift"),
             encoding: .utf8
         )
 
-        #expect(source.contains("Mr. Sane here. I need to share an insane stat with you all."))
-        #expect(source.contains("Across SaneApps Mac apps: 100,000+ downloads in 180 days."))
-        #expect(source.contains("Fewer than 0.5% led to purchases."))
-        #expect(source.contains("Kind reviews mean a lot, but they can't sustain these apps."))
-        #expect(source.contains("\\\"The worker is worthy of his wages.\\\""))
-        #expect(source.contains("Sincerely,"))
-        #expect(source.contains("1 Timothy 5:18"))
-        #expect(source.contains("!licenseService.usesAppStorePurchase && !licenseService.usesSetappPurchase"))
-        #expect(source.contains("return \"Buy Pro\""))
-        #expect(source.contains("Text(Self.directSupportLabel())"))
-        #expect(source.contains("Self.directSupportURL()"))
-        #expect(source.contains("@inline(never)\n    private static func directSupportString"))
-        #expect(source.contains("@inline(never)\n    private static func directSupportByte"))
-        #expect(!source.contains("private static let donationLabel"))
-        #expect(!source.contains("private static let donationURL"))
-        #expect(!source.contains("\"https://github.com/sponsors/MrSaneApps\""))
-        #expect(!source.contains("Text(\"Donate\")"))
+        #expect(source.contains("Text(\"Your 14-day trial has ended\")"))
+        #expect(source.contains("Text(\"Buy \\(licenseService.appName) once to keep using it.\")"))
+        #expect(source.contains("return \"Buy \\(licenseService.appName)\""))
         #expect(source.contains("Text(\"Enter License\")"))
         #expect(source.contains("Text(\"Quit\")"))
-        #expect(!source.contains("To continue using \\(licenseService.appName), please purchase a license."))
+
+        let buyAction = try #require(source.range(of: "Text(primaryPurchaseLabel)"))
+        let enterLicenseAction = try #require(source.range(of: "Text(\"Enter License\")"))
+        let quitAction = try #require(source.range(of: "Text(\"Quit\")"))
+        #expect(buyAction.lowerBound < enterLicenseAction.lowerBound)
+        #expect(enterLicenseAction.lowerBound < quitAction.lowerBound)
+
+        #expect(!source.contains("Mr. Sane here."))
+        #expect(!source.contains("100,000+ downloads"))
+        #expect(!source.contains("0.5%"))
+        #expect(!source.contains("The worker is worthy of his wages."))
+        #expect(!source.contains("1 Timothy 5:18"))
+        #expect(!source.contains("Sincerely,"))
+        #expect(!source.contains("directSupportLabel"))
+        #expect(!source.contains("directSupportURL"))
+        #expect(!source.contains("Donate"))
+        #expect(!source.contains("\"Buy Pro\""))
+        #expect(!source.contains("\"Unlock Pro"))
+    }
+
+    @Test("License gate logs anonymous aggregate view, buy, and quit events")
+    func licenseGateLogsAggregateEvents() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/LicenseGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("EventTracker.log(.paywallSeen, app: appName)"))
+        #expect(source.contains("EventTracker.log(.checkoutClicked, app: appName)"))
+        #expect(source.contains("EventTracker.log(.paywallQuit, app: appName)"))
+        #expect(source.contains("Task.detached"))
+        #expect(source.contains("EventTracker.log(.paywallQuit, app: appName)\n            }\n            NSApplication.shared.terminate(nil)"))
     }
 
     @Test("Welcome gate uses entry label for direct key flow")
@@ -1163,6 +1181,7 @@ struct SaneEventTrackerTests {
         #expect(EventTracker.FunnelEvent.providerConnectFailed.rawValue == "provider_connect_failed")
         #expect(EventTracker.FunnelEvent.paywallSeen.rawValue == "paywall_seen")
         #expect(EventTracker.FunnelEvent.checkoutClicked.rawValue == "checkout_clicked")
+        #expect(EventTracker.FunnelEvent.paywallQuit.rawValue == "paywall_quit")
         #expect(EventTracker.FunnelEvent.firstValueAction.rawValue == "first_value_action")
     }
 

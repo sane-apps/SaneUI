@@ -22,6 +22,7 @@ public enum EventTracker: Sendable {
         case providerConnectFailed = "provider_connect_failed"
         case paywallSeen = "paywall_seen"
         case checkoutClicked = "checkout_clicked"
+        case paywallQuit = "paywall_quit"
         case firstValueAction = "first_value_action"
     }
 
