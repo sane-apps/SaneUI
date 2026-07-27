@@ -457,6 +457,52 @@ struct ReadableHelpStandardTests {
 #endif
 
 struct WelcomeGateFlowPolicyTests {
+    @Test("Direct trial copy uses one neutral trial-then-purchase model")
+    func directTrialCopyIsNeutral() {
+        #expect(WelcomeGateDirectTrialCopy.trialTitle == "14-Day Trial")
+        #expect(WelcomeGateDirectTrialCopy.purchaseTitle == "Buy once")
+        #expect(WelcomeGateDirectTrialCopy.expiredTitle == "Your trial has ended")
+        #expect(WelcomeGateDirectTrialCopy.title(
+            isLicensed: false,
+            isTrialActive: false,
+            hasExpiredTrial: false
+        ) == "14-Day Trial")
+        #expect(WelcomeGateDirectTrialCopy.title(
+            isLicensed: false,
+            isTrialActive: false,
+            hasExpiredTrial: true
+        ) == "Your trial has ended")
+        #expect(WelcomeGateDirectTrialCopy.purchaseLabel(price: "$14.99") == "Buy once — $14.99")
+
+        let renderedCopy = [
+            WelcomeGateDirectTrialCopy.trialTitle,
+            WelcomeGateDirectTrialCopy.purchaseTitle,
+            WelcomeGateDirectTrialCopy.expiredTitle,
+            WelcomeGateDirectTrialCopy.message(
+                isLicensed: false,
+                isTrialActive: true,
+                hasExpiredTrial: false,
+                daysRemaining: 7
+            )
+        ].joined(separator: " ").lowercased()
+        let words = renderedCopy.split { !$0.isLetter }
+        #expect(!words.contains("basic"))
+        #expect(!words.contains("pro"))
+    }
+
+    @Test("Direct onboarding branches around the tier chooser")
+    func directOnboardingUsesNeutralSummaryInsteadOfTierChooser() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("if usesDirectTrialFlow {\n            directTrialSummaryView"))
+        #expect(source.contains("if usesDirectTrialFlow {\n                directTrialFeaturesPage"))
+        #expect(source.contains("licenseService.distributionChannel == .direct"))
+    }
+
     @Test("Permission onboarding scrolls instead of clipping content or controls")
     func permissionOnboardingUsesBoundedScrolling() throws {
         let source = try String(

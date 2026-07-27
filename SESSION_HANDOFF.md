@@ -1,6 +1,18 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-07-11
+Last updated: 2026-07-27
+
+## 2026-07-27 Neutral Direct Trial Onboarding
+
+- Direct-download onboarding now presents one 14-day trial followed by a
+  one-time purchase. It no longer shows Basic/Pro plan cards or Pro wording on
+  the direct channel.
+- App Store and Setapp onboarding branches remain unchanged.
+- Focused neutral-copy/channel tests passed 16/16. Full Mini `swift test`
+  passed 132 tests across 28 suites.
+- The change is limited to `WelcomeGateView.swift` and its existing test file.
+  Unrelated dirty licensing/product-matching work remains uncommitted and
+  untouched.
 
 ## 2026-07-11 Settings Grid Alignment
 

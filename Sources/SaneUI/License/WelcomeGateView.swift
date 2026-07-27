@@ -48,6 +48,49 @@ enum WelcomeGateCopy {
     }
 }
 
+enum WelcomeGateDirectTrialCopy {
+    static let trialTitle = "14-Day Trial"
+    static let purchaseTitle = "Buy once"
+    static let expiredTitle = "Your trial has ended"
+
+    static func title(
+        isLicensed: Bool,
+        isTrialActive: Bool,
+        hasExpiredTrial: Bool
+    ) -> String {
+        if hasExpiredTrial {
+            return expiredTitle
+        }
+        if isLicensed, !isTrialActive {
+            return "You're all set"
+        }
+        return trialTitle
+    }
+
+    static func message(
+        isLicensed: Bool,
+        isTrialActive: Bool,
+        hasExpiredTrial: Bool,
+        daysRemaining: Int?
+    ) -> String {
+        if hasExpiredTrial {
+            return "Buy once to keep using every feature."
+        }
+        if isLicensed, !isTrialActive {
+            return "All features are unlocked. Thanks for supporting independent software."
+        }
+        if isTrialActive, let daysRemaining {
+            let dayText = daysRemaining == 1 ? "1 day" : "\(daysRemaining) days"
+            return "\(dayText) remaining. Every feature is included, with no credit card required."
+        }
+        return "Every feature is included for 14 days, with no credit card required."
+    }
+
+    static func purchaseLabel(price: String) -> String {
+        "\(purchaseTitle) — \(price)"
+    }
+}
+
 enum WelcomeGateLayoutPolicy {
     static func frameSize(appSlug: String) -> CGSize {
         switch appSlug {
@@ -295,7 +338,7 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
     }
 }
 
-/// First-install onboarding flow with Free vs Pro comparison.
+/// First-install onboarding flow with channel-appropriate access choices.
 /// Shown once on first launch.
 public struct WelcomeGateView: View {
     private struct CompanionApp: Identifiable {
@@ -450,6 +493,10 @@ public struct WelcomeGateView: View {
     private static let pageCount = 7
     private let totalPages = Self.pageCount
 
+    private var usesDirectTrialFlow: Bool {
+        licenseService.distributionChannel == .direct
+    }
+
     private var resolvedProTierTitle: String {
         proTierTitleOverride
             ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.displayPriceLabel)")
@@ -588,7 +635,11 @@ public struct WelcomeGateView: View {
         case 2:
             coreFeaturesPage
         case 3:
-            proWorkflowPage
+            if usesDirectTrialFlow {
+                directTrialFeaturesPage
+            } else {
+                proWorkflowPage
+            }
         case 4:
             sanePromisePage
         case 5:
@@ -661,7 +712,12 @@ public struct WelcomeGateView: View {
         case "sanesales":
             return "Track revenue, orders, products, and trends across any date range."
         case "saneclip":
-            return "Private clipboard history for your Mac. Start with the free core, then unlock deeper paste and capture tools if you need them."
+            return usesDirectTrialFlow
+                ? "Private clipboard history for your Mac, with every feature included during your trial."
+                : """
+                Private clipboard history for your Mac. Start with the free core, then unlock deeper paste and \
+                capture tools if you need them.
+                """
         case "sanebar":
             return "Take control of your menu bar so your Mac stays clean and focused."
         default:
@@ -678,7 +734,12 @@ public struct WelcomeGateView: View {
         case "sanesales":
             return "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
         case "saneclip":
-            return "A short walkthrough: Basic, Pro, the Sane Promise, and the optional access behind capture and fast paste."
+            return usesDirectTrialFlow
+                ? "A short walkthrough of history, capture, paste tools, privacy, and your 14-day trial."
+                : """
+                A short walkthrough: Basic, Pro, the Sane Promise, and the optional access behind capture and \
+                fast paste.
+                """
         default:
             return "This takes about a minute. Follow each step in order."
         }
@@ -701,6 +762,16 @@ public struct WelcomeGateView: View {
 
     private var welcomeHighlights: [(icon: String, text: String)] {
         if appSlug == "saneclip" {
+            if usesDirectTrialFlow {
+                return [
+                    ("clipboard", "Keep clipboard history searchable, pinnable, and easy to recover."),
+                    ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
+                    (
+                        "text.viewfinder",
+                        "OCR capture, smarter paste, snippets, rules, and privacy controls are included during the trial."
+                    )
+                ]
+            }
             return [
                 ("clipboard", "Basic keeps your last 50 clips searchable, pinnable, and easy to recover."),
                 ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
@@ -714,6 +785,9 @@ public struct WelcomeGateView: View {
     }
 
     private var coreLeadText: String {
+        if usesDirectTrialFlow {
+            return "Set it up once, then let it work quietly in the background."
+        }
         switch appSlug {
         case "sanehosts":
             return "Basic setup once, then protection runs quietly in the background."
@@ -723,7 +797,7 @@ public struct WelcomeGateView: View {
     }
 
     private var coreCardTitle: String {
-        appSlug == "sanehosts" ? "Basic Setup" : "Core Workflow"
+        usesDirectTrialFlow || appSlug != "sanehosts" ? "Core Workflow" : "Basic Setup"
     }
 
     private var coreCardSubtitle: String {
@@ -845,7 +919,7 @@ public struct WelcomeGateView: View {
     private var coreFeaturesPage: some View {
         if appSlug == "sanehosts" {
             saneHostsCorePage
-        } else if appSlug == "saneclip" {
+        } else if appSlug == "saneclip", !usesDirectTrialFlow {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
                     VStack(spacing: goldenBase * 0.62) {
@@ -928,6 +1002,46 @@ public struct WelcomeGateView: View {
                 .padding(.bottom, goldenBase * 1.4)
             }
         }
+    }
+
+    private var directTrialFeaturesPage: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: goldenGap) {
+                VStack(spacing: goldenBase * 0.62) {
+                    (Text("Everything ").foregroundStyle(.white) + Text("Included").foregroundStyle(saneAccentGradient))
+                        .font(.system(size: 30, weight: .bold, design: .serif))
+
+                    Text("Try every feature for 14 days. Buy once if it works for you.")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, goldenBase * 0.35)
+
+                featureCard(
+                    title: "14-Day Trial",
+                    subtitle: "No account, subscription, or credit card required",
+                    features: directTrialFeatures,
+                    columns: 1,
+                    compact: false
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.horizontal, goldenPad)
+            .padding(.top, goldenBase)
+            .padding(.bottom, goldenBase * 1.4)
+        }
+    }
+
+    private var directTrialFeatures: [(icon: String, text: String)] {
+        let neutralFeatures = proFeatures.filter { feature in
+            let words = feature.text
+                .lowercased()
+                .split { !$0.isLetter }
+            return !words.contains("basic") && !words.contains("pro")
+        }
+        return Array((neutralFeatures.isEmpty ? setupCoreFeatures : neutralFeatures).prefix(6))
     }
 
     @ViewBuilder
@@ -1235,7 +1349,11 @@ public struct WelcomeGateView: View {
 
     @ViewBuilder
     private var finalTierPage: some View {
-        if licenseService.isPro {
+        if usesDirectTrialFlow {
+            directTrialSummaryView
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
+        } else if licenseService.isPro {
             proActivatedView
                 .padding(.horizontal, 24)
                 .padding(.vertical, 8)
@@ -1247,6 +1365,78 @@ public struct WelcomeGateView: View {
             selectionView
                 .padding(.horizontal, 24)
                 .padding(.vertical, 8)
+        }
+    }
+
+    private var directTrialSummaryView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+
+            Image(
+                systemName: licenseService.hasExpiredProTrial
+                    ? "clock.badge.exclamationmark.fill"
+                    : "checkmark.seal.fill"
+            )
+                .font(.system(size: 42))
+                .foregroundStyle(
+                    licenseService.hasExpiredProTrial
+                        ? AnyShapeStyle(saneAccentGradient)
+                        : AnyShapeStyle(Color.green)
+                )
+
+            Text(WelcomeGateDirectTrialCopy.title(
+                isLicensed: licenseService.isPro,
+                isTrialActive: licenseService.isProTrialActive,
+                hasExpiredTrial: licenseService.hasExpiredProTrial
+            ))
+            .font(.system(size: 28, weight: .bold, design: .serif))
+            .foregroundStyle(.white)
+
+            Text(WelcomeGateDirectTrialCopy.message(
+                isLicensed: licenseService.isPro,
+                isTrialActive: licenseService.isProTrialActive,
+                hasExpiredTrial: licenseService.hasExpiredProTrial,
+                daysRemaining: licenseService.proTrialDaysRemaining
+            ))
+            .font(.system(size: 15))
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+
+            if !licenseService.isPro || licenseService.isProTrialActive {
+                trialOutcomeCard(
+                    title: WelcomeGateDirectTrialCopy.purchaseTitle,
+                    subtitle: "One payment — yours forever",
+                    features: directTrialFeatures,
+                    isHighlighted: true
+                )
+                .padding(.horizontal, 20)
+                .frame(maxWidth: 420)
+
+                Button(WelcomeGateDirectTrialCopy.purchaseLabel(price: licenseService.displayPriceLabel)) {
+                    runSingleOutboundAction {
+                        if let url = licenseService.checkoutURL {
+                            SanePlatform.open(url)
+                        }
+                        Task.detached {
+                            await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                            await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                        }
+                    }
+                }
+                .buttonStyle(
+                    OnboardingPrimaryButtonStyle(cornerRadius: 10, horizontalPadding: 18, verticalPadding: 9)
+                )
+                .disabled(outboundActionInFlight)
+
+                Button(licenseService.alternateEntryLabel) {
+                    showingLicenseEntry = true
+                }
+                .buttonStyle(OnboardingSecondaryButtonStyle())
+                .font(.system(size: 13))
+            }
+
+            Spacer()
         }
     }
 
@@ -1708,6 +1898,11 @@ public struct WelcomeGateView: View {
     }
 
     private var finalPrimaryButtonLabel: String {
+        if usesDirectTrialFlow {
+            return licenseService.hasExpiredProTrial
+                ? WelcomeGateDirectTrialCopy.purchaseTitle
+                : "Get Started"
+        }
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
             return "Buy Pro"
         }
@@ -1733,6 +1928,25 @@ public struct WelcomeGateView: View {
     private func completeOnboarding(useSecondaryAction: Bool = false) {
         if useSecondaryAction {
             onSecondaryCompletion?()
+            Task.detached {
+                await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())
+            }
+            onComplete?()
+            dismiss()
+            return
+        }
+
+        if usesDirectTrialFlow {
+            if licenseService.hasExpiredProTrial, let url = licenseService.checkoutURL {
+                runSingleOutboundAction {
+                    SanePlatform.open(url)
+                    Task.detached {
+                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                    }
+                }
+                return
+            }
             Task.detached {
                 await EventTracker.logOnce(.onboardingCompleted, app: appName.lowercased())
             }
