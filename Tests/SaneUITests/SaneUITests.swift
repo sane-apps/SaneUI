@@ -805,6 +805,18 @@ struct SaneLicenseServiceTests {
         #expect(service.displayPriceLabel == "$14.99")
     }
 
+    @Test("SaneClick App Store fallback price matches the one-time unlock")
+    @MainActor
+    func saneClickAppStoreFallbackPriceMatchesUnlock() {
+        let service = LicenseService(
+            appName: "SaneClick",
+            purchaseBackend: .appStore(productID: "com.saneclick.app.pro.actions.v4"),
+            keychain: MockKeychainService()
+        )
+
+        #expect(service.displayPriceLabel == "$9.99")
+    }
+
     @Test("Expired Pro trial removes Pro access")
     @MainActor
     func expiredProTrialRemovesProAccess() throws {

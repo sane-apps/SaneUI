@@ -254,12 +254,14 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     private var defaultDisplayPrice: String {
-        switch appName.lowercased() {
-        case "saneclick":
-            "$14.99"
-        case "sanesales":
+        switch (appName.lowercased(), purchaseBackend) {
+        case ("saneclick", .appStore):
             "$9.99"
-        case "sanebar", "saneclip", "sanehosts":
+        case ("saneclick", _):
+            "$14.99"
+        case ("sanesales", _):
+            "$9.99"
+        case ("sanebar", _), ("saneclip", _), ("sanehosts", _):
             "$14.99"
         default:
             "$14.99"
