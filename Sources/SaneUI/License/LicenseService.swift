@@ -981,15 +981,23 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
     static func licenseProductMatchesApp(appName: String, productName: String?, variantName: String?) -> Bool {
         let appToken = normalizedProductToken(appName)
-        guard !appToken.isEmpty else { return true }
+        guard !appToken.isEmpty else { return false }
         let productToken = productName.map(normalizedProductToken) ?? ""
         let variantToken = variantName.map(normalizedProductToken) ?? ""
         guard !productToken.isEmpty || !variantToken.isEmpty else { return false }
         let everythingBundleToken = "saneappseverythingbundle"
+        if productToken == everythingBundleToken || variantToken == everythingBundleToken {
+            let everythingBundleApps: Set = [
+                "saneclick",
+                "saneclip",
+                "sanehosts",
+                "sanesales",
+                "sanevideo",
+            ]
+            return everythingBundleApps.contains(appToken)
+        }
         return productToken.contains(appToken) ||
-            variantToken.contains(appToken) ||
-            productToken.contains(everythingBundleToken) ||
-            variantToken.contains(everythingBundleToken)
+            variantToken.contains(appToken)
     }
 
     private static func normalizedProductToken(_ value: String) -> String {
