@@ -2,6 +2,19 @@
 
 Last updated: 2026-07-27
 
+## 2026-07-27 Neutral License and Purchase Surfaces
+
+- Shared license, purchase, onboarding, upsell, and catalog surfaces now use
+  neutral trial, purchase, and licensed wording instead of customer-visible tiers.
+- The direct SaneClick fallback matches its live one-time price at `$14.99`.
+- Direct Everything Bundle matching now uses an explicit five-app allowlist;
+  its independent regression was committed separately as `656e1db`.
+- Focused license, trial, neutral-copy, and product-matching verification passed
+  44 tests across four suites on the Mini.
+- Full Mini `nice -n 10 swift test` passed 134 tests across 28 suites.
+- The unrelated heading-layout guidance in `AGENTS.md` and `README.md` remains
+  uncommitted and was not included in either licensing commit.
+
 ## 2026-07-27 Neutral Direct Trial Onboarding
 
 - Direct-download onboarding now presents one 14-day trial followed by a

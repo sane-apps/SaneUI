@@ -205,7 +205,7 @@ private struct ControlsCatalogView: View {
                 CompactDivider()
                 CompactRow("Accent") {
                     HStack(spacing: 8) {
-                        SaneAccentBadge(title: "Pro", systemImage: "sparkles")
+                        SaneAccentBadge(title: "Licensed", systemImage: "sparkles")
                         SaneAccentBadge(title: "On-Device")
                     }
                 }
@@ -345,8 +345,8 @@ private struct SettingsCatalogView: View {
 
 private struct LicenseCatalogView: View {
     private enum LicensePreview: String, CaseIterable {
-        case basic = "Basic"
-        case pro = "Pro"
+        case basic = "Not Licensed"
+        case pro = "Licensed"
         case setapp = "Setapp"
     }
 
@@ -370,7 +370,7 @@ private struct LicenseCatalogView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
 
-            Text("Shared Basic, Pro, and Setapp layouts every app should inherit.")
+            Text("Shared trial, licensed, and Setapp layouts every app should inherit.")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
 

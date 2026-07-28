@@ -101,7 +101,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.green)
-            Text("Pro Activated!")
+            Text("License Activated!")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
             if let email = licenseService.licenseEmail {
@@ -156,7 +156,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .help("Close")
             }
 
-            Text("Unlock Pro")
+            Text("Buy Full Access")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
@@ -166,7 +166,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)") {
+            Button(licenseService.isPurchasing ? "Processing..." : "Buy Full Access — \(licenseService.displayPriceLabel)") {
                 Task { await licenseService.purchasePro() }
             }
             .buttonStyle(SaneActionButtonStyle(prominent: true))

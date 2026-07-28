@@ -62,13 +62,13 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 warningSectionTitle: String(localized: "saneui.license.warning_section_title", defaultValue: "Status", bundle: .module),
                 statusLabel: String(localized: "saneui.license.status_label", defaultValue: "Status", bundle: .module),
                 actionsLabel: String(localized: "saneui.license.actions_label", defaultValue: "Actions", bundle: .module),
-                basicBadgeTitle: String(localized: "saneui.license.basic_badge_title", defaultValue: "Basic", bundle: .module),
-                proBadgeTitle: String(localized: "saneui.license.pro_badge_title", defaultValue: "Pro", bundle: .module),
+                basicBadgeTitle: String(localized: "saneui.license.basic_badge_title", defaultValue: "Not Licensed", bundle: .module),
+                proBadgeTitle: String(localized: "saneui.license.pro_badge_title", defaultValue: "Licensed", bundle: .module),
                 restorePurchasesLabel: String(localized: "saneui.license.restore_purchases_label", defaultValue: "Restore Purchases", bundle: .module),
                 managedBySetappLabel: String(localized: "saneui.license.managed_by_setapp_label", defaultValue: "Managed by Setapp", bundle: .module),
                 includedWithSetappLabel: String(localized: "saneui.license.included_with_setapp_label", defaultValue: "Included with Setapp", bundle: .module),
                 processingLabel: String(localized: "saneui.license.processing_label", defaultValue: "Processing...", bundle: .module),
-                unlockProPrefix: String(localized: "saneui.license.unlock_pro_prefix", defaultValue: "Unlock Pro —", bundle: .module),
+                unlockProPrefix: String(localized: "saneui.license.unlock_pro_prefix", defaultValue: "Buy Once —", bundle: .module),
                 fallbackPriceLabel: String(localized: "saneui.license.fallback_price_label", defaultValue: "$14.99", bundle: .module)
             )
         }
@@ -78,7 +78,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
         }
 
         func keepProLabel(price: String?) -> String {
-            "Keep Pro — \(price ?? fallbackPriceLabel)"
+            "Buy Once — \(price ?? fallbackPriceLabel)"
         }
     }
 

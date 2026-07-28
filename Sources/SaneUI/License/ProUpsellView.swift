@@ -143,7 +143,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                 .padding(.horizontal, 20)
 
             VStack(alignment: .leading, spacing: 6) {
-                proPoint(icon: "star.fill", text: "All Pro features unlocked")
+                proPoint(icon: "star.fill", text: "All features unlocked")
                 proPoint(icon: "infinity", text: "Lifetime updates — no subscription")
                 proPoint(icon: "lock.shield", text: "100% on-device, no account required")
                 proPoint(icon: "heart.fill", text: "Helps keep new features coming")
@@ -177,7 +177,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         }
                         Task { await licenseService.purchasePro() }
                     } label: {
-                        Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
+                        Text(licenseService.isPurchasing ? "Processing..." : "Buy \(licenseService.appName) — \(licenseService.displayPriceLabel)")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -215,7 +215,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                             await EventTracker.log("upsell_clicked_buy", app: appName)
                         }
                     } label: {
-                        Text("Unlock Pro — \(licenseService.displayPriceLabel)")
+                        Text("Buy \(licenseService.appName) — \(licenseService.displayPriceLabel)")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)

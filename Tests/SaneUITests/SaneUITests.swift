@@ -649,7 +649,7 @@ struct WelcomeGateFlowPolicyTests {
             selectedTier: .pro,
             usesAppStorePurchase: true
         )
-        #expect(label == "Unlock Pro")
+        #expect(label == "Buy Once")
     }
 
     @Test("Basic user selecting Pro on web build shows Get Started")
@@ -723,9 +723,9 @@ struct SaneLicenseServiceTests {
             keychain: MockKeychainService()
         )
 
-        #expect(service.alternateUnlockLabel == "Unlock Pro")
+        #expect(service.alternateUnlockLabel == "Buy SaneHosts")
         #expect(service.alternateEntryLabel == "Enter License Key")
-        #expect(service.accessManagementLabel == "Deactivate Pro")
+        #expect(service.accessManagementLabel == "Deactivate License")
     }
 
     @Test("SaneVideo direct price matches the SaneApps Pro price")
@@ -763,10 +763,22 @@ struct SaneLicenseServiceTests {
         #expect(!service.isLicensed)
         #expect(service.isPro)
         #expect(service.isProTrialActive)
-        #expect(service.proAccessBadgeTitle == "Pro Trial")
+        #expect(service.proAccessBadgeTitle == "Trial")
         #expect(service.proTrialDaysRemaining == 14)
         #expect(defaults.object(forKey: "tests.sanehosts.trial.started_at") != nil)
         #expect(try keychain.string(forKey: "tests.sanehosts.trial.started_at") != nil)
+    }
+
+    @Test("SaneClick direct price matches the live one-time price")
+    @MainActor
+    func saneClickDirectPriceMatchesLivePrice() {
+        let service = LicenseService(
+            appName: "SaneClick",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "saneclick"),
+            keychain: MockKeychainService()
+        )
+
+        #expect(service.displayPriceLabel == "$14.99")
     }
 
     @Test("Expired Pro trial removes Pro access")
@@ -957,6 +969,54 @@ struct SharedLicenseUIPolicyTests {
 
         #expect(source.contains("Button(licenseService.alternateEntryLabel)"))
         #expect(!source.contains("Button(licenseService.alternateUnlockLabel)"))
+        #expect(source.contains("Buy \\(licenseService.appName) — \\(licenseService.displayPriceLabel)"))
+        #expect(!source.contains("\"Unlock Pro"))
+    }
+
+    @Test("Shared license surfaces use neutral customer-visible copy")
+    func sharedLicenseSurfacesUseNeutralVisibleCopy() throws {
+        let sourcePaths = [
+            "Sources/SaneUI/License/LicenseEntryView.swift",
+            "Sources/SaneUI/License/LicenseService.swift",
+            "Sources/SaneUI/License/LicenseSettingsView.swift",
+            "Sources/SaneUI/License/ProUpsellView.swift",
+            "Sources/SaneUI/License/ProUpsellWindow.swift",
+            "Sources/SaneUI/License/WelcomeGateView.swift",
+            "Sources/SaneUICatalog/SaneUICatalogApp.swift",
+        ]
+        let root = saneUIPackageRootURL()
+        let source = try sourcePaths.map { path in
+            try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+        }.joined(separator: "\n")
+
+        let requiredVisibleCopy = [
+            "License Activated!",
+            "Buy Full Access",
+            "Not Licensed",
+            "Licensed",
+            "Buy Once —",
+            "All features unlocked",
+            "Your Trial Ended",
+            "Access is managed by Setapp.",
+        ]
+        for copy in requiredVisibleCopy {
+            #expect(source.contains(copy), "Missing neutral visible copy: \\(copy)")
+        }
+
+        let retiredVisibleCopy = [
+            "\"Unlock Pro",
+            "\"Pro Activated",
+            "\"Pro Trial\"",
+            "\"Keep Pro",
+            "\"Your Pro Trial Ended\"",
+            "\"Buy Pro\"",
+            "\"Deactivate Pro\"",
+            "\"Basic\"",
+            "\"Pro\"",
+        ]
+        for copy in retiredVisibleCopy {
+            #expect(!source.contains(copy), "Retired tier copy remains visible: \\(copy)")
+        }
     }
 
     @Test("Shared upsell does not stack a nested license sheet")
@@ -1074,7 +1134,7 @@ struct SharedLicenseUIPolicyTests {
 
         #expect(source.contains("if licenseService.usesSetappPurchase"))
         #expect(source.contains("Text(\"Included with Setapp\")"))
-        #expect(source.contains("Text(\"Pro access is managed by Setapp.\")"))
+        #expect(source.contains("Text(\"Access is managed by Setapp.\")"))
         #expect(source.contains("EventTracker.log(\"app_store_purchase_clicked\""))
         #expect(source.contains("currentPage = max(0, currentPage - 1)"))
         #expect(source.contains("currentPage = min(totalPages - 1, currentPage + 1)"))

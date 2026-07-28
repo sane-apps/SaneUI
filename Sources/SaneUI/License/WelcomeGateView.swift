@@ -274,7 +274,7 @@ enum WelcomeGateFlowPolicy {
     ) -> String {
         switch finalPrimaryAction(isPro: isPro, selectedTier: selectedTier, channel: channel) {
         case .purchasePro:
-            return "Unlock Pro"
+            return "Buy Once"
         case .openCheckout, .complete:
             return "Get Started"
         }
@@ -523,7 +523,7 @@ public struct WelcomeGateView: View {
 
     private var resolvedProTierTitle: String {
         proTierTitleOverride
-            ?? (licenseService.usesSetappPurchase ? "Pro — Setapp" : "Pro — \(licenseService.displayPriceLabel)")
+            ?? (licenseService.usesSetappPurchase ? "Included with Setapp" : "Full Access — \(licenseService.displayPriceLabel)")
     }
 
     private var resolvedProTierPrice: String {
@@ -536,7 +536,7 @@ public struct WelcomeGateView: View {
         appIcon: String,
         freeFeatures: [(icon: String, text: String)],
         proFeatures: [(icon: String, text: String)],
-        freeTierTitle: String = "Basic",
+        freeTierTitle: String = "Included",
         freeTierPrice: String? = "$0 forever",
         proTierTitleOverride: String? = nil,
         proTierPriceOverride: String? = nil,
@@ -797,9 +797,9 @@ public struct WelcomeGateView: View {
                 ]
             }
             return [
-                ("clipboard", "Basic keeps your last 50 clips searchable, pinnable, and easy to recover."),
+                ("clipboard", "SaneClip keeps your last 50 clips searchable, pinnable, and easy to recover."),
                 ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
-                ("text.viewfinder", "Pro adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls."),
+                ("text.viewfinder", "Full access adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls."),
             ]
         }
         if appSlug == "sanehosts" {
@@ -814,14 +814,14 @@ public struct WelcomeGateView: View {
         }
         switch appSlug {
         case "sanehosts":
-            return "Basic setup once, then protection runs quietly in the background."
+            return "Set up once, then protection runs quietly in the background."
         default:
             return "Daily workflow, in order."
         }
     }
 
     private var coreCardTitle: String {
-        usesDirectTrialFlow || appSlug != "sanehosts" ? "Core Workflow" : "Basic Setup"
+        usesDirectTrialFlow || appSlug != "sanehosts" ? "Core Workflow" : "Core Setup"
     }
 
     private var coreCardSubtitle: String {
@@ -947,10 +947,10 @@ public struct WelcomeGateView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
                     VStack(spacing: goldenBase * 0.62) {
-                        (Text("Basic ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
+                        (Text("Included ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
                             .font(.system(size: 30, weight: .bold, design: .serif))
 
-                        Text("After the Pro trial, Basic keeps the core clipboard workflow: history, search, pinning, screenshots, and optional private sync.")
+                        Text("The included clipboard workflow covers history, search, pinning, screenshots, and optional private sync.")
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
@@ -960,7 +960,7 @@ public struct WelcomeGateView: View {
 
                     VStack(spacing: goldenBase * 0.62) {
                         featureCard(
-                            title: "What Basic Includes",
+                            title: "What Is Included",
                             subtitle: "History, search, screenshots, the companion app, and private defaults",
                             features: freeFeatures,
                             columns: 1,
@@ -1076,7 +1076,7 @@ public struct WelcomeGateView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: goldenGap) {
                     VStack(spacing: goldenBase * 0.62) {
-                        (Text("Pro ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
+                        (Text("Full Access ").foregroundStyle(.white) + Text("Overview").foregroundStyle(saneAccentGradient))
                             .font(.system(size: 30, weight: .bold, design: .serif))
 
                         Text("Upgrade for OCR capture, smarter paste, deeper organization, and stronger privacy controls.")
@@ -1089,7 +1089,7 @@ public struct WelcomeGateView: View {
 
                     VStack(spacing: goldenBase * 0.62) {
                         featureCard(
-                            title: "What Pro Unlocks",
+                            title: "What Full Access Adds",
                             subtitle: "OCR capture, smarter paste, reusable text, and stronger control",
                             features: proFeatures.filter { !$0.text.localizedCaseInsensitiveContains("everything in basic") },
                             columns: 1,
@@ -1472,7 +1472,7 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.green)
 
-            Text(licenseService.isProTrialActive ? "Enjoy Your Pro Trial" : "Pro Activated")
+            Text(licenseService.isProTrialActive ? "Enjoy Your Trial" : "Purchase Complete")
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
@@ -1483,7 +1483,7 @@ public struct WelcomeGateView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if licenseService.isProTrialActive {
-                Button("Keep Pro — \(licenseService.displayPriceLabel)") {
+                Button("Buy Once — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
                         if let url = licenseService.checkoutURL {
                             SanePlatform.open(url)
@@ -1515,7 +1515,7 @@ public struct WelcomeGateView: View {
     private var proActivatedMessage: String {
         if let days = licenseService.proTrialDaysRemaining {
             let dayText = days == 1 ? "1 day" : "\(days) days"
-            return "\(dayText) of Pro is unlocked. No credit card required.\nPro is required after the trial."
+            return "\(dayText) remain in your trial. No credit card required.\nA one-time purchase is required after the trial."
         }
         return "All features unlocked.\nI couldn't do this without you."
     }
@@ -1528,18 +1528,18 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 42))
                 .foregroundStyle(saneAccentGradient)
 
-            Text("Your Pro Trial Ended")
+            Text("Your Trial Ended")
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("Your trial has ended. Pro is required to keep using these tools.")
+            Text("Your trial has ended. A one-time purchase is required to keep using these tools.")
                 .font(.system(size: 15))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             trialOutcomeCard(
-                title: "Keep Pro",
+                title: "Buy Once",
                 subtitle: "One-time — yours forever",
                 features: expiredTrialProFeatures,
                 isHighlighted: true
@@ -1548,7 +1548,7 @@ public struct WelcomeGateView: View {
             .frame(maxWidth: 420)
 
             if !licenseService.usesSetappPurchase {
-                Button("Unlock Pro — \(licenseService.displayPriceLabel)") {
+                Button("Buy \(appName) — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
                         if licenseService.usesAppStorePurchase {
                             Task.detached {
@@ -1763,7 +1763,7 @@ public struct WelcomeGateView: View {
                         }
                     }
                 } label: {
-                    Text(licenseService.isPurchasing ? "Processing..." : "Unlock Pro — \(licenseService.displayPriceLabel)")
+                    Text(licenseService.isPurchasing ? "Processing..." : "Buy \(appName) — \(licenseService.displayPriceLabel)")
                         .font(.system(size: 13, weight: .semibold))
                         .frame(maxWidth: .infinity)
                 }
@@ -1779,7 +1779,7 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 13))
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
-                Text("Pro access is managed by Setapp.")
+                Text("Access is managed by Setapp.")
                     .font(.system(size: 13))
                     .foregroundStyle(.white)
             } else {
@@ -1931,7 +1931,7 @@ public struct WelcomeGateView: View {
             )
         }
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
-            return "Buy Pro"
+            return "Buy \(appName)"
         }
         return WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,

@@ -39,7 +39,7 @@ public enum SaneDistributionChannel: Sendable {
         case .direct:
             "This only checks whether your unlock is valid. It does not upload your files, profiles, or app content."
         case .appStore:
-            "This build unlocks Pro through the App Store. It does not upload your files, profiles, or app content."
+            "This build unlocks the full app through the App Store. It does not upload your files, profiles, or app content."
         case .setapp:
             "This build unlocks through Setapp. It does not upload your files, profiles, or app content."
         }
@@ -50,7 +50,7 @@ public enum SaneDistributionChannel: Sendable {
         case .direct:
             "This build uses direct purchase."
         case .appStore:
-            "This App Store build unlocks Pro with an in-app purchase."
+            "This App Store build uses an in-app purchase."
         case .setapp:
             "This Setapp build manages access through Setapp."
         }
@@ -185,7 +185,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     public var proAccessBadgeTitle: String {
-        isProTrialActive ? "Pro Trial" : "Pro"
+        isProTrialActive ? "Trial" : "Licensed"
     }
 
     public var proAccessDetail: String? {
@@ -217,7 +217,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     public var alternateUnlockLabel: String {
-        directCopy?.alternateUnlockLabel ?? "Unlock Pro"
+        directCopy?.alternateUnlockLabel ?? "Buy \(appName)"
     }
 
     public var alternateEntryLabel: String {
@@ -225,7 +225,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     public var accessManagementLabel: String {
-        directCopy?.accessManagementLabel ?? "Deactivate Pro"
+        directCopy?.accessManagementLabel ?? "Deactivate License"
     }
 
     public var alternateEntryInstruction: String {
@@ -256,7 +256,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private var defaultDisplayPrice: String {
         switch appName.lowercased() {
         case "saneclick":
-            "$9.99"
+            "$14.99"
         case "sanesales":
             "$9.99"
         case "sanebar", "saneclip", "sanehosts":
@@ -527,7 +527,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             startProTrialIfNeeded()
             updateTrialLastSeenAt()
             debugLog("no cached key")
-            logger.info("\(self.isProTrialActive ? "No cached unlock credential — Pro trial active" : "No cached unlock credential — locked", privacy: .public)")
+            logger.info("\(self.isProTrialActive ? "No cached unlock credential — trial active" : "No cached unlock credential — locked", privacy: .public)")
             return
         }
 
@@ -655,7 +655,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                 appStoreProduct = products.first
                 appStoreDisplayPrice = appStoreProduct?.displayPrice ?? appStoreDisplayPrice
                 if appStoreProduct == nil {
-                    purchaseError = "Pro purchase is not configured yet in App Store Connect."
+                    purchaseError = "Purchasing is not configured yet in App Store Connect."
                     logger.error("StoreKit product not found for \(productID)")
                 }
             } catch {
@@ -683,7 +683,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             }
 
             guard let product = appStoreProduct else {
-                purchaseError = "Pro purchase is not configured yet in App Store Connect."
+                purchaseError = "Purchasing is not configured yet in App Store Connect."
                 isPurchasing = false
                 return
             }
@@ -742,7 +742,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                     purchaseError = nil
                     validationError = nil
                 } else if !isLicensed {
-                    purchaseError = "No prior Pro purchase was found for this Apple ID."
+                    purchaseError = "No prior purchase was found for this Apple ID."
                 }
             } catch {
                 purchaseError = "Restore failed. Please try again."
@@ -759,7 +759,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     /// Validate a purchase key with LemonSqueezy and unlock the app.
     public func activate(key: String) async {
         if usesAppStorePurchase {
-            validationError = "Use in-app purchase to unlock Pro in this App Store build."
+            validationError = "Use in-app purchase to unlock the full app in this App Store build."
             return
         }
 
