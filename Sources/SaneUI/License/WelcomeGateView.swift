@@ -561,11 +561,11 @@ public struct WelcomeGateView: View {
         self.permissionConfig = permissionConfig ?? WelcomeGatePermissionConfig(
             title: "Privacy First",
             bullets: [
-                ("video.slash.fill", "No screen recording."),
-                ("eye.slash.fill", "No screenshots."),
-                ("icloud.slash", "No data collected."),
+                ("video.slash.fill", "No screen recording or screenshots."),
+                ("doc.text.magnifyingglass", "Your files, scripts, clipboard, and other personal content are not captured."),
+                ("chart.bar.xaxis", "Anonymous aggregate product events may be sent as described in the privacy policy."),
             ],
-            grantedMessage: "You're all set. No extra setup is required here."
+            grantedMessage: "Your personal content stays on your device. No extra access is required here."
         )
         self.licenseService = licenseService
         self.autoDismissOnPro = autoDismissOnPro

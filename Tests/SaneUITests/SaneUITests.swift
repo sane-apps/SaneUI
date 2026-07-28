@@ -203,8 +203,8 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(source.contains("fallbackDefaults = .standard"))
     }
 
-    @Test("Debug keychain bypass has explicit real-keychain opt-in")
-    func debugKeychainBypassPolicyCanExerciseRealKeychain() {
+    @Test("Keychain bypass controls work only in Debug builds")
+    func keychainBypassControlsAreDebugOnly() {
         #expect(KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: true))
         #expect(!KeychainService.shouldBypassKeychain(
             environment: ["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1"],
@@ -219,13 +219,18 @@ struct RuntimeEnvironmentPolicyTests {
             arguments: [],
             isDebugBuild: true
         ))
-        #expect(!KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: false))
         #expect(KeychainService.shouldBypassKeychain(
+            environment: ["SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1"],
+            arguments: ["SaneApp", "--sane-no-keychain"],
+            isDebugBuild: true
+        ))
+        #expect(!KeychainService.shouldBypassKeychain(environment: [:], arguments: [], isDebugBuild: false))
+        #expect(!KeychainService.shouldBypassKeychain(
             environment: [:],
             arguments: ["SaneApp", "--sane-no-keychain"],
             isDebugBuild: false
         ))
-        #expect(KeychainService.shouldBypassKeychain(
+        #expect(!KeychainService.shouldBypassKeychain(
             environment: ["SANEAPPS_DISABLE_KEYCHAIN": "1"],
             arguments: [],
             isDebugBuild: false
@@ -543,6 +548,20 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("private var permissionPage: some View {\n        ScrollView(.vertical, showsIndicators: true)"))
         #expect(source.contains(".frame(maxWidth: .infinity, maxHeight: .infinity)"))
         #expect(source.contains("WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)"))
+    }
+
+    @Test("Default onboarding privacy copy matches the telemetry boundary")
+    func defaultOnboardingPrivacyCopyMatchesTelemetryBoundary() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Your files, scripts, clipboard, and other personal content are not captured."))
+        #expect(source.contains("Anonymous aggregate product events may be sent as described in the privacy policy."))
+        #expect(!source.contains("No data collected."))
+        #expect(!source.contains("No extra setup is required here."))
     }
 
     @Test("Welcome gate accepts tier copy overrides")
