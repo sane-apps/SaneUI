@@ -48,6 +48,11 @@ func saneVideoOnboardingCopyUsesVideoSemantics() {
     #expect(WelcomeGateCopy.proSubtitle(appSlug: "sanevideo") == "Captions, templates, smart polish, and flexible export")
     #expect(!WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo").contains("paste"))
     #expect(!WelcomeGateCopy.proLead(appSlug: "sanevideo").contains("copy"))
+    #expect(WelcomeGateCopy.coreSubtitle(appSlug: "saneclick") == "Useful Finder actions, one right-click away")
+    #expect(WelcomeGateCopy.proLead(appSlug: "saneclick") == "Set it once, then useful Finder actions stay one right-click away.")
+    #expect(WelcomeGateCopy.proTitle(appSlug: "saneclick") == "More Finder Actions")
+    #expect(WelcomeGateCopy.proSubtitle(appSlug: "saneclick") == "OCR, PDFs, images, folders, and more")
+    #expect(!WelcomeGateCopy.proLead(appSlug: "saneclick").contains("copy/paste"))
 }
 
 @Test("SaneVideo onboarding reserves readable space without shrinking shared apps")

@@ -10,6 +10,8 @@ enum WelcomeGateCopy {
         switch appSlug {
         case "sanehosts":
             "One-click protection: choose level, activate, done"
+        case "saneclick":
+            "Useful Finder actions, one right-click away"
         case "sanevideo":
             "Record, polish, and export in one local workflow"
         default:
@@ -21,6 +23,8 @@ enum WelcomeGateCopy {
         switch appSlug {
         case "sanehosts":
             "Advanced features for power users who need deeper control."
+        case "saneclick":
+            "Set it once, then useful Finder actions stay one right-click away."
         case "sanevideo":
             "Keep the complete local creator workflow after your trial."
         default:
@@ -31,6 +35,7 @@ enum WelcomeGateCopy {
     static func proTitle(appSlug: String) -> String {
         switch appSlug {
         case "sanehosts": "Advanced Features"
+        case "saneclick": "More Finder Actions"
         case "sanevideo": "Creator Tools"
         default: "Power Features"
         }
@@ -40,6 +45,8 @@ enum WelcomeGateCopy {
         switch appSlug {
         case "sanehosts":
             "Profiles, presets, merge, import, and bulk tools"
+        case "saneclick":
+            "OCR, PDFs, images, folders, and more"
         case "sanevideo":
             "Captions, templates, smart polish, and flexible export"
         default:
