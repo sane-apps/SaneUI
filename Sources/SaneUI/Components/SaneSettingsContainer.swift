@@ -155,10 +155,10 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                                     .font(SaneTypography.label)
                                     .foregroundStyle(SaneTypography.text)
                                     .lineLimit(1)
-                                    .minimumScaleFactor(0.9)
+                                    .minimumScaleFactor(1)
                             } icon: {
                                 Image(systemName: tab.icon)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: SaneTypography.bodySize, weight: .semibold))
                                     .foregroundStyle(tab.iconColor)
                                     .frame(width: 22)
                             }

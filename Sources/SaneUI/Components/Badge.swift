@@ -28,10 +28,10 @@ public struct StatusBadge: View {
         HStack(spacing: 4) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: SaneTypography.bodySize, weight: .semibold))
             }
             Text(text)
-                .font(.system(size: 14, weight: .semibold))
+                .font(SaneTypography.label)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -193,13 +193,13 @@ public struct SaneActionButtonStyle: ButtonStyle {
 
         var body: some View {
             configuration.label
-                .font(.system(size: 14, weight: .semibold))
+                .font(SaneTypography.label)
                 .foregroundStyle(isEnabled ? SaneTypography.text : SaneTypography.text.opacity(0.92))
                 .lineLimit(1)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(1)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, compact ? 9 : 12)
-                .padding(.vertical, compact ? 4 : 6)
+                .padding(.horizontal, compact ? 10 : 14)
+                .padding(.vertical, compact ? 6 : 8)
                 .background(
                     SaneGlassCapsuleBackground(
                         tint: tint,
@@ -237,12 +237,12 @@ public struct SaneSegmentedChoiceButton: View {
     public var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(SaneTypography.label)
+                .foregroundStyle(SaneTypography.text)
                 .lineLimit(1)
-                .minimumScaleFactor(0.9)
+                .minimumScaleFactor(1)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 5)
+                .padding(.vertical, 7)
                 .background(
                     SaneGlassRoundedBackground(
                         cornerRadius: 7,
@@ -274,12 +274,12 @@ public struct SaneAccentBadge: View {
         HStack(spacing: 4) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: SaneTypography.bodySize, weight: .semibold))
             }
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
+                .font(SaneTypography.label)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(SaneTypography.text)
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(

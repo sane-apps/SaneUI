@@ -44,7 +44,7 @@ public struct CompactSection<Content: View>: View {
             HStack(spacing: 8) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: SaneTypography.bodySize, weight: .semibold))
                         .foregroundStyle(iconColor)
                 }
                 Text(title)

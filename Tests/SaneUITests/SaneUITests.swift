@@ -106,8 +106,22 @@ func settingsTypeFloorIsSixteenPointWhite() throws {
     #expect(!typography.contains("bodySize: CGFloat = 14"))
     #expect(!typography.contains("bodySize: CGFloat = 13"))
     #expect(row.contains(".font(SaneTypography.label)"))
-    #expect(row.contains(".environment(\\.font, SaneTypography.body)"))
+    #expect(row.contains(".environment(\\.font, SaneTypography.label)"))
     #expect(row.contains(".environment(\\.controlSize, .regular)"))
+}
+
+@Test("Settings action buttons refuse shrink and stay on the 16pt floor")
+func settingsActionButtonsRefuseShrink() throws {
+    let source = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Components/Badge.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains(".font(SaneTypography.label)"))
+    #expect(source.contains(".minimumScaleFactor(1)"))
+    #expect(!source.contains(".minimumScaleFactor(0.82)"))
+    #expect(!source.contains(".font(.system(size: 14, weight: .semibold))"))
 }
 
 #if canImport(AppKit)
@@ -375,8 +389,10 @@ struct ReadableHelpStandardTests {
 
         #expect(source.contains("public struct SaneActionButtonStyle"))
         #expect(source.contains(".lineLimit(1)"))
-        #expect(source.contains(".minimumScaleFactor(0.82)"))
+        #expect(source.contains(".minimumScaleFactor(1)"))
+        #expect(source.contains(".font(SaneTypography.label)"))
         #expect(source.contains(".fixedSize(horizontal: false, vertical: true)"))
+        #expect(!source.contains(".minimumScaleFactor(0.82)"))
     }
 
     @Test("Compact settings card visibly fills its available grid column")

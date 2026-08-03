@@ -45,11 +45,11 @@ public struct CompactRow<Content: View>: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             content
-                .font(SaneTypography.body)
+                .environment(\.font, SaneTypography.body)
                 .foregroundStyle(SaneTypography.text)
                 .controlSize(.regular)
         }
-        .environment(\.font, SaneTypography.body)
+        .environment(\.font, SaneTypography.label)
         .environment(\.controlSize, .regular)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

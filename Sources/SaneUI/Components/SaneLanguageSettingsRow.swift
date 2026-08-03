@@ -68,7 +68,7 @@ public struct SaneLanguageSettingsRow: View {
             CompactDivider()
 
             Text(canChangeLanguage ? labels.helperText : labels.singleLanguageHelperText)
-                .font(.system(size: 14, weight: .medium))
+                .font(SaneTypography.body)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)
@@ -99,9 +99,9 @@ public struct SaneLanguageSettingsRow: View {
 
     private func valueText(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(.white)
+            .font(SaneTypography.label)
+            .foregroundStyle(SaneTypography.text)
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
+            .minimumScaleFactor(1)
     }
 }
