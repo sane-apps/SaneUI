@@ -48,14 +48,14 @@ public struct SaneEmptyState: View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(SaneTypography.text)
 
             VStack(spacing: 4) {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(.white)
                 Text(description)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
@@ -102,7 +102,7 @@ public struct LoadingOverlay: View {
                     .scaleEffect(1.2)
                 if let message = message {
                     Text(message)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                 }
             }
@@ -152,7 +152,7 @@ public struct SaneErrorState: View {
                 .foregroundStyle(.red)
 
             Text(message)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 

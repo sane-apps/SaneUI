@@ -184,3 +184,16 @@ Last updated: 2026-07-27
 - `SaneAboutView` now accepts optional typed primary/support action links so apps with private repositories can route customers to working public destinations without cloning shared About UI.
 - SaneVideo uses this to label and route the actions to its public Website and Support pages while retaining the diagnostics-backed in-app bug reporter and shared license surface.
 - Verification: full Mini `swift test` passed 120 tests across 27 suites; `git diff --check` passed.
+
+## 2026-08-03 — Settings frost + type restored (owner screenshot)
+
+**What went wrong:** Jul 10 `9f21f36` / `bb8a298` killed living mesh/vibrancy in native Settings to dodge a macOS 26 NSVisualEffectView blank-window bug. A later attempt then painted `navy.opacity(0.55)` *on top of* `glassEffect`, which flattened every CompactSection across every app. Type floor drifted to 13pt / gray helper copy in places.
+
+**Fix now:**
+- Liquid glass rows: no dense navy overlay on macOS 26; light wash only on legacy blur.
+- `SaneTypography` 14pt bright white floor; license/onboarding helpers bumped 13→14.
+- Settings host keeps mesh with `useSystemVibrancy: false` (still avoids the Jul 10 compositor bug) so glass has life underneath.
+- Apps pinning remote SaneUI must rebuild against this revision — SaneBar Package.resolved still points at GitHub.
+
+**Verify:** `swift test` on Mini; SaneUICatalog + SaneBar Control settings screenshots.
+

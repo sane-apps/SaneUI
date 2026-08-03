@@ -159,14 +159,14 @@ public struct LicenseGateView: View {
                  : (licenseService.usesAppStorePurchase
                      ? "One-time in-app purchase"
                      : "\(licenseService.displayPriceLabel) \u{00B7} One-time purchase \u{00B7} Lifetime updates"))
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             if let error = licenseService.purchaseError {
                 Text(error)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -179,7 +179,7 @@ public struct LicenseGateView: View {
     private var secondaryActions: some View {
         if licenseService.usesSetappPurchase {
             Text(licenseService.distributionChannel.purchaseManagementMessage)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -189,7 +189,7 @@ public struct LicenseGateView: View {
                     Task { await licenseService.restorePurchases() }
                 } label: {
                     Text("Restore Purchases")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }
@@ -207,7 +207,7 @@ public struct LicenseGateView: View {
                     }
                 } label: {
                     Text("Enter License")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }
@@ -228,7 +228,7 @@ public struct LicenseGateView: View {
             NSApplication.shared.terminate(nil)
         } label: {
             Text("Quit")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
         }
@@ -276,7 +276,7 @@ public struct LicenseGateView: View {
 
                 if let error = licenseService.validationError {
                     Text(error)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                 }
             }

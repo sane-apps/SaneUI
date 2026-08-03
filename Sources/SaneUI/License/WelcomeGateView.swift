@@ -281,9 +281,9 @@ enum WelcomeGateFlowPolicy {
     ) -> String {
         switch finalPrimaryAction(isPro: isPro, selectedTier: selectedTier, channel: channel) {
         case .purchasePro:
-            return "Buy Once"
+            "Buy Once"
         case .openCheckout, .complete:
-            return "Get Started"
+            "Get Started"
         }
     }
 
@@ -407,7 +407,7 @@ public struct WelcomeGateView: View {
                         Spacer(minLength: 0)
 
                         Image(systemName: "arrow.up.forward")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 24, height: 24)
                             .background(Circle().fill(Color.white.opacity(0.12)))
@@ -420,7 +420,7 @@ public struct WelcomeGateView: View {
                             .lineLimit(1)
 
                         Text(app.detail)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -428,10 +428,10 @@ public struct WelcomeGateView: View {
 
                     HStack(spacing: 4) {
                         Text("Open")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     .padding(.top, 1)
@@ -444,7 +444,7 @@ public struct WelcomeGateView: View {
                             LinearGradient(
                                 colors: [
                                     Color.white.opacity(isHovered ? 0.13 : 0.09),
-                                    app.accent.opacity(isHovered ? 0.18 : 0.10),
+                                    app.accent.opacity(isHovered ? 0.18 : 0.10)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -471,8 +471,7 @@ public struct WelcomeGateView: View {
         var body: some View {
             #if canImport(AppKit)
                 if let url = Bundle.module.url(forResource: resourceName, withExtension: "png"),
-                   let image = NSImage(contentsOf: url)
-                {
+                   let image = NSImage(contentsOf: url) {
                     Image(nsImage: image)
                         .resizable()
                 } else {
@@ -481,8 +480,7 @@ public struct WelcomeGateView: View {
             #elseif canImport(UIKit)
                 if let url = Bundle.module.url(forResource: resourceName, withExtension: "png"),
                    let data = try? Data(contentsOf: url),
-                   let image = UIImage(data: data)
-                {
+                   let image = UIImage(data: data) {
                     Image(uiImage: image)
                         .resizable()
                 } else {
@@ -570,7 +568,7 @@ public struct WelcomeGateView: View {
             bullets: [
                 ("video.slash.fill", "No screen recording or screenshots."),
                 ("doc.text.magnifyingglass", "Your files, scripts, clipboard, and other personal content are not captured."),
-                ("chart.bar.xaxis", "Anonymous aggregate product events may be sent as described in the privacy policy."),
+                ("chart.bar.xaxis", "Anonymous aggregate product events may be sent as described in the privacy policy.")
             ],
             grantedMessage: "Your personal content stays on your device. No extra access is required here."
         )
@@ -690,7 +688,7 @@ public struct WelcomeGateView: View {
                 ("keyboard", "Use hotkeys: Cmd+Shift+V opens history, Cmd+Control+1-9 pastes fast."),
                 ("cursorarrow.motionlines", "Choose where history opens: menu bar icon or mouse cursor."),
                 ("app.fill", "Source-app labels and colors help you scan quickly."),
-                ("iphone", "Use the iPhone companion with iCloud sync."),
+                ("iphone", "Use the iPhone companion with iCloud sync.")
             ]
         }
         if appSlug == "sanehosts" {
@@ -698,7 +696,7 @@ public struct WelcomeGateView: View {
                 ("shield.checkered", "Choose your protection level."),
                 ("checkmark.circle.fill", "Click Activate once."),
                 ("gearshape.2.fill", "SaneHosts safely updates your hosts file."),
-                ("bolt.horizontal.circle", "System-wide blocking starts immediately."),
+                ("bolt.horizontal.circle", "System-wide blocking starts immediately.")
             ]
         }
         return freeFeatures
@@ -715,7 +713,7 @@ public struct WelcomeGateView: View {
                 ("lock.shield.fill", "Protect history at rest with AES-256-GCM encryption."),
                 ("exclamationmark.shield.fill", "Detect sensitive data and auto-purge on your schedule."),
                 ("arrow.up.arrow.down.circle", "Export and import history when moving devices or backing up."),
-                ("link.badge.plus", "Use Integrations, Shortcuts, and webhooks for automation."),
+                ("link.badge.plus", "Use Integrations, Shortcuts, and webhooks for automation.")
             ]
         }
         if appSlug == "sanehosts" {
@@ -724,7 +722,7 @@ public struct WelcomeGateView: View {
                 ("arrow.down.circle", "Install downloadable presets in one click."),
                 ("arrow.triangle.merge", "Merge profiles into a single ruleset."),
                 ("checklist", "Run bulk operations across large entry sets."),
-                ("square.and.arrow.down", "Import profiles from files or URLs."),
+                ("square.and.arrow.down", "Import profiles from files or URLs.")
             ]
         }
         return proFeatures.filter { !$0.text.localizedCaseInsensitiveContains("everything in basic") }
@@ -737,57 +735,57 @@ public struct WelcomeGateView: View {
     private var welcomeSummary: String {
         switch appSlug {
         case "sanehosts":
-            return "Block ads, trackers, malware, and distractions across your Mac."
+            "Block ads, trackers, malware, and distractions across your Mac."
         case "saneclick":
-            return "Run useful Finder actions from right-click, without leaving your workflow."
+            "Run useful Finder actions from right-click, without leaving your workflow."
         case "sanesales":
-            return "Track revenue, orders, products, and trends across any date range."
+            "Track revenue, orders, products, and trends across any date range."
         case "saneclip":
-            return usesDirectTrialFlow
+            usesDirectTrialFlow
                 ? "Private clipboard history for your Mac, with every feature included during your trial."
                 : """
                 Private clipboard history for your Mac. Start with the free core, then unlock deeper paste and \
                 capture tools if you need them.
                 """
         case "sanebar":
-            return "Take control of your menu bar so your Mac stays clean and focused."
+            "Take control of your menu bar so your Mac stays clean and focused."
         default:
-            return "A calm setup to get productive fast."
+            "A calm setup to get productive fast."
         }
     }
 
     private var setupGuidance: String {
         switch appSlug {
         case "sanehosts":
-            return "Pick, Click, Protected."
+            "Pick, Click, Protected."
         case "saneclick":
-            return "In under 60 seconds: enable Finder extension, pick scripts, then right-click to run."
+            "In under 60 seconds: enable Finder extension, pick scripts, then right-click to run."
         case "sanesales":
-            return "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
+            "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
         case "saneclip":
-            return usesDirectTrialFlow
+            usesDirectTrialFlow
                 ? "A short walkthrough of history, capture, paste tools, privacy, and your 14-day trial."
                 : """
                 A short walkthrough: Basic, Pro, the Sane Promise, and the optional access behind capture and \
                 fast paste.
                 """
         default:
-            return "This takes about a minute. Follow each step in order."
+            "This takes about a minute. Follow each step in order."
         }
     }
 
     private var welcomeChips: [(icon: String, text: String)] {
         switch appSlug {
         case "sanehosts":
-            return [("checkmark.seal", "Choose Profile"), ("shield.checkered", "Activate"), ("arrow.right.circle", "Done")]
+            [("checkmark.seal", "Choose Profile"), ("shield.checkered", "Activate"), ("arrow.right.circle", "Done")]
         case "saneclick":
-            return [("checkmark.seal", "Enable"), ("cursorarrow.click.2", "Right-Click"), ("arrow.right.circle", "Run")]
+            [("checkmark.seal", "Enable"), ("cursorarrow.click.2", "Right-Click"), ("arrow.right.circle", "Run")]
         case "sanesales":
-            return [("checkmark.seal", "Connect"), ("chart.xyaxis.line", "Review"), ("arrow.right.circle", "Track")]
+            [("checkmark.seal", "Connect"), ("chart.xyaxis.line", "Review"), ("arrow.right.circle", "Track")]
         case "saneclip":
-            return [("magnifyingglass", "Search Fast"), ("pin.fill", "Pin Important"), ("lock.shield", "Private by Default")]
+            [("magnifyingglass", "Search Fast"), ("pin.fill", "Pin Important"), ("lock.shield", "Private by Default")]
         default:
-            return [("checkmark.seal", "Set Up"), ("sparkles", "Learn"), ("arrow.right.circle", "Launch")]
+            [("checkmark.seal", "Set Up"), ("sparkles", "Learn"), ("arrow.right.circle", "Launch")]
         }
     }
 
@@ -806,7 +804,7 @@ public struct WelcomeGateView: View {
             return [
                 ("clipboard", "SaneClip keeps your last 50 clips searchable, pinnable, and easy to recover."),
                 ("cursorarrow.motionlines", "Open history where you work, at the menu bar or right at the cursor."),
-                ("text.viewfinder", "Full access adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls."),
+                ("text.viewfinder", "Full access adds OCR capture, smarter paste, snippets, rules, and stronger privacy controls.")
             ]
         }
         if appSlug == "sanehosts" {
@@ -898,11 +896,11 @@ public struct WelcomeGateView: View {
                     ForEach(Array(welcomeHighlights.enumerated()), id: \.offset) { _, item in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: item.icon)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(saneAccentSoft)
                                 .frame(width: 14)
                             Text(item.text)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -913,7 +911,7 @@ public struct WelcomeGateView: View {
             }
 
             Text("This setup takes under 60 seconds.")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
         }
         .padding(32)
@@ -1179,7 +1177,7 @@ public struct WelcomeGateView: View {
                     rows: [
                         ("1", "Choose protection level"),
                         ("2", "Click Enable Protection"),
-                        ("3", "Done"),
+                        ("3", "Done")
                     ]
                 )
                 .frame(width: 250)
@@ -1189,7 +1187,7 @@ public struct WelcomeGateView: View {
                     bullets: [
                         "System-wide blocking starts",
                         "Hosts file updates safely",
-                        "DNS cache flushes automatically",
+                        "DNS cache flushes automatically"
                     ]
                 )
                 .frame(width: 250)
@@ -1252,7 +1250,7 @@ public struct WelcomeGateView: View {
                     .font(.system(size: 15, design: .serif))
                     .foregroundStyle(.white)
                 Text("— 2 Timothy 1:7")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
 
@@ -1336,14 +1334,13 @@ public struct WelcomeGateView: View {
                 }
                 .padding(.top, 2)
             } else if let actionLabel = section.actionLabel,
-                      let action = section.action
-            {
+                      let action = section.action {
                 Button {
                     action()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.open.fill")
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                         Text(actionLabel)
                             .font(.system(size: 14, weight: .semibold))
                     }
@@ -1358,7 +1355,7 @@ public struct WelcomeGateView: View {
                 }
             } else if let grantedMessage = section.grantedMessage {
                 Text(grantedMessage)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1408,12 +1405,12 @@ public struct WelcomeGateView: View {
                     ? "clock.badge.exclamationmark.fill"
                     : "checkmark.seal.fill"
             )
-                .font(.system(size: 42))
-                .foregroundStyle(
-                    licenseService.hasExpiredProTrial
-                        ? AnyShapeStyle(saneAccentGradient)
-                        : AnyShapeStyle(Color.green)
-                )
+            .font(.system(size: 42))
+            .foregroundStyle(
+                licenseService.hasExpiredProTrial
+                    ? AnyShapeStyle(saneAccentGradient)
+                    : AnyShapeStyle(Color.green)
+            )
 
             Text(WelcomeGateDirectTrialCopy.title(
                 isLicensed: licenseService.isPro,
@@ -1464,7 +1461,7 @@ public struct WelcomeGateView: View {
                     showingLicenseEntry = true
                 }
                 .buttonStyle(OnboardingSecondaryButtonStyle())
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             }
 
             Spacer()
@@ -1602,7 +1599,7 @@ public struct WelcomeGateView: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
 
@@ -1614,11 +1611,11 @@ public struct WelcomeGateView: View {
                 ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
                     HStack(alignment: .top, spacing: 7) {
                         Image(systemName: feature.icon)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(isHighlighted ? saneAccentSoft : .white)
                             .frame(width: 14)
                         Text(feature.text)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1645,25 +1642,25 @@ public struct WelcomeGateView: View {
     private var companionApps: [CompanionApp] {
         switch appName.lowercased() {
         case "saneclick":
-            return [
+            [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclick-app"),
                 companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=saneclick-app"),
-                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclick-app"),
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclick-app")
             ]
         case "saneclip":
-            return [
+            [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=saneclip-app"),
                 companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=saneclip-app"),
-                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclip-app"),
+                companion("SaneHosts", "Block ads and trackers across your Mac", "https://sanehosts.com?ref=saneclip-app")
             ]
         case "sanehosts":
-            return [
+            [
                 companion("SaneBar", "Hide menu bar clutter fast", "https://sanebar.com?ref=sanehosts-app"),
                 companion("SaneClick", "Add useful right-click actions", "https://saneclick.com?ref=sanehosts-app"),
-                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=sanehosts-app"),
+                companion("SaneClip", "Save clipboard history privately", "https://saneclip.com?ref=sanehosts-app")
             ]
         default:
-            return []
+            []
         }
     }
 
@@ -1681,15 +1678,15 @@ public struct WelcomeGateView: View {
     private func companionTheme(for name: String) -> (iconResourceName: String, accent: Color) {
         switch name.lowercased() {
         case "sanebar":
-            return ("SaneBarIcon", Color(red: 0.22, green: 0.78, blue: 0.92))
+            ("SaneBarIcon", Color(red: 0.22, green: 0.78, blue: 0.92))
         case "saneclick":
-            return ("SaneClickIcon", Color(red: 0.38, green: 0.70, blue: 1.00))
+            ("SaneClickIcon", Color(red: 0.38, green: 0.70, blue: 1.00))
         case "saneclip":
-            return ("SaneClipIcon", Color(red: 0.63, green: 0.66, blue: 1.00))
+            ("SaneClipIcon", Color(red: 0.63, green: 0.66, blue: 1.00))
         case "sanehosts":
-            return ("SaneHostsIcon", Color(red: 0.37, green: 0.86, blue: 0.58))
+            ("SaneHostsIcon", Color(red: 0.37, green: 0.86, blue: 0.58))
         default:
-            return ("SaneBarIcon", saneAccent)
+            ("SaneBarIcon", saneAccent)
         }
     }
 
@@ -1701,7 +1698,7 @@ public struct WelcomeGateView: View {
                     .foregroundStyle(.white)
 
                 Text("for this Mac")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
 
@@ -1750,7 +1747,7 @@ public struct WelcomeGateView: View {
         VStack(spacing: 6) {
             if licenseService.usesSetappPurchase {
                 Text("Included with Setapp")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
             } else {
@@ -1771,7 +1768,7 @@ public struct WelcomeGateView: View {
                     }
                 } label: {
                     Text(licenseService.isPurchasing ? "Processing..." : "Buy \(appName) — \(licenseService.displayPriceLabel)")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle(cornerRadius: 9, horizontalPadding: 14, verticalPadding: 7))
@@ -1783,18 +1780,18 @@ public struct WelcomeGateView: View {
                     Task { await licenseService.restorePurchases() }
                 }
                 .buttonStyle(OnboardingSecondaryButtonStyle())
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text("Access is managed by Setapp.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.white)
             } else {
                 Button(licenseService.alternateEntryLabel) {
                     showingLicenseEntry = true
                 }
                 .buttonStyle(OnboardingSecondaryButtonStyle())
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             }
         }
     }
@@ -1817,7 +1814,7 @@ public struct WelcomeGateView: View {
                         .foregroundStyle(isPro ? saneAccentSoft : .white)
                     if let price {
                         Text(price)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(.white)
                     }
                 }
@@ -1835,11 +1832,11 @@ public struct WelcomeGateView: View {
                 ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
                     HStack(alignment: .top, spacing: 7) {
                         Image(systemName: feature.icon)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(isPro ? saneAccentSoft : .white)
                             .frame(width: 14)
                         Text(feature.text)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -2040,7 +2037,7 @@ public struct WelcomeGateView: View {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     HStack(alignment: .top, spacing: 8) {
                         Text(row.0)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 19, height: 19)
                             .background(
@@ -2052,7 +2049,7 @@ public struct WelcomeGateView: View {
                                     )
                             )
                         Text(row.1)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -2089,7 +2086,7 @@ public struct WelcomeGateView: View {
                             .frame(width: 5, height: 5)
                             .padding(.top, 5)
                         Text(bullet)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -2100,7 +2097,7 @@ public struct WelcomeGateView: View {
                 Image(systemName: "checkmark.seal.fill")
                     .foregroundStyle(saneAccentSoft)
                 Text("Protection status updates in real time.")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
             .padding(.top, 5)
@@ -2134,7 +2131,7 @@ public struct WelcomeGateView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(saneAccentSoft)
                 gradientLeadingWordText(title)
                     .font(.system(size: 16, weight: .semibold))
@@ -2161,9 +2158,9 @@ public struct WelcomeGateView: View {
     private func quickChip(icon: String, text: String, accented: Bool = false) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
             Text(text)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
         }
         .foregroundStyle(accented ? saneAccentSoft : .white)
         .padding(.horizontal, 10)
@@ -2186,8 +2183,8 @@ public struct WelcomeGateView: View {
         compact: Bool = true
     ) -> some View {
         let titleSize: CGFloat = compact ? 16 : 19
-        let subtitleSize: CGFloat = compact ? 12 : 15
-        let bodySize: CGFloat = compact ? 13 : 16
+        let subtitleSize: CGFloat = compact ? 14 : 15
+        let bodySize: CGFloat = compact ? 14 : 16
         let iconSize: CGFloat = compact ? 12 : 14
         let rowSpacing: CGFloat = compact ? 8 : 12
 
@@ -2278,7 +2275,7 @@ public struct WelcomeGateView: View {
                 colors: [
                     Color.blue.opacity(0.06),
                     Color.indigo.opacity(0.04),
-                    Color.clear,
+                    Color.clear
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -2306,12 +2303,12 @@ private struct PromisePillarCard: View {
                 ForEach(lines, id: \.self) { line in
                     HStack(alignment: .top, spacing: 5) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.green)
                             .frame(width: 12)
                             .padding(.top, 2)
                         Text(line)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
                     }
                 }

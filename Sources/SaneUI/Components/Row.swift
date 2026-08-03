@@ -9,7 +9,8 @@ import SwiftUI
 /// ```swift
 /// CompactRow("Storage", icon: "externaldrive", iconColor: .orange) {
 ///     Text("256 GB")
-///         .foregroundStyle(.white)
+///         .font(SaneTypography.body)
+///         .foregroundStyle(SaneTypography.text)
 /// }
 /// ```
 public struct CompactRow<Content: View>: View {
@@ -18,12 +19,6 @@ public struct CompactRow<Content: View>: View {
     let iconColor: Color
     let content: Content
 
-    /// Creates a new compact row
-    /// - Parameters:
-    ///   - label: The row label
-    ///   - icon: Optional SF Symbol name
-    ///   - iconColor: Color for the icon
-    ///   - content: Trailing content
     public init(
         _ label: String,
         icon: String? = nil,
@@ -37,48 +32,35 @@ public struct CompactRow<Content: View>: View {
     }
 
     public var body: some View {
-        HStack {
-            if let icon = icon {
+        HStack(spacing: 10) {
+            if let icon {
                 Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(iconColor)
-                    .frame(width: 20)
+                    .frame(width: 22)
             }
             Text(label)
-                .foregroundStyle(.white)
-            Spacer()
+                .font(SaneTypography.body)
+                .foregroundStyle(SaneTypography.text)
+            Spacer(minLength: 8)
             content
+                .font(SaneTypography.body)
+                .foregroundStyle(SaneTypography.text)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 }
 
 // MARK: - Compact Toggle
 
 /// A toggle switch row with icon and label.
-///
-/// Use inside a `CompactSection` for settings toggles.
-///
-/// ```swift
-/// CompactToggle(
-///     label: "Dark Mode",
-///     icon: "moon.fill",
-///     iconColor: .purple,
-///     isOn: $isDarkMode
-/// )
-/// ```
 public struct CompactToggle: View {
     let label: String
     let icon: String?
     let iconColor: Color
     @Binding var isOn: Bool
 
-    /// Creates a new compact toggle
-    /// - Parameters:
-    ///   - label: The toggle label
-    ///   - icon: Optional SF Symbol name
-    ///   - iconColor: Color for the icon
-    ///   - isOn: Binding to the toggle state
     public init(
         label: String,
         icon: String? = nil,
@@ -88,36 +70,38 @@ public struct CompactToggle: View {
         self.label = label
         self.icon = icon
         self.iconColor = iconColor
-        self._isOn = isOn
+        _isOn = isOn
     }
 
     public var body: some View {
         Button {
             isOn.toggle()
         } label: {
-            HStack {
+            HStack(spacing: 10) {
                 if let icon {
                     Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(iconColor)
-                        .frame(width: 20)
+                        .frame(width: 22)
                 }
                 Text(label)
-                    .foregroundStyle(.white)
-                Spacer()
+                    .font(SaneTypography.body)
+                    .foregroundStyle(SaneTypography.text)
+                Spacer(minLength: 8)
                 switchIndicator
             }
         }
-        .controlSize(.small)
+        .controlSize(.regular)
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .accessibilityValue(isOn ? "On" : "Off")
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     private var switchIndicator: some View {
         Capsule()
-            .fill(isOn ? SanePanelChrome.accentStart : Color.white.opacity(0.22))
+            .fill(isOn ? SanePanelChrome.accentStart : Color.white.opacity(0.28))
             .overlay(alignment: isOn ? .trailing : .leading) {
                 Circle()
                     .fill(.white)
@@ -130,36 +114,25 @@ public struct CompactToggle: View {
 
 // MARK: - Compact Divider
 
-/// An inset divider for separating rows within a section.
-///
-/// ```swift
-/// CompactRow("Item 1") { Text("Value") }
-/// CompactDivider()
-/// CompactRow("Item 2") { Text("Value") }
-/// ```
 public struct CompactDivider: View {
-    /// Creates a new compact divider
     public init() {}
 
     public var body: some View {
         Divider()
-            .padding(.leading, 12)
+            .overlay(Color.white.opacity(0.18))
+            .padding(.leading, 14)
     }
 }
-
-// MARK: - Preview
 
 #Preview("Rows and Toggles") {
     VStack(spacing: 20) {
         CompactSection("Rows", icon: "list.bullet", iconColor: .blue) {
             CompactRow("Simple Row", icon: "star", iconColor: .yellow) {
                 Text("Value")
-                    .foregroundStyle(.white)
             }
             CompactDivider()
             CompactRow("Another Row", icon: "heart", iconColor: .red) {
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.white)
             }
         }
 

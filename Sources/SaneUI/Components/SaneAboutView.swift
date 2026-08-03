@@ -164,7 +164,7 @@ public struct SaneAboutView: View {
                         .foregroundStyle(.white)
 
                     Text(SaneAboutViewPolicy.versionLine(bundle: .main, override: versionLineText))
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                 }
 
@@ -180,7 +180,7 @@ public struct SaneAboutView: View {
                     )
                     Text(labels.secondaryTrustLine)
                 }
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
@@ -273,12 +273,12 @@ public struct SaneAboutView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 16)
 
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
 
                 Spacer()
@@ -339,7 +339,7 @@ public struct SaneAboutView: View {
                                 }
                                 CompactDivider()
                                 Text(license.text)
-                                    .font(.system(size: 13, design: .monospaced))
+                                    .font(.system(size: 14, design: .monospaced))
                                     .foregroundStyle(.white)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 12)

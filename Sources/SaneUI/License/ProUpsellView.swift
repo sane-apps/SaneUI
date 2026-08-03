@@ -133,7 +133,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(feature.featureDescription)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -157,7 +157,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         .foregroundStyle(Color.saneAccent)
 
                     Text("Included with your Setapp install")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(.white)
                 } else {
                     Text(licenseService.displayPriceLabel)
@@ -165,7 +165,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                         .foregroundStyle(Color.saneAccent)
 
                     Text("One-time purchase")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(.white)
                 }
 
@@ -195,12 +195,12 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                     .disabled(licenseService.isPurchasing)
                 } else if licenseService.usesSetappPurchase {
                     Text("Included with Setapp")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.vertical, 4)
 
                     Text(licenseService.distributionChannel.purchaseManagementMessage)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -236,7 +236,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
 
                 if let purchaseError = licenseService.purchaseError {
                     Text(purchaseError)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -254,7 +254,7 @@ public struct ProUpsellView<Feature: ProFeatureDescribing>: View {
                 .foregroundStyle(Color.saneAccent)
                 .frame(width: 20)
             Text(text)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
         }

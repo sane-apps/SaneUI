@@ -26,12 +26,12 @@ public struct StatusBadge: View {
 
     public var body: some View {
         HStack(spacing: 4) {
-            if let icon = icon {
+            if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
             }
             Text(text)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -94,7 +94,7 @@ public struct ActionButton: View {
 
     private var buttonContent: some View {
         HStack(spacing: 4) {
-            if let icon = icon {
+            if let icon {
                 Image(systemName: icon)
             }
             Text(title)
@@ -136,21 +136,21 @@ public struct SaneActionButtonStyle: ButtonStyle {
 
         private var tint: Color {
             if destructive {
-                return Color(red: 0.86, green: 0.28, blue: 0.30)
+                Color(red: 0.86, green: 0.28, blue: 0.30)
             } else if prominent {
-                return SanePanelChrome.accentTeal
+                SanePanelChrome.accentTeal
             } else {
-                return SanePanelChrome.controlNavyDeep
+                SanePanelChrome.controlNavyDeep
             }
         }
 
         private var edgeTint: Color {
             if destructive {
-                return Color(red: 0.98, green: 0.60, blue: 0.62)
+                Color(red: 0.98, green: 0.60, blue: 0.62)
             } else if prominent {
-                return SanePanelChrome.accentHighlight
+                SanePanelChrome.accentHighlight
             } else {
-                return SanePanelChrome.accentTeal
+                SanePanelChrome.accentTeal
             }
         }
 
@@ -167,8 +167,12 @@ public struct SaneActionButtonStyle: ButtonStyle {
 
         private var glowOpacity: Double {
             guard isEnabled else { return 0.02 }
-            if destructive { return 0.10 }
-            if prominent { return 0.22 }
+            if destructive {
+                return 0.10
+            }
+            if prominent {
+                return 0.22
+            }
             return 0.08
         }
 
@@ -189,8 +193,8 @@ public struct SaneActionButtonStyle: ButtonStyle {
 
         var body: some View {
             configuration.label
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.62))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isEnabled ? SaneTypography.text : SaneTypography.text.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
@@ -233,7 +237,7 @@ public struct SaneSegmentedChoiceButton: View {
     public var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.9)
@@ -270,10 +274,10 @@ public struct SaneAccentBadge: View {
         HStack(spacing: 4) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
             }
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 8)

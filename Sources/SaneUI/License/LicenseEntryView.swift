@@ -106,7 +106,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .foregroundStyle(.white)
             if let email = licenseService.licenseEmail {
                 Text(email)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.white)
             }
         }
@@ -134,7 +134,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .foregroundStyle(.white)
 
             Text(licenseService.distributionChannel.purchaseManagementMessage)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -161,7 +161,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .foregroundStyle(.white)
 
             Text(licenseService.distributionChannel.purchaseManagementMessage)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -180,7 +180,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
 
             if let error = licenseService.purchaseError {
                 Text(error)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -211,7 +211,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
                 .foregroundStyle(.white)
 
             Text(licenseService.alternateEntryInstruction)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -228,7 +228,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
 
             if let error = licenseService.validationError {
                 Text(error)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -284,7 +284,7 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         #else
             TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $licenseKey)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13, design: .monospaced))
+                .font(.system(size: 14, design: .monospaced))
                 .focused($licenseFieldFocused)
                 .accessibilityIdentifier("saneui-license-key-field")
         #endif

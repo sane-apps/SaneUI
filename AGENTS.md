@@ -42,9 +42,10 @@ swift test
 ## Shared UI Rules
 
 - Check `Sources/SaneUICatalog/SaneUICatalogApp.swift` before changing any shared settings/About/license/update surface.
-- Shared settings text, helper text, highlights, badges, status messages, and subsection text must stay bright white, high contrast, and at least `13pt`.
+- Shared settings text, helper text, highlights, badges, status messages, and subsection text must stay bright white, high contrast, and at least `14pt` (`SaneTypography`).
 - Settings and right-click menu items must be ordered from the customer's most likely/common need to the least likely/most advanced need.
 - Settings sections should use plain language, balanced spacing, and visual symmetry.
+- Prefer frosted / liquid-glass rows (`SaneGlassRoundedBackground`) over a living mesh panel background. Flat linear backgrounds are a last-resort fallback only when glass cannot composite — never ship gray helper text or sub-14pt settings copy as part of that fallback.
 - Do not reintroduce gray helper text, `mailto:` bug-report links, `Manage Access` copy, or `.buttonStyle(.bordered)` in shared surfaces.
 - Prefer extending existing shared views over adding app-local one-offs.
 

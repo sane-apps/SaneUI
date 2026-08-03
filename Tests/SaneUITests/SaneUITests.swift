@@ -128,7 +128,7 @@ func compactToggleUsesLabeledSwitchRow() throws {
                 "Check for Updates...",
                 "About / Report a Bug...",
                 "Restart Finder",
-                "Quit SaneClick",
+                "Quit SaneClick"
             ])
             #expect(menu.item(withTitle: "Check for Updates...")?.isEnabled == false)
             #expect(SaneStandardMenu.coreUtilityOrder == [
@@ -136,7 +136,7 @@ func compactToggleUsesLabeledSwitchRow() throws {
                 "License...",
                 "Check for Updates...",
                 "About / Report a Bug...",
-                "What's New...",
+                "What's New..."
             ])
         }
 
@@ -219,7 +219,7 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(KeychainService.shouldBypassKeychain(
             environment: [
                 "SANEAPPS_ENABLE_KEYCHAIN_IN_DEBUG": "1",
-                "SANEAPPS_DISABLE_KEYCHAIN": "1",
+                "SANEAPPS_DISABLE_KEYCHAIN": "1"
             ],
             arguments: [],
             isDebugBuild: true
@@ -444,8 +444,8 @@ struct ReadableHelpStandardTests {
             #expect(source.contains("didRevealInitialSidebarSelection"))
             #expect(source.contains("proxy.scrollTo(selectedTab.id, anchor: .center)"))
             #expect(source.contains("private struct SaneSettingsBackground: View"))
-            #expect(source.contains("LinearGradient("))
-            #expect(!source.contains("SaneGradientBackground"))
+            #expect(source.contains("useSystemVibrancy: false"))
+            #expect(source.contains("SaneGradientBackground("))
             #expect(!source.contains("VisualEffectBlur"))
             #expect(!source.contains("NavigationSplitView"))
             #expect(source.contains("public final class SaneSettingsWindow: NSWindow"))
@@ -508,7 +508,7 @@ struct WelcomeGateFlowPolicyTests {
             ("2.circle", "Two"),
             ("3.circle", "Three"),
             ("4.circle", "Four"),
-            ("5.circle", "Five"),
+            ("5.circle", "Five")
         ])
         #expect(summaryFeatures.count == 4)
         #expect(summaryFeatures.map(\.text) == ["One", "Two", "Three", "Four"])
@@ -1018,7 +1018,7 @@ struct SharedLicenseUIPolicyTests {
             "Sources/SaneUI/License/ProUpsellView.swift",
             "Sources/SaneUI/License/ProUpsellWindow.swift",
             "Sources/SaneUI/License/WelcomeGateView.swift",
-            "Sources/SaneUICatalog/SaneUICatalogApp.swift",
+            "Sources/SaneUICatalog/SaneUICatalogApp.swift"
         ]
         let root = saneUIPackageRootURL()
         let source = try sourcePaths.map { path in
@@ -1033,7 +1033,7 @@ struct SharedLicenseUIPolicyTests {
             "Buy Once —",
             "All features unlocked",
             "Your Trial Ended",
-            "Access is managed by Setapp.",
+            "Access is managed by Setapp."
         ]
         for copy in requiredVisibleCopy {
             #expect(source.contains(copy), "Missing neutral visible copy: \\(copy)")
@@ -1048,7 +1048,7 @@ struct SharedLicenseUIPolicyTests {
             "\"Buy Pro\"",
             "\"Deactivate Pro\"",
             "\"Basic\"",
-            "\"Pro\"",
+            "\"Pro\""
         ]
         for copy in retiredVisibleCopy {
             #expect(!source.contains(copy), "Retired tier copy remains visible: \\(copy)")
@@ -1271,7 +1271,7 @@ struct SharedLicenseUIPolicyTests {
                 hex(SaneSettingsIconSemantic.general.color),
                 hex(SaneSettingsIconSemantic.shortcuts.color),
                 hex(SaneSettingsIconSemantic.license.color),
-                hex(SaneSettingsIconSemantic.about.color),
+                hex(SaneSettingsIconSemantic.about.color)
             ]
 
             #expect(Set(coreHexes).count == coreHexes.count)
@@ -1397,7 +1397,7 @@ struct SaneInstallLocationTests {
 
         #expect(candidates.map(\.url.path) == [
             "/Applications/SaneBar.app",
-            "/Users/tester/Applications/SaneBar.app",
+            "/Users/tester/Applications/SaneBar.app"
         ])
     }
 
@@ -1773,7 +1773,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok"),
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "launch ok")
             ],
             settingsSummary: "showDockIcon: false",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1796,7 +1796,7 @@ struct DiagnosticsReportingTests {
             platformDescription: "macOS 26.3.1",
             deviceDescription: "Macmini9,1 (Apple Silicon)",
             recentLogs: [
-                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com"),
+                .init(timestamp: Date(timeIntervalSince1970: 1), level: "INFO", message: "opened /Volumes/ClientDrive/Acme Secret/foo.mov for jane@example.com")
             ],
             settingsSummary: "exportPath: /Users/alex/Projects/PrivateClient\napiKey: sk_test_12345678901234567890",
             collectedAt: Date(timeIntervalSince1970: 2)
@@ -1894,7 +1894,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "SUFeedURL": "https://example.com/appcast.xml",
+            "SUFeedURL": "https://example.com/appcast.xml"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1938,7 +1938,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
-            "AppStoreProductID": "com.saneapps.direct.pro",
+            "AppStoreProductID": "com.saneapps.direct.pro"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -1981,7 +1981,7 @@ struct PurchaseBackendInferenceTests {
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.directbundle",
             "AppStoreProductID": "com.saneapps.direct.pro",
-            "SaneDistributionChannel": "direct",
+            "SaneDistributionChannel": "direct"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -2023,7 +2023,7 @@ struct PurchaseBackendInferenceTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.appstorebundle",
-            "AppStoreProductID": "com.saneapps.sales.pro",
+            "AppStoreProductID": "com.saneapps.sales.pro"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,
@@ -2086,7 +2086,7 @@ struct SaneAboutViewPolicyTests {
 
         let info: [String: Any] = [
             "CFBundleIdentifier": "com.saneapps.testbundle",
-            "CFBundleShortVersionString": "9.9.9",
+            "CFBundleShortVersionString": "9.9.9"
         ]
         let data = try PropertyListSerialization.data(
             fromPropertyList: info,

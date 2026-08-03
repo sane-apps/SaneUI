@@ -153,7 +153,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
             if let error = licenseService.validationError ?? licenseService.purchaseError {
                 CompactSection(labels.warningSectionTitle, icon: "exclamationmark.triangle.fill", iconColor: .red) {
                     Text(error)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
@@ -174,7 +174,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
             if let email = licenseService.licenseEmail {
                 Text(email)
                     .foregroundStyle(.white)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
             }
         }
     }
@@ -183,7 +183,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     private var managementContent: some View {
         if let managementLabel = licenseService.distributionChannel.managementLabel {
             Text(managementLabel)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
 
             if licenseService.usesAppStorePurchase {
@@ -225,7 +225,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text(labels.managedBySetappLabel)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             } else {
                 Button {
@@ -241,7 +241,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
 
             if let error = licenseService.validationError ?? licenseService.purchaseError {
                 Text(error)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
         }
@@ -261,7 +261,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text(labels.managedBySetappLabel)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
             } else if licenseService.isProTrialActive {
                 directTrialActions
@@ -300,7 +300,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
         CompactRow(labels.actionsLabel, icon: "cart", iconColor: .saneAccent) {
             if licenseService.usesSetappPurchase {
                 Text(labels.managedBySetappLabel)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             } else {
                 ViewThatFits(in: .horizontal) {
@@ -335,7 +335,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .disabled(licenseService.isPurchasing)
             } else if licenseService.usesSetappPurchase {
                 Text(labels.includedWithSetappLabel)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -389,7 +389,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
 
     private func statusBadge(title: String, color: Color) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(color)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
@@ -408,7 +408,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
             )
             if let detail = proAccessDetail {
                 Text(detail)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
         }

@@ -170,7 +170,7 @@ public struct SaneFeedbackView: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
                 Text(SaneFeedbackCopy.subtitle)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
 

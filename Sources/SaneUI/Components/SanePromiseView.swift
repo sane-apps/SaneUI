@@ -66,7 +66,7 @@ public struct SanePromiseView: View {
                     Text(".\"").foregroundColor(.white))
                     .font(.system(size: 15, design: .serif))
                 Text("\u{2014} 2 Timothy 1:7")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
             }
 
@@ -130,7 +130,7 @@ public struct SanePillarCard: View {
                             .frame(width: 12)
                             .padding(.top, 2)
                 Text(line)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundStyle(.white)
                     }
                 }

@@ -33,15 +33,20 @@ private enum SaneSettingsWindowMetrics {
 /// }
 /// ```
 public protocol SaneSettingsTab: RawRepresentable, CaseIterable, Identifiable, Hashable
-where RawValue == String, AllCases: RandomAccessCollection {
+    where RawValue == String, AllCases: RandomAccessCollection {
     var title: String { get }
     var icon: String { get }
     var iconColor: Color { get }
 }
 
 public extension SaneSettingsTab {
-    var id: String { rawValue }
-    var title: String { rawValue }
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        rawValue
+    }
 }
 
 public enum SaneSettingsWindowDefaults {
@@ -110,7 +115,13 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                 .frame(width: 1)
             detail(selection.wrappedValue ?? defaultTab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(SaneSettingsBackground())
+                .background(
+                    SaneGradientBackground(
+                        style: .panel,
+                        motion: .animated,
+                        useSystemVibrancy: true
+                    )
+                )
         }
         .groupBoxStyle(GlassGroupBoxStyle())
         .tint(SanePanelChrome.accentStart)
@@ -132,29 +143,29 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     private var sidebar: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: 3) {
+                LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(Tab.allCases), id: \.id) { tab in
                         Button {
                             selection.wrappedValue = tab
                         } label: {
                             Label {
                                 Text(tab.title)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(.white)
+                                    .font(SaneTypography.label)
+                                    .foregroundStyle(SaneTypography.text)
                                     .lineLimit(1)
-                                    .minimumScaleFactor(0.85)
+                                    .minimumScaleFactor(0.9)
                             } icon: {
                                 Image(systemName: tab.icon)
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(tab.iconColor)
-                                    .frame(width: 20)
+                                    .frame(width: 22)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 10)
                             .background {
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.34) : .clear)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.40) : Color.white.opacity(0.06))
                             }
                         }
                         .buttonStyle(.plain)
@@ -163,7 +174,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                         .id(tab.id)
                     }
                 }
-                .padding(8)
+                .padding(10)
             }
             .onAppear {
                 guard !didRevealInitialSidebarSelection else { return }
@@ -183,10 +194,12 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
             alignment: .topLeading
         )
         .background(
-            ZStack {
-                SaneSettingsBackground()
-                SanePanelChrome.controlNavyDeep.opacity(0.62)
-            }
+            SaneGradientBackground(
+                style: .panel,
+                motion: .animated,
+                useSystemVibrancy: true
+            )
+            .overlay(SanePanelChrome.controlNavyDeep.opacity(0.08))
         )
     }
 
@@ -209,18 +222,16 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     #endif
 }
 
-/// A pure SwiftUI background for settings hosts. Native `Settings {}` windows
-/// on macOS 26 can intermittently fail to composite NSVisualEffectView-backed
-/// backgrounds over SwiftUI controls, so this intentionally does not use the
-/// shared mesh/blur background.
+/// Settings host background: living mesh. Prefer vibrancy on so glass rows have
+/// something alive to frost over. If a native `Settings {}` host blanks again on a
+/// future OS, set `useSystemVibrancy: false` at that call site only.
 private struct SaneSettingsBackground: View {
     var body: some View {
-        LinearGradient(
-            colors: [SanePalette.navyDeep, SanePalette.tealGlowPanel, SanePalette.navyMid],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+        SaneGradientBackground(
+            style: .panel,
+            motion: .animated,
+            useSystemVibrancy: true
         )
-        .ignoresSafeArea()
     }
 }
 
@@ -249,8 +260,13 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
     /// behavior for free. Menu-bar apps that host settings in a custom `NSWindow`
     /// should use this class so text-entry views receive Cmd+V consistently.
     public final class SaneSettingsWindow: NSWindow, @unchecked Sendable {
-        override public var canBecomeKey: Bool { true }
-        override public var canBecomeMain: Bool { true }
+        override public var canBecomeKey: Bool {
+            true
+        }
+
+        override public var canBecomeMain: Bool {
+            true
+        }
 
         override public func performKeyEquivalent(with event: NSEvent) -> Bool {
             if Self.isPlainCommandV(event), forwardPasteToFirstResponder() {
@@ -287,11 +303,11 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
     public struct SaneSettingsResizeGrip: NSViewRepresentable {
         public init() {}
 
-        public func makeNSView(context: Context) -> SaneSettingsResizeGripView {
+        public func makeNSView(context _: Context) -> SaneSettingsResizeGripView {
             SaneSettingsResizeGripView()
         }
 
-        public func updateNSView(_ nsView: SaneSettingsResizeGripView, context: Context) {
+        public func updateNSView(_ nsView: SaneSettingsResizeGripView, context _: Context) {
             nsView.needsDisplay = true
         }
     }
@@ -300,7 +316,9 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         private var initialFrame: NSRect?
         private var initialMouseLocation: NSPoint?
 
-        override public var isFlipped: Bool { false }
+        override public var isFlipped: Bool {
+            false
+        }
 
         override public init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
@@ -311,7 +329,7 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         }
 
         @available(*, unavailable)
-        required init?(coder: NSCoder) {
+        required init?(coder _: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
 
@@ -336,13 +354,13 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
             context.strokePath()
         }
 
-        override public func mouseDown(with event: NSEvent) {
+        override public func mouseDown(with _: NSEvent) {
             guard let window else { return }
             initialFrame = window.frame
             initialMouseLocation = NSEvent.mouseLocation
         }
 
-        override public func mouseDragged(with event: NSEvent) {
+        override public func mouseDragged(with _: NSEvent) {
             guard let window,
                   let initialFrame,
                   let initialMouseLocation

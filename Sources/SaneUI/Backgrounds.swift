@@ -7,7 +7,7 @@ import SwiftUI
 
 // MARK: - Visual Effect Blur
 
-/// A translucent blur effect view for macOS glass morphism.
+// A translucent blur effect view for macOS glass morphism.
 #if canImport(AppKit)
     public struct VisualEffectBlur: NSViewRepresentable {
         public let material: NSVisualEffectView.Material
@@ -113,24 +113,32 @@ public struct SaneGradientBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let style: SaneGradientBackgroundStyle
     private let motion: SaneGradientBackgroundMotion
+    /// System vibrancy under the mesh. Disable in native `Settings {}` hosts where
+    /// NSVisualEffectView can fail to composite on macOS 26 — mesh still lives.
+    private let useSystemVibrancy: Bool
 
     public init(
         style: SaneGradientBackgroundStyle = .standard,
-        motion: SaneGradientBackgroundMotion = .static
+        motion: SaneGradientBackgroundMotion = .static,
+        useSystemVibrancy: Bool = true
     ) {
         self.style = style
         self.motion = motion
+        self.useSystemVibrancy = useSystemVibrancy
     }
 
     public var body: some View {
         ZStack {
-            // Layer 0: System vibrancy (dark mode depth)
-            if colorScheme == .dark {
+            // Layer 0: System vibrancy (dark mode depth) — optional
+            if useSystemVibrancy, colorScheme == .dark {
                 #if os(macOS)
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                 #else
                     VisualEffectBlur()
                 #endif
+            } else if colorScheme == .dark {
+                // Solid deep navy so glass sections still have contrast without vibrancy.
+                SanePalette.navyDeep
             }
 
             // Layer 1: Living mesh or linear fallback
@@ -200,25 +208,24 @@ public struct SaneGradientBackground: View {
 
     // MARK: - Linear Fallback (macOS 14)
 
+    @ViewBuilder
     private var linearFallback: some View {
-        Group {
-            if colorScheme == .dark {
-                LinearGradient(
-                    colors: style == .panel
-                        ? [SanePalette.navy, SanePalette.tealGlowPanel, SanePalette.navyDeep]
-                        : [SanePalette.navy, SanePalette.tealDeep, SanePalette.navyDeep],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            } else {
-                LinearGradient(
-                    colors: style == .panel
-                        ? [SanePalette.lightWash, SanePalette.lightGlowPanel, SanePalette.lightCool]
-                        : [SanePalette.lightWash, SanePalette.lightGlow, SanePalette.lightCool],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
+        if colorScheme == .dark {
+            LinearGradient(
+                colors: style == .panel
+                    ? [SanePalette.navy, SanePalette.tealGlowPanel, SanePalette.navyDeep]
+                    : [SanePalette.navy, SanePalette.tealDeep, SanePalette.navyDeep],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            LinearGradient(
+                colors: style == .panel
+                    ? [SanePalette.lightWash, SanePalette.lightGlowPanel, SanePalette.lightCool]
+                    : [SanePalette.lightWash, SanePalette.lightGlow, SanePalette.lightCool],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 
@@ -264,7 +271,7 @@ public struct SaneGradientBackground: View {
         }
     }
 
-    internal nonisolated static func meshOpacity(for style: SaneGradientBackgroundStyle) -> Double {
+    nonisolated static func meshOpacity(for style: SaneGradientBackgroundStyle) -> Double {
         switch style {
         case .standard:
             1.0
@@ -273,24 +280,19 @@ public struct SaneGradientBackground: View {
         }
     }
 
-    internal nonisolated static func usesAnimatedMesh(
+    nonisolated static func usesAnimatedMesh(
         style: SaneGradientBackgroundStyle,
         reduceMotion: Bool
     ) -> Bool {
         usesAnimatedMesh(style: style, reduceMotion: reduceMotion, motion: .static)
     }
 
-    internal nonisolated static func usesAnimatedMesh(
-        style: SaneGradientBackgroundStyle,
+    nonisolated static func usesAnimatedMesh(
+        style _: SaneGradientBackgroundStyle,
         reduceMotion: Bool,
         motion: SaneGradientBackgroundMotion
     ) -> Bool {
-        switch style {
-        case .standard:
-            motion == .animated && !reduceMotion
-        case .panel:
-            false
-        }
+        motion == .animated && !reduceMotion
     }
 }
 
@@ -314,12 +316,12 @@ public struct SaneGlassRoundedBackground: View {
         cornerRadius: CGFloat,
         tint: Color = SanePanelChrome.accentStart,
         edgeTint: Color? = nil,
-        tintStrength: Double = 0.14,
-        glowOpacity: Double = 0.0,
+        tintStrength: Double = 0.22,
+        glowOpacity: Double = 0.08,
         interactive: Bool = false,
-        shadowOpacity: Double = 0.16,
-        shadowRadius: CGFloat = 10,
-        shadowY: CGFloat = 4
+        shadowOpacity: Double = 0.22,
+        shadowRadius: CGFloat = 12,
+        shadowY: CGFloat = 5
     ) {
         self.cornerRadius = cornerRadius
         self.tint = tint
@@ -340,7 +342,7 @@ public struct SaneGlassRoundedBackground: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(colorScheme == .dark ? 0.14 : 0.08),
+                            Color.white.opacity(colorScheme == .dark ? 0.18 : 0.10),
                             Color.clear
                         ],
                         startPoint: .top,
@@ -348,26 +350,36 @@ public struct SaneGlassRoundedBackground: View {
                     )
                 )
 
+            // Legacy path only: a light wash so blur still reads as frost.
+            // Never paint dense navy over liquid glass — that is what flattened every settings row.
+            if needsLegacyFrostWash {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        colorScheme == .dark
+                            ? SanePalette.navy.opacity(0.10)
+                            : Color.white.opacity(0.18)
+                    )
+            }
+
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            tint.opacity(colorScheme == .dark ? tintStrength : tintStrength * 0.65),
-                            SanePanelChrome.accentEnd.opacity(colorScheme == .dark ? tintStrength * 0.42 : tintStrength * 0.25)
+                            tint.opacity(colorScheme == .dark ? tintStrength * 0.35 : tintStrength * 0.30),
+                            SanePanelChrome.accentEnd.opacity(colorScheme == .dark ? tintStrength * 0.18 : tintStrength * 0.12)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(colorScheme == .dark ? 0.24 : 0.14),
-                            resolvedEdgeTint.opacity(colorScheme == .dark ? 0.40 : 0.24)
+                            Color.white.opacity(colorScheme == .dark ? 0.28 : 0.16),
+                            resolvedEdgeTint.opacity(colorScheme == .dark ? 0.45 : 0.28)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -393,22 +405,44 @@ public struct SaneGlassRoundedBackground: View {
     private var glassBase: some View {
         #if swift(>=6.2)
             if #available(macOS 26.0, iOS 26.0, *) {
-                if interactive {
-                    Color.clear.glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
-                } else {
-                    Color.clear.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                    if interactive {
+                        Color.clear.glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
+                    } else {
+                        Color.clear.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+                    }
                 }
             } else {
                 legacyGlassBase
-                    .opacity(colorScheme == .dark ? 0.88 : 0.74)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             }
         #else
-            legacyGlassBase
-                .opacity(colorScheme == .dark ? 0.88 : 0.74)
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                legacyGlassBase
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            }
         #endif
     }
 
-    private var resolvedEdgeTint: Color { edgeTint ?? tint }
+    /// Opaque wash is only for pre-liquid-glass blur, so frost stays visible.
+    private var needsLegacyFrostWash: Bool {
+        #if swift(>=6.2)
+            if #available(macOS 26.0, iOS 26.0, *) {
+                return false
+            }
+            return true
+        #else
+            return true
+        #endif
+    }
+
+    private var resolvedEdgeTint: Color {
+        edgeTint ?? tint
+    }
 
     @ViewBuilder
     private var legacyGlassBase: some View {
@@ -529,7 +563,9 @@ public struct SaneGlassCapsuleBackground: View {
         #endif
     }
 
-    private var resolvedEdgeTint: Color { edgeTint ?? tint }
+    private var resolvedEdgeTint: Color {
+        edgeTint ?? tint
+    }
 
     @ViewBuilder
     private var legacyGlassBase: some View {
@@ -641,7 +677,9 @@ public struct SaneGlassCircleBackground: View {
         #endif
     }
 
-    private var resolvedEdgeTint: Color { edgeTint ?? tint }
+    private var resolvedEdgeTint: Color {
+        edgeTint ?? tint
+    }
 
     @ViewBuilder
     private var legacyGlassBase: some View {
@@ -676,20 +714,21 @@ public struct GlassGroupBoxStyle: GroupBoxStyle {
     public func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             configuration.label
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(SaneTypography.label)
+                .foregroundStyle(SaneTypography.text)
 
             configuration.content
         }
         .padding(16)
         .background(
             SaneGlassRoundedBackground(
-                cornerRadius: 12,
+                cornerRadius: 14,
                 tint: SanePanelChrome.panelTint,
-                tintStrength: 0.12,
-                shadowOpacity: 0.12,
-                shadowRadius: 8,
-                shadowY: 3
+                tintStrength: 0.18,
+                glowOpacity: 0.12,
+                shadowOpacity: 0.24,
+                shadowRadius: 14,
+                shadowY: 5
             )
         )
     }
@@ -706,13 +745,14 @@ public struct GlassGroupBoxStyle: GroupBoxStyle {
         CompactSection("Browse Icons") {
             CompactRow("Opens as") {
                 Text("Icon Panel")
-                    .foregroundStyle(.secondary)
+                    .font(SaneTypography.body)
+                    .foregroundStyle(SaneTypography.text)
             }
             CompactDivider()
             CompactRow("Shortcut") {
                 Text("⌘⇧Space")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .font(SaneTypography.mono)
+                    .foregroundStyle(SaneTypography.text)
             }
         }
         .padding(.horizontal, 20)

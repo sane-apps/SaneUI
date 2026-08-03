@@ -39,10 +39,12 @@ public struct SaneInlineHelp: View {
 
     public var body: some View {
         Text(text)
-            .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.94))
+            .font(SaneTypography.body)
+            .foregroundStyle(SaneTypography.text)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityLabel(text)
+            // Keep help readable even when a parent preview uses .disabled(true).
+            .disabled(false)
     }
 }

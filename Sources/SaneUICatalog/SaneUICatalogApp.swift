@@ -112,7 +112,7 @@ private struct FoundationsCatalogView: View {
 
         CompactSection("Background", icon: "sparkles.rectangle.stack", iconColor: .blue) {
             Text("Use the calmer panel gradient for shared settings, detail views, and overlay-backed controls.")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)
@@ -152,7 +152,6 @@ private struct FoundationsCatalogView: View {
         }
     }
 
-    @ViewBuilder
     private func semanticRow(_ label: String, icon: String, semantic: SaneSettingsIconSemantic) -> some View {
         CompactRow(label, icon: icon, iconColor: semantic.color) {
             swatch(semantic.color)
@@ -188,7 +187,7 @@ private struct ControlsCatalogView: View {
 
             if let lastButtonAction {
                 Text(lastButtonAction)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 4)
             }
@@ -298,16 +297,16 @@ private struct SettingsCatalogView: View {
     var body: some View {
         CompactSection("Startup", icon: "power", iconColor: .orange) {
             SaneLoginItemToggle()
-                .disabled(true)
+                .allowsHitTesting(false)
             CompactDivider()
             SaneDockIconToggle(showDockIcon: $showDockIcon)
-                .disabled(true)
+                .allowsHitTesting(false)
             CompactDivider()
             Text("Preview only. Startup toggles stay off so the host Mac never changes.")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .font(SaneTypography.body)
+                .foregroundStyle(SaneTypography.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 10)
         }
 
@@ -324,7 +323,7 @@ private struct SettingsCatalogView: View {
             steps: [
                 "Open the matching Privacy & Security pane.",
                 "Enable the app for the requested target.",
-                "Return to the app and retry the action.",
+                "Return to the app and retry the action."
             ],
             primaryAction: SanePermissionAction(
                 title: "Open Automation Settings",
@@ -371,7 +370,7 @@ private struct LicenseCatalogView: View {
                 .foregroundStyle(.white)
 
             Text("Shared trial, licensed, and Setapp layouts every app should inherit.")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white)
 
             HStack(spacing: 8) {
@@ -445,10 +444,10 @@ private struct AboutCatalogView: View {
             githubRepo: "SaneUI",
             diagnosticsService: diagnosticsService,
             licenses: [
-                SaneAboutLicenseCatalog.saneUI,
+                SaneAboutLicenseCatalog.saneUI
             ],
             feedbackExtraAttachments: [
-                ("slider.horizontal.3", "Catalog state and selected tab"),
+                ("slider.horizontal.3", "Catalog state and selected tab")
             ],
             versionLineText: "Shared Source of Truth",
             identitySymbolName: "square.stack.3d.up.fill",
@@ -485,7 +484,7 @@ private struct StatesCatalogView: View {
 
             if let lastStateAction {
                 Text(lastStateAction)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 4)
             }
@@ -537,10 +536,10 @@ private struct StatesCatalogView: View {
         }
     }
 
-    private func stateCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func stateCard(title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
             ZStack {
                 RoundedRectangle(cornerRadius: 18)

@@ -40,15 +40,16 @@ public struct CompactSection<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                if let icon = icon {
+                if let icon {
                     Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(iconColor)
                 }
                 Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                    .font(SaneTypography.section)
+                    .foregroundStyle(SaneTypography.text)
             }
             .padding(.horizontal, 2)
 
@@ -58,12 +59,14 @@ public struct CompactSection<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 SaneGlassRoundedBackground(
-                    cornerRadius: 10,
+                    cornerRadius: 14,
                     tint: SanePanelChrome.panelTint,
-                    tintStrength: 0.10,
-                    shadowOpacity: 0.12,
-                    shadowRadius: 8,
-                    shadowY: 3
+                    tintStrength: 0.12,
+                    glowOpacity: 0.14,
+                    interactive: true,
+                    shadowOpacity: 0.28,
+                    shadowRadius: 16,
+                    shadowY: 6
                 )
             )
             .padding(.horizontal, 2)

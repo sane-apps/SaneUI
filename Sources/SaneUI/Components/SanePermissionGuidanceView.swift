@@ -176,7 +176,7 @@
                     ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                         HStack(alignment: .top, spacing: 10) {
                             Text("\(index + 1)")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                                 .frame(width: 24, height: 24)
                                 .background(
@@ -185,7 +185,7 @@
                                 )
 
                             Text(step)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .saneHelp(step)
