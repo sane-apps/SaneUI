@@ -114,6 +114,8 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                 .fill(Color.white.opacity(0.12))
                 .frame(width: 1)
             detail(selection.wrappedValue ?? defaultTab)
+                .environment(\.font, SaneTypography.body)
+                .environment(\.controlSize, .regular)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(
                     SaneGradientBackground(

@@ -77,15 +77,37 @@ func compactToggleUsesLabeledSwitchRow() throws {
         encoding: .utf8
     )
 
-    #expect(source.contains("Button {"))
-    #expect(source.contains("isOn.toggle()"))
+    #expect(source.contains("onTapGesture { isOn.toggle() }"))
     #expect(source.contains("private var switchIndicator: some View"))
     #expect(source.contains("Capsule()"))
     #expect(source.contains("Circle()"))
-    #expect(source.contains(".buttonStyle(.plain)"))
+    #expect(source.contains("SaneTypography.label"))
     #expect(source.contains(".accessibilityLabel(label)"))
     #expect(source.contains(".accessibilityValue(isOn ? \"On\" : \"Off\")"))
     #expect(!source.contains("Toggle(\"\", isOn:"))
+    #expect(!source.contains(".buttonStyle(.plain)"))
+}
+
+@Test("Settings type floor stays at 16pt white and CompactRow labels refuse Button shrink")
+func settingsTypeFloorIsSixteenPointWhite() throws {
+    let typography = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Typography.swift"),
+        encoding: .utf8
+    )
+    let row = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Components/Row.swift"),
+        encoding: .utf8
+    )
+
+    #expect(typography.contains("bodySize: CGFloat = 16"))
+    #expect(typography.contains("public static let text = Color.white"))
+    #expect(!typography.contains("bodySize: CGFloat = 14"))
+    #expect(!typography.contains("bodySize: CGFloat = 13"))
+    #expect(row.contains(".font(SaneTypography.label)"))
+    #expect(row.contains(".environment(\\.font, SaneTypography.body)"))
+    #expect(row.contains(".environment(\\.controlSize, .regular)"))
 }
 
 #if canImport(AppKit)

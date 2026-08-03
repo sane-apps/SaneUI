@@ -35,18 +35,22 @@ public struct CompactRow<Content: View>: View {
         HStack(spacing: 10) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: SaneTypography.bodySize, weight: .semibold))
                     .foregroundStyle(iconColor)
-                    .frame(width: 22)
+                    .frame(width: 24)
             }
             Text(label)
-                .font(SaneTypography.body)
+                .font(SaneTypography.label)
                 .foregroundStyle(SaneTypography.text)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             content
                 .font(SaneTypography.body)
                 .foregroundStyle(SaneTypography.text)
+                .controlSize(.regular)
         }
+        .environment(\.font, SaneTypography.body)
+        .environment(\.controlSize, .regular)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
     }
@@ -55,6 +59,9 @@ public struct CompactRow<Content: View>: View {
 // MARK: - Compact Toggle
 
 /// A toggle switch row with icon and label.
+///
+/// Uses a tappable `HStack` (not `Button`) so macOS control sizing cannot shrink
+/// the absolute 16pt label font.
 public struct CompactToggle: View {
     let label: String
     let icon: String?
@@ -74,27 +81,29 @@ public struct CompactToggle: View {
     }
 
     public var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            HStack(spacing: 10) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                        .frame(width: 22)
-                }
-                Text(label)
-                    .font(SaneTypography.body)
-                    .foregroundStyle(SaneTypography.text)
-                Spacer(minLength: 8)
-                switchIndicator
+        HStack(spacing: 10) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: SaneTypography.bodySize, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 24)
             }
+            Text(label)
+                .font(SaneTypography.label)
+                .foregroundStyle(SaneTypography.text)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            switchIndicator
         }
-        .controlSize(.regular)
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture { isOn.toggle() }
+        .environment(\.font, SaneTypography.body)
+        .environment(\.controlSize, .regular)
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel(label)
         .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAction { isOn.toggle() }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
     }
@@ -105,10 +114,11 @@ public struct CompactToggle: View {
             .overlay(alignment: isOn ? .trailing : .leading) {
                 Circle()
                     .fill(.white)
-                    .frame(width: 18, height: 18)
+                    .frame(width: 20, height: 20)
                     .padding(3)
             }
-            .frame(width: 44, height: 24)
+            .frame(width: 48, height: 26)
+            .accessibilityHidden(true)
     }
 }
 

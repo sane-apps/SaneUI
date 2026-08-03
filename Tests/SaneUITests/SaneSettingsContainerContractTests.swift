@@ -27,8 +27,9 @@ import Testing
             #expect(source.contains(".onChange(of: selection.wrappedValue)"))
             #expect(!source.contains("NavigationSplitView"))
             #expect(source.contains("private struct SaneSettingsBackground: View"))
-            #expect(source.contains("useSystemVibrancy: false"))
+            #expect(source.contains("useSystemVibrancy: true"))
             #expect(source.contains("SaneGradientBackground("))
+            #expect(source.contains(".environment(\\.font, SaneTypography.body)"))
             #expect(!source.contains("VisualEffectBlur"))
         }
 

@@ -56,6 +56,8 @@ public struct CompactSection<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
+            .environment(\.font, SaneTypography.body)
+            .environment(\.controlSize, .regular)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 SaneGlassRoundedBackground(
