@@ -241,7 +241,8 @@ public struct SaneSegmentedChoiceButton: View {
                 .foregroundStyle(SaneTypography.text)
                 .lineLimit(1)
                 .minimumScaleFactor(1)
-                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(
                     SaneGlassRoundedBackground(
@@ -258,6 +259,7 @@ public struct SaneSegmentedChoiceButton: View {
                 )
         }
         .buttonStyle(SanePressablePlainStyle())
+        .controlSize(.regular)
     }
 }
 
