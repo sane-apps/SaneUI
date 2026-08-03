@@ -106,8 +106,11 @@ func settingsTypeFloorIsSixteenPointWhite() throws {
     #expect(!typography.contains("bodySize: CGFloat = 14"))
     #expect(!typography.contains("bodySize: CGFloat = 13"))
     #expect(row.contains(".font(SaneTypography.label)"))
+    #expect(row.contains(".fixedSize(horizontal: true, vertical: false)"))
+    #expect(row.contains(".layoutPriority(1)"))
     #expect(row.contains(".environment(\\.font, SaneTypography.label)"))
     #expect(row.contains(".environment(\\.controlSize, .regular)"))
+    #expect(!row.contains(".fixedSize(horizontal: false, vertical: true)"))
 }
 
 @Test("Settings action buttons refuse shrink and stay on the 16pt floor")
@@ -391,8 +394,8 @@ struct ReadableHelpStandardTests {
         #expect(source.contains(".lineLimit(1)"))
         #expect(source.contains(".minimumScaleFactor(1)"))
         #expect(source.contains(".font(SaneTypography.label)"))
-        #expect(source.contains(".fixedSize(horizontal: false, vertical: true)"))
-        #expect(!source.contains(".minimumScaleFactor(0.82)"))
+        #expect(source.contains(".fixedSize(horizontal: true, vertical: false)"))
+        #expect(!source.contains(".fixedSize(horizontal: false, vertical: true)"))
     }
 
     @Test("Compact settings card visibly fills its available grid column")

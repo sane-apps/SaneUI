@@ -42,12 +42,16 @@ public struct CompactRow<Content: View>: View {
             Text(label)
                 .font(SaneTypography.label)
                 .foregroundStyle(SaneTypography.text)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
             Spacer(minLength: 8)
             content
                 .environment(\.font, SaneTypography.body)
                 .foregroundStyle(SaneTypography.text)
                 .controlSize(.regular)
+                .layoutPriority(0)
         }
         .environment(\.font, SaneTypography.label)
         .environment(\.controlSize, .regular)
@@ -91,7 +95,10 @@ public struct CompactToggle: View {
             Text(label)
                 .font(SaneTypography.label)
                 .foregroundStyle(SaneTypography.text)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
             Spacer(minLength: 8)
             switchIndicator
         }

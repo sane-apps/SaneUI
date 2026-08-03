@@ -5,12 +5,12 @@ import SwiftUI
 #endif
 
 private enum SaneSettingsWindowMetrics {
-    static let minWidth: CGFloat = 560
-    static let idealWidth: CGFloat = 600
-    static let minHeight: CGFloat = 352
-    static let idealHeight: CGFloat = 400
-    static let sidebarMinWidth: CGFloat = 152
-    static let sidebarIdealWidth: CGFloat = 168
+    static let minWidth: CGFloat = 640
+    static let idealWidth: CGFloat = 720
+    static let minHeight: CGFloat = 400
+    static let idealHeight: CGFloat = 520
+    static let sidebarMinWidth: CGFloat = 168
+    static let sidebarIdealWidth: CGFloat = 180
     static let sidebarMaxWidth: CGFloat = 220
 }
 

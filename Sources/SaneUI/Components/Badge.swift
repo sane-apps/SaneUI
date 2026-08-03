@@ -197,7 +197,7 @@ public struct SaneActionButtonStyle: ButtonStyle {
                 .foregroundStyle(isEnabled ? SaneTypography.text : SaneTypography.text.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(1)
-                .fixedSize(horizontal: false, vertical: true)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, compact ? 10 : 14)
                 .padding(.vertical, compact ? 6 : 8)
                 .background(
