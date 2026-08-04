@@ -88,8 +88,8 @@ func compactToggleUsesLabeledSwitchRow() throws {
     #expect(!source.contains(".buttonStyle(.plain)"))
 }
 
-@Test("Settings type floor stays at 18pt white with uncrushable CompactRow labels")
-func settingsTypeFloorIsEighteenPointWhite() throws {
+@Test("Settings type floor stays at 13pt white with uncrushable CompactRow labels")
+func settingsTypeFloorIsThirteenPointWhite() throws {
     let typography = try String(
         contentsOf: saneUIPackageRootURL()
             .appendingPathComponent("Sources/SaneUI/Typography.swift"),
@@ -101,12 +101,12 @@ func settingsTypeFloorIsEighteenPointWhite() throws {
         encoding: .utf8
     )
 
-    #expect(typography.contains("bodySize: CGFloat = 18"))
-    #expect(typography.contains("sectionSize: CGFloat = 18"))
+    #expect(typography.contains("bodySize: CGFloat = 13"))
+    #expect(typography.contains("sectionSize: CGFloat = 13"))
     #expect(typography.contains("public static let text = Color.white"))
+    #expect(!typography.contains("bodySize: CGFloat = 18"))
     #expect(!typography.contains("bodySize: CGFloat = 16"))
     #expect(!typography.contains("bodySize: CGFloat = 14"))
-    #expect(!typography.contains("bodySize: CGFloat = 13"))
     #expect(row.contains(".font(SaneTypography.label)"))
     #expect(row.contains(".fixedSize(horizontal: true, vertical: false)"))
     #expect(row.contains(".layoutPriority(1)"))

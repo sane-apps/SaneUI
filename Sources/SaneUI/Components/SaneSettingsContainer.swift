@@ -126,7 +126,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                 )
         }
         .groupBoxStyle(GlassGroupBoxStyle())
-        .tint(SanePanelChrome.accentStart)
+        .modifier(SaneSettingsBrandTintModifier())
         .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
         #if os(macOS)
             .background(windowSizingBackground)
@@ -166,8 +166,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(selection.wrappedValue == tab ? SanePanelChrome.accentStart.opacity(0.40) : Color.white.opacity(0.06))
+                                SaneSettingsSidebarRowBackground(isSelected: selection.wrappedValue == tab)
                             }
                         }
                         .buttonStyle(.plain)
@@ -440,3 +439,27 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         }
     }
 #endif
+
+// MARK: - Brand accent helpers
+
+private struct SaneSettingsBrandTintModifier: ViewModifier {
+    @Environment(\.saneBrandAccent) private var brandAccent
+
+    func body(content: Content) -> some View {
+        content.tint(brandAccent ?? SanePanelChrome.accentStart)
+    }
+}
+
+private struct SaneSettingsSidebarRowBackground: View {
+    var isSelected: Bool
+    @Environment(\.saneBrandAccent) private var brandAccent
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(
+                isSelected
+                    ? (brandAccent ?? SanePanelChrome.accentStart).opacity(0.40)
+                    : Color.white.opacity(0.06)
+            )
+    }
+}

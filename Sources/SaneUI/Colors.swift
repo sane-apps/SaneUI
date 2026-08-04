@@ -137,9 +137,40 @@ private struct AdaptiveColorsKey: EnvironmentKey {
     static let defaultValue = AdaptiveColors(colorScheme: .dark)
 }
 
+/// Optional per-app brand accent. When set, primary ActionButtons and Settings tint
+/// use this instead of the shared teal/blue chrome (SaneBooks gold, etc.).
+private struct SaneBrandAccentKey: EnvironmentKey {
+    static let defaultValue: Color? = nil
+}
+
+private struct SaneBrandAccentSoftKey: EnvironmentKey {
+    static let defaultValue: Color? = nil
+}
+
 public extension EnvironmentValues {
     var adaptiveColors: AdaptiveColors {
         get { self[AdaptiveColorsKey.self] }
         set { self[AdaptiveColorsKey.self] = newValue }
+    }
+
+    /// Primary brand accent override for the hosting app (nil = SaneUI default).
+    var saneBrandAccent: Color? {
+        get { self[SaneBrandAccentKey.self] }
+        set { self[SaneBrandAccentKey.self] = newValue }
+    }
+
+    /// Softer brand accent for highlights / selected edges (nil = derive from chrome).
+    var saneBrandAccentSoft: Color? {
+        get { self[SaneBrandAccentSoftKey.self] }
+        set { self[SaneBrandAccentSoftKey.self] = newValue }
+    }
+}
+
+public extension View {
+    /// Apply an app-local brand accent without changing global SaneUI teal.
+    func saneBrandAccent(_ accent: Color, soft: Color? = nil) -> some View {
+        environment(\.saneBrandAccent, accent)
+            .environment(\.saneBrandAccentSoft, soft)
+            .tint(accent)
     }
 }

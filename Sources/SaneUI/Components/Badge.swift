@@ -133,12 +133,14 @@ public struct SaneActionButtonStyle: ButtonStyle {
         let compact: Bool
 
         @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.saneBrandAccent) private var brandAccent
+        @Environment(\.saneBrandAccentSoft) private var brandAccentSoft
 
         private var tint: Color {
             if destructive {
                 Color(red: 0.86, green: 0.28, blue: 0.30)
             } else if prominent {
-                SanePanelChrome.accentTeal
+                brandAccent ?? SanePanelChrome.accentTeal
             } else {
                 SanePanelChrome.controlNavyDeep
             }
@@ -148,9 +150,9 @@ public struct SaneActionButtonStyle: ButtonStyle {
             if destructive {
                 Color(red: 0.98, green: 0.60, blue: 0.62)
             } else if prominent {
-                SanePanelChrome.accentHighlight
+                brandAccentSoft ?? brandAccent ?? SanePanelChrome.accentHighlight
             } else {
-                SanePanelChrome.accentTeal
+                brandAccent ?? SanePanelChrome.accentTeal
             }
         }
 
