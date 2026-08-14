@@ -6,6 +6,7 @@ import SwiftUI
 /// Shows either:
 /// - direct checkout + key entry for website builds, or
 /// - App Store IAP + restore for App Store builds.
+/// The window stays closable. Not now continues without buying.
 /// On successful activation, displays a checkmark animation and dismisses after 1.5 seconds.
 public struct LicenseGateView: View {
     @Bindable var licenseService: LicenseService
@@ -40,16 +41,9 @@ public struct LicenseGateView: View {
         }
         .frame(minWidth: 460, minHeight: 620)
         .onAppear {
-            lockWindow()
             let appName = licenseService.appName.lowercased()
             Task.detached {
                 await EventTracker.log(.paywallSeen, app: appName)
-            }
-        }
-        .onDisappear {
-            // If the gate disappears but the user isn't licensed, quit.
-            if !licenseService.isLicensed {
-                NSApplication.shared.terminate(nil)
             }
         }
         .onChange(of: licenseService.isLicensed) { _, licensed in
@@ -57,19 +51,6 @@ public struct LicenseGateView: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showSuccess = true
                 }
-                // Restore close button after licensing so the window can close normally.
-                if let window = NSApplication.shared.keyWindow {
-                    window.styleMask.insert(.closable)
-                }
-            }
-        }
-    }
-
-    /// Remove the close button so the gate can't be dismissed without a license.
-    private func lockWindow() {
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.keyWindow ?? NSApplication.shared.windows.first(where: { $0.isVisible }) {
-                window.styleMask.remove(.closable)
             }
         }
     }
@@ -178,11 +159,16 @@ public struct LicenseGateView: View {
     @ViewBuilder
     private var secondaryActions: some View {
         if licenseService.usesSetappPurchase {
-            Text(licenseService.distributionChannel.purchaseManagementMessage)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 10) {
+                Text(licenseService.distributionChannel.purchaseManagementMessage)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                continueWithoutPurchaseButton
+                quitButton
+            }
         } else if licenseService.usesAppStorePurchase {
             VStack(spacing: 10) {
                 Button {
@@ -197,6 +183,7 @@ public struct LicenseGateView: View {
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
 
+                continueWithoutPurchaseButton
                 quitButton
             }
         } else {
@@ -214,9 +201,28 @@ public struct LicenseGateView: View {
                 .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
 
+                continueWithoutPurchaseButton
                 quitButton
             }
         }
+    }
+
+    private var continueWithoutPurchaseButton: some View {
+        Button {
+            let appName = licenseService.appName.lowercased()
+            Task.detached {
+                await EventTracker.log(.paywallDismissed, app: appName)
+            }
+            licenseService.continueWithoutPurchase()
+        } label: {
+            Text("Not now")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(SaneActionButtonStyle())
+        .controlSize(.small)
+        .accessibilityIdentifier("license-gate-not-now")
     }
 
     private var quitButton: some View {

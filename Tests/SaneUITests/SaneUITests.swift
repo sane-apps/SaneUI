@@ -2159,6 +2159,19 @@ struct SaneAboutViewPolicyTests {
         #expect(SaneAboutViewPolicy.issuesURL(githubRepo: "SaneUI")?.absoluteString == "https://github.com/sane-apps/SaneUI/issues")
     }
 
+    @Test("Bug reporter without diagnostics falls back to Issues, not supportAction")
+    func bugReporterFallbackUsesIssuesNotSupportAction() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneAboutView.swift"),
+            encoding: .utf8
+        )
+        #expect(source.contains("Never fall back to supportAction"))
+        #expect(source.contains("openURL(SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))"))
+        let bugReporterSlice = source.components(separatedBy: "Never fall back to supportAction").last ?? ""
+        #expect(!bugReporterSlice.contains("openURL(supportAction?.url ?? SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))"))
+    }
+
     @Test("About action links preserve their public destination")
     func aboutActionLinkPreservesDestination() throws {
         let destination = try #require(URL(string: "https://sanevideo.com/support"))

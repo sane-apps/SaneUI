@@ -1,6 +1,29 @@
 # SaneUI Session Handoff
 
-Last updated: 2026-07-27
+Last updated: 2026-08-13
+
+## 2026-08-13 Note: dirty About test is not part of the license-gate fix
+
+- Unrelated local dirty work: `SaneAboutView.swift` plus test
+  `bugReporterFallbackUsesIssuesNotSupportAction`.
+- That test uses `#filePath` and looks under `Tests/Sources/...`, so
+  `swift test` fails with file-not-found. It is not caused by the
+  closable license-gate change.
+- Leave it uncommitted. Fix the test path (use `saneUIPackageRootURL()`)
+  when that About change is finished. Do not mix it into the license-gate
+  commit.
+
+## 2026-08-13 Expired-trial gate is closable
+
+- Owner: sell, do not trap. A leftover Debug SaneVideo from Mini nightly
+  `verify` showed the old locked paywall and the close button did nothing.
+- `LicenseGateView` no longer removes `.closable` and no longer terminates
+  the app if the gate disappears unlicensed.
+- **Not now** calls `LicenseService.continueWithoutPurchase()` (session-only).
+  Apps show the gate with `shouldShowExpiredTrialGate`. Pro feature guards
+  still use `isPro`.
+- Quit remains an explicit leave. Buy / Enter License stay first.
+- Wired: SaneVideo, SaneClick, SaneClip, SaneHosts, SaneSales, SaneSync.
 
 ## 2026-07-27 Neutral License and Purchase Surfaces
 

@@ -88,7 +88,7 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
 }
 
 /// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain,
-/// and can start a direct-download Pro trial before the paid gate takes over.
+/// and can start a direct-download Pro trial before the expired-trial gate asks to buy.
 ///
 /// App Store and Setapp builds use their platform purchase state instead of direct trials.
 /// Initialize with app-specific name and checkout URL.
@@ -170,6 +170,17 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
               let startedAt = proTrialStartedAt
         else { return false }
         return effectiveTrialNow() >= trialEndDate(startedAt: startedAt, durationDays: proTrial.durationDays)
+    }
+
+    /// Session-only. Close or Not now hides the expired-trial gate without granting Pro.
+    public private(set) var dismissedExpiredTrialGate = false
+
+    public var shouldShowExpiredTrialGate: Bool {
+        hasExpiredProTrial && !dismissedExpiredTrialGate
+    }
+
+    public func continueWithoutPurchase() {
+        dismissedExpiredTrialGate = true
     }
 
     public var proTrialDaysRemaining: Int? {
