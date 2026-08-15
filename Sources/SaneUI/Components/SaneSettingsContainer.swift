@@ -171,6 +171,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                         }
                         .buttonStyle(.plain)
                         .saneHelp(tab.title)
+                        .accessibilityLabel(tab.title)
                         .accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])
                         .id(tab.id)
                     }
