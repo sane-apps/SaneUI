@@ -598,6 +598,19 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)"))
     }
 
+    @Test("Welcome Next control is labeled for accessibility automation")
+    func welcomeNextButtonExposesStableAccessibility() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/WelcomeGateView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains(".accessibilityLabel(\"Next\")"))
+        #expect(source.contains(".accessibilityIdentifier(\"welcome-next\")"))
+        #expect(source.contains(".accessibilityAddTraits(.isButton)"))
+    }
+
     @Test("Default onboarding privacy copy matches the telemetry boundary")
     func defaultOnboardingPrivacyCopyMatchesTelemetryBoundary() throws {
         let source = try String(

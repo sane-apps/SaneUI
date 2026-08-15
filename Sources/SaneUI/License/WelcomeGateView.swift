@@ -1902,6 +1902,9 @@ public struct WelcomeGateView: View {
                     }
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle())
+                .accessibilityLabel("Next")
+                .accessibilityIdentifier("welcome-next")
+                .accessibilityAddTraits(.isButton)
             } else {
                 HStack(spacing: 10) {
                     if let secondaryCompletionActionLabel {
