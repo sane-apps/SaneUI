@@ -152,6 +152,7 @@ public extension View {
         }
 
         private func fitIfNeeded(_ window: NSWindow?, context: Context) {
+            guard let window else { return }
             if hugging, !context.coordinator.didFitInitialCanvas {
                 SaneWindowContentSync.hug(window, to: size)
                 context.coordinator.didFitInitialCanvas = true

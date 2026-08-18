@@ -101,6 +101,21 @@ func onboardingWindowsHugTheirCanvas() {
     #expect(!window.titlebarAppearsTransparent)
     #expect(!window.styleMask.contains(.fullSizeContentView))
 }
+
+@Test("Window sync waits for a real window before marking the first hug done")
+func windowSyncWaitsForARealWindowBeforeMarkingHugDone() throws {
+    let source = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Support/SaneWindowContentSync.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("guard let window else { return }"))
+    #expect(source.contains("context.coordinator.didFitInitialCanvas = true"))
+    let guardIndex = try #require(source.range(of: "guard let window else { return }"))
+    let flagIndex = try #require(source.range(of: "context.coordinator.didFitInitialCanvas = true"))
+    #expect(guardIndex.lowerBound < flagIndex.lowerBound)
+}
 #endif
 
 @Test("CompactToggle uses a labeled switch row so the whole setting is clickable")
