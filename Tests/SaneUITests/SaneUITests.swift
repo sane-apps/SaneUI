@@ -1062,9 +1062,9 @@ struct SaneLicenseServiceTests {
         #expect(service.purchaseError == nil)
     }
 
-    @Test("Debug force-pro override unlocks App Store builds deterministically")
+    @Test("Force-pro override unlocks App Store builds in Release customer-UI fixtures")
     @MainActor
-    func debugForceProOverrideUnlocksAppStoreBuildsDeterministically() {
+    func forceProOverrideUnlocksAppStoreBuildsDeterministically() {
         setenv("SANEAPPS_FORCE_PRO_MODE", "1", 1)
         defer { unsetenv("SANEAPPS_FORCE_PRO_MODE") }
 

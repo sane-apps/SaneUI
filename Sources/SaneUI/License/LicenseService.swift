@@ -484,18 +484,16 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return
         }
 
-        #if DEBUG
-            if environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode") {
-                isLicensed = true
-                licenseEmail = nil
-                hasCompletedPurchaseStateRefresh = true
-                validationError = nil
-                purchaseError = nil
-                debugLog("forced pro mode")
-                logger.info("License forced to pro mode via debug override")
-                return
-            }
-        #endif
+        if environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode") {
+            isLicensed = true
+            licenseEmail = nil
+            hasCompletedPurchaseStateRefresh = true
+            validationError = nil
+            purchaseError = nil
+            debugLog("forced pro mode")
+            logger.info("License forced to pro mode via SANEAPPS_FORCE_PRO_MODE")
+            return
+        }
 
         if usesAppStorePurchase {
             hasCompletedPurchaseStateRefresh = false
