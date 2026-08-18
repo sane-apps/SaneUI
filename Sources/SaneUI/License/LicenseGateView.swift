@@ -10,11 +10,13 @@ public enum LicenseGateLayoutPolicy {
 /// Shows either:
 /// - direct checkout + key entry for website builds, or
 /// - App Store IAP + restore for App Store builds.
-/// The window stays closable. Not now continues without buying.
+/// The window stays closable. Closing does not unlock the app.
 /// On successful activation, displays a checkmark animation and dismisses after 1.5 seconds.
 public struct LicenseGateView: View {
     @Bindable var licenseService: LicenseService
     let appIcon: String
+    let expiredDetail: String?
+    let allowsContinueWithoutPurchase: Bool
 
     @State private var licenseKey = ""
     @State private var showKeyEntry = false
@@ -23,9 +25,19 @@ public struct LicenseGateView: View {
     /// - Parameters:
     ///   - licenseService: The license service instance to validate against.
     ///   - appIcon: SF Symbol name for the app icon displayed at top.
-    public init(licenseService: LicenseService, appIcon: String) {
+    ///   - expiredDetail: Optional replacement for the default expired-trial subtitle.
+    ///   - allowsContinueWithoutPurchase: Legacy escape hatch. Leave false so
+    ///     the trial ends in a hard buy screen instead of a free forever mode.
+    public init(
+        licenseService: LicenseService,
+        appIcon: String,
+        expiredDetail: String? = nil,
+        allowsContinueWithoutPurchase: Bool = false
+    ) {
         self.licenseService = licenseService
         self.appIcon = appIcon
+        self.expiredDetail = expiredDetail
+        self.allowsContinueWithoutPurchase = allowsContinueWithoutPurchase
     }
 
     public var body: some View {
@@ -103,7 +115,7 @@ public struct LicenseGateView: View {
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
 
-            Text("Buy \(licenseService.appName) once to keep using it.")
+            Text(expiredDetail ?? "Buy \(licenseService.appName) once to keep using it.")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -175,7 +187,9 @@ public struct LicenseGateView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                continueWithoutPurchaseButton
+                if allowsContinueWithoutPurchase {
+                    continueWithoutPurchaseButton
+                }
                 quitButton
             }
         } else if licenseService.usesAppStorePurchase {
@@ -192,7 +206,9 @@ public struct LicenseGateView: View {
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
 
-                continueWithoutPurchaseButton
+                if allowsContinueWithoutPurchase {
+                    continueWithoutPurchaseButton
+                }
                 quitButton
             }
         } else {
@@ -210,7 +226,9 @@ public struct LicenseGateView: View {
                 .buttonStyle(SaneActionButtonStyle())
                 .controlSize(.small)
 
-                continueWithoutPurchaseButton
+                if allowsContinueWithoutPurchase {
+                    continueWithoutPurchaseButton
+                }
                 quitButton
             }
         }

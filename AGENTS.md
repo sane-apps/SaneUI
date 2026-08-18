@@ -49,7 +49,7 @@ swift test
 - Do not wrap CompactToggle labels in `Button` — macOS control sizing shrinks absolute fonts inside buttons. Keep the tappable `HStack` + `onTapGesture` pattern in `Row.swift`.
 - Do not reintroduce gray helper text, `mailto:` bug-report links, `Manage Access` copy, or `.buttonStyle(.bordered)` in shared surfaces.
 - Prefer extending existing shared views over adding app-local one-offs.
-- `LicenseGateView` must stay closable. Never remove `.closable` or terminate the app because the gate disappeared. Buy stays first; Not now continues without Pro for this session.
+- `LicenseGateView` must stay closable. Never remove `.closable` or terminate the app because the gate disappeared. Buy stays first, then license entry, then Quit. Do not offer Not now or a free forever mode after the trial. Closing the window does not unlock the app.
 
 ## Adding Components
 

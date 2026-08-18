@@ -78,7 +78,8 @@ enum WelcomeGateDirectTrialCopy {
         isLicensed: Bool,
         isTrialActive: Bool,
         hasExpiredTrial: Bool,
-        daysRemaining: Int?
+        daysRemaining: Int?,
+        appName: String = "SaneHosts"
     ) -> String {
         if hasExpiredTrial {
             return "Buy once to keep using every feature."
@@ -88,9 +89,9 @@ enum WelcomeGateDirectTrialCopy {
         }
         if isTrialActive, let daysRemaining {
             let dayText = daysRemaining == 1 ? "1 day" : "\(daysRemaining) days"
-            return "\(dayText) remaining. Every feature is included, with no credit card required."
+            return "\(dayText) remaining. After that, \(appName) stops until you buy once."
         }
-        return "Every feature is included for 14 days, with no credit card required."
+        return "Every feature is included. After 14 days \(appName) stops until you buy once."
     }
 
     static func purchaseLabel(price: String) -> String {
@@ -1436,14 +1437,15 @@ public struct WelcomeGateView: View {
                 isLicensed: licenseService.isPro,
                 isTrialActive: licenseService.isProTrialActive,
                 hasExpiredTrial: licenseService.hasExpiredProTrial,
-                daysRemaining: licenseService.proTrialDaysRemaining
+                daysRemaining: licenseService.proTrialDaysRemaining,
+                appName: appName
             ))
             .font(.system(size: 15))
             .foregroundStyle(.white)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
 
-            if !licenseService.isPro || licenseService.isProTrialActive {
+            if licenseService.hasExpiredProTrial {
                 trialOutcomeCard(
                     title: WelcomeGateDirectTrialCopy.purchaseTitle,
                     subtitle: "One payment — yours forever",

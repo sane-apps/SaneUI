@@ -614,12 +614,20 @@ struct WelcomeGateFlowPolicyTests {
                 isLicensed: false,
                 isTrialActive: true,
                 hasExpiredTrial: false,
-                daysRemaining: 7
+                daysRemaining: 7,
+                appName: "SaneHosts"
             )
         ].joined(separator: " ").lowercased()
         let words = renderedCopy.split { !$0.isLetter }
         #expect(!words.contains("basic"))
         #expect(!words.contains("pro"))
+        #expect(WelcomeGateDirectTrialCopy.message(
+            isLicensed: false,
+            isTrialActive: false,
+            hasExpiredTrial: false,
+            daysRemaining: nil,
+            appName: "SaneHosts"
+        ).contains("SaneHosts stops until you buy once"))
     }
 
     @Test("Direct onboarding branches around the tier chooser")
@@ -633,6 +641,7 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("if usesDirectTrialFlow {\n            directTrialSummaryView"))
         #expect(source.contains("if usesDirectTrialFlow {\n                directTrialFeaturesPage"))
         #expect(source.contains("licenseService.distributionChannel == .direct"))
+        #expect(source.contains("if licenseService.hasExpiredProTrial {\n                trialOutcomeCard"))
     }
 
     @Test("Permission onboarding scrolls instead of clipping content or controls")
@@ -1200,7 +1209,9 @@ struct SharedLicenseUIPolicyTests {
         )
 
         #expect(source.contains("Text(\"Your 14-day trial has ended\")"))
-        #expect(source.contains("Text(\"Buy \\(licenseService.appName) once to keep using it.\")"))
+        #expect(source.contains("expiredDetail ?? \"Buy \\(licenseService.appName) once to keep using it.\""))
+        #expect(source.contains("allowsContinueWithoutPurchase: Bool = false"))
+        #expect(source.contains("if allowsContinueWithoutPurchase"))
         #expect(source.contains("return \"Buy \\(licenseService.appName)\""))
         #expect(source.contains("Text(\"Enter License\")"))
         #expect(source.contains("Text(\"Quit\")"))
