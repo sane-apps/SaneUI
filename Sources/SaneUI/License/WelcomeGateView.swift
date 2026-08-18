@@ -122,8 +122,8 @@ enum WelcomeGateDirectTrialCopy {
     }
 }
 
-enum WelcomeGateLayoutPolicy {
-    static func frameSize(appSlug: String) -> CGSize {
+public enum WelcomeGateLayoutPolicy {
+    public static func frameSize(appSlug: String) -> CGSize {
         switch appSlug {
         case "saneclip":
             CGSize(width: 700, height: 620)
@@ -613,7 +613,9 @@ public struct WelcomeGateView: View {
                 .padding(.bottom, 30)
         }
         .frame(width: frameSize.width, height: frameSize.height)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(onboardingBackground)
+        .saneWindowContentSize(frameSize)
         .sheet(isPresented: $showingLicenseEntry) {
             LicenseEntryView(licenseService: licenseService)
         }
@@ -1159,8 +1161,8 @@ public struct WelcomeGateView: View {
     }
 
     private var saneHostsCorePage: some View {
-        VStack(spacing: goldenBase * 1.2) {
-            VStack(spacing: goldenBase * 0.62) {
+        VStack(spacing: 18) {
+            VStack(spacing: 8) {
                 (Text("How ").foregroundStyle(.white) + Text("SaneHosts").foregroundStyle(saneAccentGradient) + Text(" Works").foregroundStyle(.white))
                     .font(.system(size: 30, weight: .bold, design: .serif))
 
@@ -1171,7 +1173,7 @@ public struct WelcomeGateView: View {
             }
             .frame(maxWidth: .infinity)
 
-            HStack(alignment: .top, spacing: 13) {
+            HStack(alignment: .top, spacing: 16) {
                 onboardingStepCard(
                     title: "Setup",
                     rows: [
@@ -1180,7 +1182,7 @@ public struct WelcomeGateView: View {
                         ("3", "Done")
                     ]
                 )
-                .frame(width: 250)
+                .frame(maxWidth: .infinity, minHeight: 188, maxHeight: .infinity, alignment: .topLeading)
 
                 onboardingResultCard(
                     title: "After you enable",
@@ -1190,9 +1192,19 @@ public struct WelcomeGateView: View {
                         "DNS cache flushes automatically"
                     ]
                 )
-                .frame(width: 250)
+                .frame(maxWidth: .infinity, minHeight: 188, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
+            .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(saneAccentSoft)
+                Text("Protection status updates in real time.")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+            }
         }
         .padding(.horizontal, goldenPad)
         .padding(.vertical, goldenBase)
@@ -2032,11 +2044,11 @@ public struct WelcomeGateView: View {
         title: String,
         rows: [(String, String)]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             gradientLeadingWordText(title)
                 .font(.system(size: 16, weight: .semibold))
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     HStack(alignment: .top, spacing: 8) {
                         Text(row.0)
@@ -2060,8 +2072,8 @@ public struct WelcomeGateView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(.horizontal, 13)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(cardBg)
@@ -2077,11 +2089,11 @@ public struct WelcomeGateView: View {
         title: String,
         bullets: [String]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             gradientLeadingWordText(title)
                 .font(.system(size: 16, weight: .semibold))
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(bullets.enumerated()), id: \.offset) { _, bullet in
                     HStack(alignment: .top, spacing: 8) {
                         Circle()
@@ -2095,19 +2107,10 @@ public struct WelcomeGateView: View {
                     }
                 }
             }
-
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(saneAccentSoft)
-                Text("Protection status updates in real time.")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
-            }
-            .padding(.top, 5)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(.horizontal, 13)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(cardBg)
@@ -2400,7 +2403,7 @@ private struct PromisePillarCard: View {
             win.titleVisibility = .hidden
             win.titlebarAppearsTransparent = true
             win.isMovableByWindowBackground = true
-            win.backgroundColor = .windowBackgroundColor
+            win.backgroundColor = SaneWindowContentSync.fillColor
             win.isReleasedWhenClosed = false
             win.collectionBehavior = win.collectionBehavior.union([.moveToActiveSpace])
             win.center()

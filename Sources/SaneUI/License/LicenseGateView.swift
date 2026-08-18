@@ -1,6 +1,10 @@
 #if os(macOS)
 import SwiftUI
 
+public enum LicenseGateLayoutPolicy {
+    public static let frameSize = CGSize(width: 520, height: 680)
+}
+
 /// Full-screen license gate that replaces the entire app window when unlicensed.
 ///
 /// Shows either:
@@ -39,7 +43,12 @@ public struct LicenseGateView: View {
                     .transition(.opacity)
             }
         }
-        .frame(minWidth: 460, minHeight: 620)
+        .frame(
+            minWidth: LicenseGateLayoutPolicy.frameSize.width,
+            minHeight: LicenseGateLayoutPolicy.frameSize.height
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .saneWindowContentSize(LicenseGateLayoutPolicy.frameSize)
         .onAppear {
             let appName = licenseService.appName.lowercased()
             Task.detached {

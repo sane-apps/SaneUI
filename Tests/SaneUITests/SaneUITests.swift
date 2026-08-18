@@ -67,7 +67,41 @@ func saneVideoOnboardingUsesCreatorSizedCanvas() {
     #expect(videoSize.height > defaultSize.height)
     #expect(defaultSize == CGSize(width: 700, height: 520))
     #expect(clipSize == CGSize(width: 700, height: 620))
+    #expect(WelcomeGateLayoutPolicy.frameSize(appSlug: "sanehosts") == defaultSize)
+    #expect(LicenseGateLayoutPolicy.frameSize == CGSize(width: 520, height: 680))
 }
+
+#if os(macOS)
+@Test("Onboarding windows hug their canvas and workspace windows can grow again")
+@MainActor
+func onboardingWindowsHugTheirCanvas() {
+    let welcome = WelcomeGateLayoutPolicy.frameSize(appSlug: "sanehosts")
+    let workspace = CGSize(width: 900, height: 650)
+    let window = NSWindow(
+        contentRect: NSRect(x: 0, y: 0, width: workspace.width, height: workspace.height),
+        styleMask: [.titled, .closable, .resizable],
+        backing: .buffered,
+        defer: false
+    )
+
+    SaneWindowContentSync.hug(window, to: welcome)
+    #expect(SaneWindowContentSync.contentDelta(window.contentView?.frame.size ?? .zero, welcome) <= SaneWindowContentSync.sizeTolerance)
+    #expect(window.titlebarAppearsTransparent)
+    #expect(window.styleMask.contains(.fullSizeContentView))
+    #expect(window.backgroundColor == SaneWindowContentSync.fillColor)
+    #expect(window.maxSize.width > welcome.width)
+    #expect(window.minSize.width == welcome.width)
+
+    window.setContentSize(CGSize(width: welcome.width + 120, height: welcome.height))
+    SaneWindowContentSync.apply(window, contentSize: welcome, hugging: true)
+    #expect((window.contentView?.frame.width ?? 0) >= welcome.width + 100)
+
+    SaneWindowContentSync.release(window, to: workspace)
+    #expect(SaneWindowContentSync.contentDelta(window.contentView?.frame.size ?? .zero, workspace) <= SaneWindowContentSync.sizeTolerance)
+    #expect(!window.titlebarAppearsTransparent)
+    #expect(!window.styleMask.contains(.fullSizeContentView))
+}
+#endif
 
 @Test("CompactToggle uses a labeled switch row so the whole setting is clickable")
 func compactToggleUsesLabeledSwitchRow() throws {
@@ -304,6 +338,7 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(modern[kSecUseDataProtectionKeychain] as? Bool == true)
         #expect(modern[kSecAttrAccessGroup] as? String == "M78L6FXD48.com.mrsane.SaneHosts")
     }
+
 }
 
 struct SettingsLocalizationTests {
@@ -596,6 +631,10 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("private var permissionPage: some View {\n        ScrollView(.vertical, showsIndicators: true)"))
         #expect(source.contains(".frame(maxWidth: .infinity, maxHeight: .infinity)"))
         #expect(source.contains("WelcomeGateLayoutPolicy.frameSize(appSlug: appSlug)"))
+        #expect(source.contains(".saneWindowContentSize(frameSize)"))
+        #expect(source.contains(".frame(maxWidth: 720)"))
+        #expect(!source.contains(".frame(width: 250)"))
+        #expect(source.contains("Protection status updates in real time."))
     }
 
     @Test("Welcome Next control is labeled for accessibility automation")
@@ -1134,6 +1173,7 @@ struct SharedLicenseUIPolicyTests {
 
         #expect(source.contains("Text(licenseService.alternateEntryLabel)"))
         #expect(!source.contains("Text(licenseService.alternateUnlockLabel)"))
+        #expect(source.contains(".saneWindowContentSize(LicenseGateLayoutPolicy.frameSize)"))
     }
 
     @Test("License gate uses neutral expired-trial copy and direct action order")

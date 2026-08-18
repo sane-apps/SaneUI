@@ -74,6 +74,16 @@ public enum SanePalette {
     public static let tealBrightPanel = Color(red: 0.072, green: 0.245, blue: 0.305)
     public static let cyanHintPanel = Color(red: 0.045, green: 0.165, blue: 0.225)
 
+    #if os(macOS)
+        public static var nsNavy: NSColor {
+            NSColor(red: 0.04, green: 0.08, blue: 0.18, alpha: 1)
+        }
+
+        public static var nsNavyDeep: NSColor {
+            NSColor(red: 0.02, green: 0.04, blue: 0.12, alpha: 1)
+        }
+    #endif
+
     // Light mode: soft teal-blue wash
     public static let lightWash = Color(red: 0.94, green: 0.97, blue: 0.99)
     public static let lightTeal = Color(red: 0.89, green: 0.95, blue: 0.97)
