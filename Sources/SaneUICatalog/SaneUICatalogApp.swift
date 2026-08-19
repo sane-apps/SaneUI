@@ -183,6 +183,10 @@ private struct ControlsCatalogView: View {
                         lastButtonAction = "Destructive action preview fired"
                     }
                 }
+                CompactDivider()
+                CompactRow("Donate") {
+                    SaneStickyDonateButton()
+                }
             }
 
             if let lastButtonAction {

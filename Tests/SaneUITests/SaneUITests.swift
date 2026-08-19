@@ -1208,11 +1208,13 @@ struct SharedLicenseUIPolicyTests {
             encoding: .utf8
         )
 
-        #expect(source.contains("Text(\"Your 14-day trial has ended\")"))
-        #expect(source.contains("expiredDetail ?? \"Buy \\(licenseService.appName) once to keep using it.\""))
+        #expect(source.contains("donationURL == nil ? \"Your 14-day trial has ended\" : \"This app is free now\""))
+        #expect(source.contains("Buy \\(licenseService.appName) once to keep using it."))
+        #expect(source.contains("Every feature stays unlocked. Donate only if you want to support it."))
         #expect(source.contains("allowsContinueWithoutPurchase: Bool = false"))
         #expect(source.contains("if allowsContinueWithoutPurchase"))
         #expect(source.contains("return \"Buy \\(licenseService.appName)\""))
+        #expect(source.contains("if donationURL != nil {\n            return \"Donate\""))
         #expect(source.contains("Text(\"Enter License\")"))
         #expect(source.contains("Text(\"Quit\")"))
 
@@ -1230,9 +1232,23 @@ struct SharedLicenseUIPolicyTests {
         #expect(!source.contains("Sincerely,"))
         #expect(!source.contains("directSupportLabel"))
         #expect(!source.contains("directSupportURL"))
-        #expect(!source.contains("Donate"))
         #expect(!source.contains("\"Buy Pro\""))
         #expect(!source.contains("\"Unlock Pro"))
+    }
+
+    @Test("Sticky donate button opens the live GitHub Sponsors URL")
+    func stickyDonateButtonOpensLiveGitHubSponsorsURL() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneStickyDonateButton.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("https://github.com/sponsors/MrSaneApps"))
+        #expect(source.contains("SanePlatform.open(url)"))
+        #expect(source.contains("accessibilityIdentifier(\"sticky-donate\")"))
+        #expect(source.contains("Text(\"Donate\")"))
+        #expect(SaneDonation.githubSponsorsURL.absoluteString == "https://github.com/sponsors/MrSaneApps")
     }
 
     @Test("License gate logs anonymous aggregate view, buy, and quit events")

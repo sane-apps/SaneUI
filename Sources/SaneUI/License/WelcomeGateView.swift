@@ -26,7 +26,7 @@ enum WelcomeGateCopy {
         case "saneclick":
             "Set it once, then useful Finder actions stay one right-click away."
         case "sanevideo":
-            "Keep the complete local creator workflow after your trial."
+            "Record, polish, and export with every local creator tool included."
         default:
             "Set once, then copy/paste stays clean and consistent."
         }
@@ -770,7 +770,7 @@ public struct WelcomeGateView: View {
         case "saneclick":
             "In under 60 seconds: enable Finder extension, pick scripts, then right-click to run."
         case "sanesales":
-            "Connect your sales platforms, then unlock searchable history, exports, widgets, and multi-provider views."
+            "Connect your sales platforms, then review history, exports, widgets, and multi-provider views."
         case "saneclip":
             usesDirectTrialFlow
                 ? "A short walkthrough of history, capture, paste tools, privacy, and your 14-day trial."
@@ -1060,8 +1060,10 @@ public struct WelcomeGateView: View {
                 .padding(.top, goldenBase * 0.35)
 
                 featureCard(
-                    title: "14-Day Trial",
-                    subtitle: "No account, subscription, or credit card required",
+                    title: usesDonationSupport ? "Everything Included" : "14-Day Trial",
+                    subtitle: usesDonationSupport
+                        ? "No account, paywall, or credit card required"
+                        : "No account, subscription, or credit card required",
                     features: directTrialFeatures,
                     columns: 1,
                     compact: false
@@ -1433,27 +1435,33 @@ public struct WelcomeGateView: View {
                     : AnyShapeStyle(Color.green)
             )
 
-            Text(WelcomeGateDirectTrialCopy.title(
-                isLicensed: licenseService.isPro,
-                isTrialActive: licenseService.isProTrialActive,
-                hasExpiredTrial: licenseService.hasExpiredProTrial
-            ))
+            Text(usesDonationSupport
+                ? "You're all set"
+                : WelcomeGateDirectTrialCopy.title(
+                    isLicensed: licenseService.isPro,
+                    isTrialActive: licenseService.isProTrialActive,
+                    hasExpiredTrial: licenseService.hasExpiredProTrial
+                )
+            )
             .font(.system(size: 28, weight: .bold, design: .serif))
             .foregroundStyle(.white)
 
-            Text(WelcomeGateDirectTrialCopy.message(
-                isLicensed: licenseService.isPro,
-                isTrialActive: licenseService.isProTrialActive,
-                hasExpiredTrial: licenseService.hasExpiredProTrial,
-                daysRemaining: licenseService.proTrialDaysRemaining,
-                appName: appName
-            ))
+            Text(usesDonationSupport
+                ? "Every feature is included. Setup stays the same. Donate only if you want to support it."
+                : WelcomeGateDirectTrialCopy.message(
+                    isLicensed: licenseService.isPro,
+                    isTrialActive: licenseService.isProTrialActive,
+                    hasExpiredTrial: licenseService.hasExpiredProTrial,
+                    daysRemaining: licenseService.proTrialDaysRemaining,
+                    appName: appName
+                )
+            )
             .font(.system(size: 15))
             .foregroundStyle(.white)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
 
-            if licenseService.hasExpiredProTrial {
+            if licenseService.hasExpiredProTrial, !usesDonationSupport {
                 trialOutcomeCard(
                     title: WelcomeGateDirectTrialCopy.purchaseTitle,
                     subtitle: "One payment — yours forever",
@@ -1463,14 +1471,14 @@ public struct WelcomeGateView: View {
                 .padding(.horizontal, 20)
                 .frame(maxWidth: 420)
 
-                Button(usesDonationSupport ? "Donate" : WelcomeGateDirectTrialCopy.purchaseLabel(price: licenseService.displayPriceLabel)) {
+                Button(WelcomeGateDirectTrialCopy.purchaseLabel(price: licenseService.displayPriceLabel)) {
                     runSingleOutboundAction {
                         if let url = supportURL {
                             SanePlatform.open(url)
                         }
                         Task.detached {
                             await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                            await EventTracker.log(usesDonationSupport ? "donate_clicked" : "upsell_clicked_buy", app: appName.lowercased())
+                            await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                         }
                     }
                 }
@@ -1498,7 +1506,9 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.green)
 
-            Text(licenseService.isProTrialActive ? "Enjoy Your Trial" : "Purchase Complete")
+            Text(usesDonationSupport
+                ? "You're all set"
+                : (licenseService.isProTrialActive ? "Enjoy Your Trial" : "Purchase Complete"))
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
@@ -1508,14 +1518,14 @@ public struct WelcomeGateView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if licenseService.isProTrialActive {
-                Button(usesDonationSupport ? "Donate" : "Buy Once — \(licenseService.displayPriceLabel)") {
+            if licenseService.isProTrialActive, !usesDonationSupport {
+                Button("Buy Once — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
                         if let url = supportURL {
                             SanePlatform.open(url)
                         }
                         Task.detached {
-                            await EventTracker.log(usesDonationSupport ? "donate_clicked" : "checkout_clicked", app: appName.lowercased())
+                            await EventTracker.log("checkout_clicked", app: appName.lowercased())
                         }
                     }
                 }
@@ -1958,6 +1968,9 @@ public struct WelcomeGateView: View {
     }
 
     private var finalPrimaryButtonLabel: String {
+        if usesDonationSupport {
+            return "Start Using \(appName)"
+        }
         if usesDirectTrialFlow {
             return WelcomeGateDirectTrialCopy.completionLabel(
                 isLicensed: licenseService.isPro,
@@ -1967,7 +1980,7 @@ public struct WelcomeGateView: View {
             )
         }
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
-            return usesDonationSupport ? "Donate" : "Buy \(appName)"
+            return "Buy \(appName)"
         }
         return WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,
@@ -2000,12 +2013,12 @@ public struct WelcomeGateView: View {
         }
 
         if usesDirectTrialFlow {
-            if licenseService.hasExpiredProTrial, let url = supportURL {
+            if !usesDonationSupport, licenseService.hasExpiredProTrial, let url = supportURL {
                 runSingleOutboundAction {
                     SanePlatform.open(url)
                     Task.detached {
-                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "checkout_clicked", app: appName.lowercased())
-                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "upsell_clicked_buy", app: appName.lowercased())
+                        await EventTracker.log("checkout_clicked", app: appName.lowercased())
+                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
                     }
                 }
                 return

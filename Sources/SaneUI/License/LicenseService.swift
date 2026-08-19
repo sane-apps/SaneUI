@@ -304,6 +304,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         static let licenseKey = "license_key"
         static let licenseEmail = "license_email"
         static let lastValidation = "last_validation"
+        static let stickyUnlock = "sane.license.unlocked"
+        static let stickyUnlockAt = "sane.license.unlocked_at"
+        static let stickyUnlockEmail = "sane.license.unlocked_email"
     }
 
     private nonisolated static func infoPlistString(_ key: String, bundle: Bundle = .main) -> String? {
@@ -484,7 +487,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return
         }
 
-        if environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode") {
+        if isForcedProModeEnabled() {
             isLicensed = true
             licenseEmail = nil
             hasCompletedPurchaseStateRefresh = true
@@ -532,6 +535,10 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         guard let storedKey = try? keychain.string(forKey: Keys.licenseKey),
               !storedKey.isEmpty
         else {
+            if applyStickyUnlockIfValid() {
+                debugLog("sticky unlock from defaults")
+                return
+            }
             isLicensed = false
             licenseEmail = nil
             hasCompletedPurchaseStateRefresh = true
@@ -552,6 +559,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             if daysSince <= offlineGraceDays {
                 isLicensed = true
                 hasCompletedPurchaseStateRefresh = true
+                persistStickyUnlock(email: licenseEmail, at: lastDate)
                 debugLog("offline grace hit daysSince=\(Int(daysSince))")
                 logger.info("License valid (offline grace, \(Int(daysSince))d since check)")
                 return
@@ -605,6 +613,48 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return nil
         }
         return date
+    }
+
+    private func isForcedProModeEnabled() -> Bool {
+        if userDefaults.bool(forKey: "SANEAPPS_OPEN_SOURCE") {
+            return true
+        }
+        if let value = getenv("SANEAPPS_FORCE_PRO_MODE"), String(cString: value) == "1" {
+            return true
+        }
+        let environment = ProcessInfo.processInfo.environment
+        let arguments = ProcessInfo.processInfo.arguments
+        return environment["SANEAPPS_FORCE_PRO_MODE"] == "1" || arguments.contains("--force-pro-mode")
+    }
+
+    private func persistStickyUnlock(email: String?, at date: Date = Date()) {
+        userDefaults.set(true, forKey: Keys.stickyUnlock)
+        userDefaults.set(ISO8601DateFormatter().string(from: date), forKey: Keys.stickyUnlockAt)
+        if let email, !email.isEmpty {
+            userDefaults.set(email, forKey: Keys.stickyUnlockEmail)
+        }
+    }
+
+    private func clearStickyUnlock() {
+        userDefaults.removeObject(forKey: Keys.stickyUnlock)
+        userDefaults.removeObject(forKey: Keys.stickyUnlockAt)
+        userDefaults.removeObject(forKey: Keys.stickyUnlockEmail)
+    }
+
+    @discardableResult
+    private func applyStickyUnlockIfValid() -> Bool {
+        guard userDefaults.bool(forKey: Keys.stickyUnlock) else { return false }
+        guard let raw = userDefaults.string(forKey: Keys.stickyUnlockAt),
+              let date = ISO8601DateFormatter().date(from: raw)
+        else { return false }
+        let daysSince = Date().timeIntervalSince(date) / 86400
+        guard daysSince <= offlineGraceDays else { return false }
+        isLicensed = true
+        licenseEmail = userDefaults.string(forKey: Keys.stickyUnlockEmail)
+        hasCompletedPurchaseStateRefresh = true
+        validationError = nil
+        logger.info("License valid (sticky defaults, \(Int(daysSince))d since check)")
+        return true
     }
 
     private func trialEndDate(startedAt: Date, durationDays: Int) -> Date {
@@ -804,6 +854,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                 }
                 try keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
                 isLicensed = true
+                persistStickyUnlock(email: licenseEmail)
                 validationError = nil
                 logger.info("License activated successfully")
                 let name = appName.lowercased()
@@ -833,6 +884,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         try? keychain.delete(Keys.licenseKey)
         try? keychain.delete(Keys.licenseEmail)
         try? keychain.delete(Keys.lastValidation)
+        clearStickyUnlock()
         isLicensed = false
         licenseEmail = nil
         validationError = nil
@@ -971,6 +1023,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             if result.valid, Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) {
                 try? keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
                 isLicensed = true
+                persistStickyUnlock(email: licenseEmail)
                 logger.info("Background revalidation succeeded")
             } else {
                 isLicensed = false

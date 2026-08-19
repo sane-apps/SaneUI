@@ -221,31 +221,35 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     @ViewBuilder
     private var unlockContent: some View {
         HStack(spacing: 8) {
-            unlockProButton
-
-            if licenseService.usesAppStorePurchase {
-                Button {
-                    Task { await licenseService.restorePurchases() }
-                } label: {
-                    fittedActionLabel(labels.restorePurchasesLabel)
-                }
-                .buttonStyle(SaneActionButtonStyle())
-                .controlSize(.small)
-                .disabled(licenseService.isPurchasing)
-            } else if licenseService.usesSetappPurchase {
-                Text(labels.managedBySetappLabel)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+            if donationURL != nil {
+                donateButton
             } else {
-                Button {
-                    showingLicenseEntry = true
-                } label: {
-                    fittedActionLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
+                unlockProButton
+
+                if licenseService.usesAppStorePurchase {
+                    Button {
+                        Task { await licenseService.restorePurchases() }
+                    } label: {
+                        fittedActionLabel(labels.restorePurchasesLabel)
+                    }
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
+                    .disabled(licenseService.isPurchasing)
+                } else if licenseService.usesSetappPurchase {
+                    Text(labels.managedBySetappLabel)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                } else {
+                    Button {
+                        showingLicenseEntry = true
+                    } label: {
+                        fittedActionLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
+                    }
+                    .buttonStyle(SaneActionButtonStyle())
+                    .controlSize(.small)
+                    .accessibilityIdentifier("saneui-license-enter-key")
+                    .accessibilityLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
                 }
-                .buttonStyle(SaneActionButtonStyle())
-                .controlSize(.small)
-                .accessibilityIdentifier("saneui-license-enter-key")
-                .accessibilityLabel(labels.directEntryLabel ?? licenseService.alternateEntryLabel)
             }
 
             if let error = licenseService.validationError ?? licenseService.purchaseError {
@@ -308,8 +312,10 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
 
     @ViewBuilder
     private var unlockRow: some View {
-        CompactRow(labels.actionsLabel, icon: "cart", iconColor: .saneAccent) {
-            if licenseService.usesSetappPurchase {
+        CompactRow(labels.actionsLabel, icon: donationURL == nil ? "cart" : "heart.fill", iconColor: .saneAccent) {
+            if donationURL != nil {
+                donateButton
+            } else if licenseService.usesSetappPurchase {
                 Text(labels.managedBySetappLabel)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
