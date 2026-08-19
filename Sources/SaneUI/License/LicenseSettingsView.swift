@@ -86,11 +86,18 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     @State private var showingLicenseEntry = false
     private let style: Style
     private let labels: Labels
+    private let donationURL: URL?
 
-    public init(licenseService: Service, style: Style = .formSection, labels: Labels = .default) {
+    public init(
+        licenseService: Service,
+        style: Style = .formSection,
+        labels: Labels = .default,
+        donationURL: URL? = nil
+    ) {
         self.licenseService = licenseService
         self.style = style
         self.labels = labels
+        self.donationURL = donationURL
     }
 
     public var body: some View {
@@ -196,6 +203,8 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
                 .controlSize(.small)
                 .disabled(licenseService.isPurchasing)
             }
+        } else if donationURL != nil {
+            donateButton
         } else if licenseService.isProTrialActive {
             directTrialActions
         } else {
@@ -250,7 +259,9 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     @ViewBuilder
     private var managementRow: some View {
         CompactRow(labels.actionsLabel, icon: "gearshape.2", iconColor: .white) {
-            if licenseService.usesAppStorePurchase {
+            if donationURL != nil {
+                donateButton
+            } else if licenseService.usesAppStorePurchase {
                 Button {
                     Task { await licenseService.restorePurchases() }
                 } label: {
@@ -320,9 +331,25 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
         }
     }
 
+    private var donateButton: some View {
+        Button {
+            if let donationURL {
+                NSWorkspace.shared.open(donationURL)
+            }
+        } label: {
+            fittedActionLabel("Donate")
+        }
+        .buttonStyle(SaneActionButtonStyle(prominent: true))
+        .controlSize(.small)
+        .accessibilityIdentifier("saneui-license-donate")
+        .accessibilityLabel("Donate")
+    }
+
     private var unlockProButton: some View {
         Group {
-            if licenseService.usesAppStorePurchase {
+            if let donationURL {
+                donateButton
+            } else if licenseService.usesAppStorePurchase {
                 Button {
                     Task { await licenseService.purchasePro() }
                 } label: {

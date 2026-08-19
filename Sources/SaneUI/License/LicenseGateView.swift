@@ -17,6 +17,7 @@ public struct LicenseGateView: View {
     let appIcon: String
     let expiredDetail: String?
     let allowsContinueWithoutPurchase: Bool
+    let donationURL: URL?
 
     @State private var licenseKey = ""
     @State private var showKeyEntry = false
@@ -32,12 +33,14 @@ public struct LicenseGateView: View {
         licenseService: LicenseService,
         appIcon: String,
         expiredDetail: String? = nil,
-        allowsContinueWithoutPurchase: Bool = false
+        allowsContinueWithoutPurchase: Bool = false,
+        donationURL: URL? = nil
     ) {
         self.licenseService = licenseService
         self.appIcon = appIcon
         self.expiredDetail = expiredDetail
         self.allowsContinueWithoutPurchase = allowsContinueWithoutPurchase
+        self.donationURL = donationURL
     }
 
     public var body: some View {
@@ -111,11 +114,14 @@ public struct LicenseGateView: View {
                 .foregroundStyle(Color.saneAccent)
                 .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
-            Text("Your 14-day trial has ended")
+            Text(donationURL == nil ? "Your 14-day trial has ended" : "This app is free now")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
 
-            Text(expiredDetail ?? "Buy \(licenseService.appName) once to keep using it.")
+            Text(expiredDetail
+                ?? (donationURL == nil
+                    ? "Buy \(licenseService.appName) once to keep using it."
+                    : "Every feature stays unlocked. Donate only if you want to support it."))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -130,7 +136,9 @@ public struct LicenseGateView: View {
                 Task.detached {
                     await EventTracker.log(.checkoutClicked, app: appName)
                 }
-                if licenseService.usesAppStorePurchase {
+                if let donationURL {
+                    NSWorkspace.shared.open(donationURL)
+                } else if licenseService.usesAppStorePurchase {
                     Task { await licenseService.purchasePro() }
                 } else if licenseService.usesSetappPurchase {
                     return
@@ -270,6 +278,9 @@ public struct LicenseGateView: View {
     }
 
     private var primaryPurchaseLabel: String {
+        if donationURL != nil {
+            return "Donate"
+        }
         if licenseService.usesSetappPurchase {
             return "Managed by Setapp"
         }

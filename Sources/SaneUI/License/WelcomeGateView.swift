@@ -504,7 +504,11 @@ public struct WelcomeGateView: View {
     let proTierPriceOverride: String?
     let permissionConfig: WelcomeGatePermissionConfig
     @Bindable var licenseService: LicenseService
+    private let donationURL: URL?
     @Environment(\.dismiss) private var dismiss
+
+    private var usesDonationSupport: Bool { donationURL != nil }
+    private var supportURL: URL? { donationURL ?? licenseService.checkoutURL }
 
     @State private var currentPage = 0
     @State private var navigateForward = true
@@ -548,6 +552,7 @@ public struct WelcomeGateView: View {
         proTierPriceOverride: String? = nil,
         permissionConfig: WelcomeGatePermissionConfig? = nil,
         licenseService: LicenseService,
+        donationURL: URL? = nil,
         initialPage: Int = 0,
         autoDismissOnPro: Bool = true,
         secondaryCompletionActionLabel: String? = nil,
@@ -574,6 +579,7 @@ public struct WelcomeGateView: View {
             grantedMessage: "Your personal content stays on your device. No extra access is required here."
         )
         self.licenseService = licenseService
+        self.donationURL = donationURL
         self.autoDismissOnPro = autoDismissOnPro
         self.secondaryCompletionActionLabel = secondaryCompletionActionLabel
         self.secondaryCompletionAccessibilityIdentifier = secondaryCompletionAccessibilityIdentifier
@@ -1043,7 +1049,9 @@ public struct WelcomeGateView: View {
                     (Text("Everything ").foregroundStyle(.white) + Text("Included").foregroundStyle(saneAccentGradient))
                         .font(.system(size: 30, weight: .bold, design: .serif))
 
-                    Text("Try every feature for 14 days. Buy once if it works for you.")
+                    Text(donationURL == nil
+                        ? "Try every feature for 14 days. Buy once if it works for you."
+                        : "Every feature is included. Setup stays the same. Donate only if you want to support it.")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
@@ -1455,14 +1463,14 @@ public struct WelcomeGateView: View {
                 .padding(.horizontal, 20)
                 .frame(maxWidth: 420)
 
-                Button(WelcomeGateDirectTrialCopy.purchaseLabel(price: licenseService.displayPriceLabel)) {
+                Button(usesDonationSupport ? "Donate" : WelcomeGateDirectTrialCopy.purchaseLabel(price: licenseService.displayPriceLabel)) {
                     runSingleOutboundAction {
-                        if let url = licenseService.checkoutURL {
+                        if let url = supportURL {
                             SanePlatform.open(url)
                         }
                         Task.detached {
                             await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                            await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                            await EventTracker.log(usesDonationSupport ? "donate_clicked" : "upsell_clicked_buy", app: appName.lowercased())
                         }
                     }
                 }
@@ -1501,13 +1509,13 @@ public struct WelcomeGateView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if licenseService.isProTrialActive {
-                Button("Buy Once — \(licenseService.displayPriceLabel)") {
+                Button(usesDonationSupport ? "Donate" : "Buy Once — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
-                        if let url = licenseService.checkoutURL {
+                        if let url = supportURL {
                             SanePlatform.open(url)
                         }
                         Task.detached {
-                            await EventTracker.log(.checkoutClicked, app: appName.lowercased())
+                            await EventTracker.log(usesDonationSupport ? "donate_clicked" : "checkout_clicked", app: appName.lowercased())
                         }
                     }
                 }
@@ -1550,15 +1558,17 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text("Your trial has ended. A one-time purchase is required to keep using these tools.")
+            Text(usesDonationSupport
+                ? "SaneApps open-sourced this app. Every feature stays unlocked. Donate only if you want to support it."
+                : "Your trial has ended. A one-time purchase is required to keep using these tools.")
                 .font(.system(size: 15))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             trialOutcomeCard(
-                title: "Buy Once",
-                subtitle: "One-time — yours forever",
+                title: usesDonationSupport ? "Donate" : "Buy Once",
+                subtitle: usesDonationSupport ? "Optional. The app stays free." : "One-time — yours forever",
                 features: expiredTrialProFeatures,
                 isHighlighted: true
             )
@@ -1566,9 +1576,14 @@ public struct WelcomeGateView: View {
             .frame(maxWidth: 420)
 
             if !licenseService.usesSetappPurchase {
-                Button("Buy \(appName) — \(licenseService.displayPriceLabel)") {
+                Button(usesDonationSupport ? "Donate" : "Buy \(appName) — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
-                        if licenseService.usesAppStorePurchase {
+                        if let donationURL {
+                            SanePlatform.open(donationURL)
+                            Task.detached {
+                                await EventTracker.log("donate_clicked", app: appName.lowercased())
+                            }
+                        } else if licenseService.usesAppStorePurchase {
                             Task.detached {
                                 await EventTracker.log("app_store_purchase_clicked", app: appName.lowercased())
                             }
@@ -1952,7 +1967,7 @@ public struct WelcomeGateView: View {
             )
         }
         if !licenseService.isPro, licenseService.hasExpiredProTrial {
-            return "Buy \(appName)"
+            return usesDonationSupport ? "Donate" : "Buy \(appName)"
         }
         return WelcomeGateFlowPolicy.finalPrimaryButtonLabel(
             isPro: licenseService.isPro,
@@ -1985,12 +2000,12 @@ public struct WelcomeGateView: View {
         }
 
         if usesDirectTrialFlow {
-            if licenseService.hasExpiredProTrial, let url = licenseService.checkoutURL {
+            if licenseService.hasExpiredProTrial, let url = supportURL {
                 runSingleOutboundAction {
                     SanePlatform.open(url)
                     Task.detached {
-                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "checkout_clicked", app: appName.lowercased())
+                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "upsell_clicked_buy", app: appName.lowercased())
                     }
                 }
                 return
@@ -2021,12 +2036,12 @@ public struct WelcomeGateView: View {
                 return
             }
         case .openCheckout:
-            if let url = licenseService.checkoutURL {
+            if let url = supportURL {
                 runSingleOutboundAction {
                     SanePlatform.open(url)
                     Task.detached {
-                        await EventTracker.log(.checkoutClicked, app: appName.lowercased())
-                        await EventTracker.log("upsell_clicked_buy", app: appName.lowercased())
+                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "checkout_clicked", app: appName.lowercased())
+                        await EventTracker.log(usesDonationSupport ? "donate_clicked" : "upsell_clicked_buy", app: appName.lowercased())
                     }
                 }
             }
