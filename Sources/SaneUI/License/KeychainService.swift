@@ -96,13 +96,16 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         var query = baseQuery(account: key)
         query[kSecMatchLimit] = kSecMatchLimitOne
         query[kSecReturnData] = true
-        query[kSecUseAuthenticationContext] = nonInteractiveAuthenticationContext()
+        Self.applyNonInteractiveReadPolicy(to: &query)
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecSuccess, let data = result as? Data { return data.first == 1 }
         if status == errSecItemNotFound {
             if let data = migrateFromLegacyIfNeeded(account: key) { return data.first == 1 }
-            return nil
+            return fallbackBoolValue(forKey: fallbackKey(key))
+        }
+        if Self.isSilentKeychainFailure(status) {
+            return fallbackBoolValue(forKey: fallbackKey(key))
         }
         throw KeychainError(status: status)
     }
@@ -114,7 +117,11 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             return
         }
         let data = Data([value ? 1 : 0])
-        try upsert(data: data, forKey: key)
+        do {
+            try upsert(data: data, forKey: key)
+        } catch {
+            writeFallbackValue(value as NSNumber, forKey: fallbackKey(key))
+        }
     }
 
     public func string(forKey key: String) throws -> String? {
@@ -127,7 +134,7 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         var query = baseQuery(account: key)
         query[kSecMatchLimit] = kSecMatchLimitOne
         query[kSecReturnData] = true
-        query[kSecUseAuthenticationContext] = nonInteractiveAuthenticationContext()
+        Self.applyNonInteractiveReadPolicy(to: &query)
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecSuccess, let data = result as? Data {
@@ -137,7 +144,10 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             if let data = migrateFromLegacyIfNeeded(account: key) {
                 return String(data: data, encoding: .utf8)
             }
-            return nil
+            return fallbackValue(forKey: fallbackKey(key)) as? String
+        }
+        if Self.isSilentKeychainFailure(status) {
+            return fallbackValue(forKey: fallbackKey(key)) as? String
         }
         throw KeychainError(status: status)
     }
@@ -149,7 +159,11 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             return
         }
         guard let data = value.data(using: .utf8) else { return }
-        try upsert(data: data, forKey: key)
+        do {
+            try upsert(data: data, forKey: key)
+        } catch {
+            writeFallbackValue(value as NSString, forKey: fallbackKey(key))
+        }
     }
 
     public func delete(_ key: String) throws {
@@ -158,9 +172,11 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             writeFallbackValue(nil, forKey: fallbackKey(key))
             return
         }
-        let query = baseQuery(account: key)
+        var query = baseQuery(account: key)
+        Self.applyNonInteractiveReadPolicy(to: &query)
         let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
+        writeFallbackValue(nil, forKey: fallbackKey(key))
+        guard status == errSecSuccess || status == errSecItemNotFound || Self.isSilentKeychainFailure(status) else {
             throw KeychainError(status: status)
         }
     }
@@ -170,7 +186,12 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
     /// Builds the shared item attributes, opting the operation into the
     /// data-protection keychain + access group when one is configured.
     /// Exposed (non-private) for unit testing of the query shape.
-    static func makeBaseQuery(service: String, account: String, accessGroup: String?) -> [CFString: Any] {
+    static func makeBaseQuery(
+        service: String,
+        account: String,
+        accessGroup: String?,
+        useDataProtection: Bool = false
+    ) -> [CFString: Any] {
         var query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -179,12 +200,44 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         if let accessGroup {
             query[kSecUseDataProtectionKeychain] = true
             query[kSecAttrAccessGroup] = accessGroup
+        } else if useDataProtection {
+            query[kSecUseDataProtectionKeychain] = true
         }
         return query
     }
 
+    static var isSandboxedProcess: Bool {
+        ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
+    }
+
     private func baseQuery(account: String) -> [CFString: Any] {
-        Self.makeBaseQuery(service: service, account: account, accessGroup: accessGroup)
+        Self.makeBaseQuery(
+            service: service,
+            account: account,
+            accessGroup: accessGroup,
+            useDataProtection: accessGroup != nil || Self.isSandboxedProcess
+        )
+    }
+
+    /// Suppresses both LocalAuthentication sheets and the login-keychain ACL
+    /// password dialog. `LAContext.interactionNotAllowed` alone does not stop
+    /// "App wants to access key … in your keychain" after an OS update.
+    /// Keep the deprecated `kSecUseAuthenticationUIFail` flag for that ACL
+    /// dialog; Apple's replacement does not cover it.
+    static func applyNonInteractiveReadPolicy(to query: inout [CFString: Any]) {
+        query[kSecUseAuthenticationUI] = kSecUseAuthenticationUIFail
+        query[kSecUseAuthenticationContext] = {
+            let context = LAContext()
+            context.interactionNotAllowed = true
+            return context
+        }()
+    }
+
+    private static func isSilentKeychainFailure(_ status: OSStatus) -> Bool {
+        status == errSecInteractionNotAllowed
+            || status == errSecAuthFailed
+            || status == errSecUserCanceled
+            || status == errSecWrPerm
     }
 
     /// One-time migration: when this service is configured for the
@@ -192,22 +245,20 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
     /// keychain (written by a pre-accessGroup build), copy it across so future
     /// reads are silent. Returns the recovered data if a migration happened.
     ///
-    /// The legacy read intentionally allows interaction. On a machine whose
-    /// legacy ACL no longer matches the current signature it may surface one
-    /// final keychain prompt, which rescues the stored value; on healthy
-    /// machines (or after the user chose "Always Allow") it is silent. After
-    /// this runs once the value lives in the data-protection keychain and the
-    /// prompt never returns. The legacy copy is intentionally left in place to
-    /// avoid a delete-time ACL prompt; it simply goes dormant.
+    /// The legacy read is silent. If the old ACL no longer matches, migration
+    /// is skipped and callers fall back to UserDefaults instead of prompting.
+    /// After a successful copy the value lives in the data-protection keychain.
+    /// The legacy item is left in place so delete cannot raise an ACL prompt.
     private func migrateFromLegacyIfNeeded(account: String) -> Data? {
         guard accessGroup != nil else { return nil }
-        let legacyQuery: [CFString: Any] = [
+        var legacyQuery: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account,
             kSecMatchLimit: kSecMatchLimitOne,
             kSecReturnData: true
         ]
+        Self.applyNonInteractiveReadPolicy(to: &legacyQuery)
         var result: AnyObject?
         let status = SecItemCopyMatching(legacyQuery as CFDictionary, &result)
         guard status == errSecSuccess, let data = result as? Data else { return nil }
@@ -217,7 +268,8 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
     }
 
     private func upsert(data: Data, forKey key: String) throws {
-        let query = baseQuery(account: key)
+        var query = baseQuery(account: key)
+        Self.applyNonInteractiveReadPolicy(to: &query)
         let attributes: [CFString: Any] = [
             kSecValueData: data,
             kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
@@ -231,6 +283,9 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             guard addStatus == errSecSuccess else { throw KeychainError(status: addStatus) }
             return
         }
+        if Self.isSilentKeychainFailure(status) {
+            throw KeychainError(status: status)
+        }
         guard status == errSecSuccess else { throw KeychainError(status: status) }
     }
 
@@ -238,10 +293,15 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         "sane.no-keychain.\(service).\(key)"
     }
 
-    private func nonInteractiveAuthenticationContext() -> LAContext {
-        let context = LAContext()
-        context.interactionNotAllowed = true
-        return context
+    private func fallbackBoolValue(forKey key: String) -> Bool? {
+        guard let storedValue = fallbackValue(forKey: key) else { return nil }
+        if let boolValue = storedValue as? Bool {
+            return boolValue
+        }
+        if let numberValue = storedValue as? NSNumber {
+            return numberValue.boolValue
+        }
+        return nil
     }
 
     private func fallbackValue(forKey key: String) -> Any? {
