@@ -50,13 +50,14 @@ public struct CompactRow<Content: View>: View {
                 .environment(\.font, SaneTypography.body)
                 .foregroundStyle(SaneTypography.text)
                 .controlSize(.regular)
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: 0, alignment: .trailing)
                 .layoutPriority(1)
         }
         .environment(\.font, SaneTypography.label)
         .environment(\.controlSize, .regular)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

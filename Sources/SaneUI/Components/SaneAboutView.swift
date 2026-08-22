@@ -41,6 +41,7 @@
             public let openSourceButtonTitle: String
             public let licensesSheetTitle: String
             public let doneButtonTitle: String
+            public let moreAppsButtonTitle: String
 
             public init(
                 githubButtonTitle: String,
@@ -53,7 +54,8 @@
                 licenseSourceLabel: String,
                 openSourceButtonTitle: String,
                 licensesSheetTitle: String,
-                doneButtonTitle: String
+                doneButtonTitle: String,
+                moreAppsButtonTitle: String
             ) {
                 self.githubButtonTitle = githubButtonTitle
                 self.licensesButtonTitle = licensesButtonTitle
@@ -66,6 +68,7 @@
                 self.openSourceButtonTitle = openSourceButtonTitle
                 self.licensesSheetTitle = licensesSheetTitle
                 self.doneButtonTitle = doneButtonTitle
+                self.moreAppsButtonTitle = moreAppsButtonTitle
             }
 
             public static let `default` = Labels(
@@ -79,7 +82,8 @@
                 licenseSourceLabel: String(localized: "saneui.about.license_source_label", defaultValue: "Source", bundle: .module),
                 openSourceButtonTitle: String(localized: "saneui.about.open_source_button_title", defaultValue: "Open Source", bundle: .module),
                 licensesSheetTitle: String(localized: "saneui.about.licenses_sheet_title", defaultValue: "Third-Party Licenses", bundle: .module),
-                doneButtonTitle: String(localized: "saneui.about.done_button_title", defaultValue: "Done", bundle: .module)
+                doneButtonTitle: String(localized: "saneui.about.done_button_title", defaultValue: "Done", bundle: .module),
+                moreAppsButtonTitle: String(localized: "saneui.about.more_apps_button_title", defaultValue: "More Apps", bundle: .module)
             )
         }
 
@@ -155,14 +159,13 @@
         }
 
         public var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 18) {
+            SaneSettingsPage {
+                VStack(spacing: 10) {
                     identityView
-                        .padding(.top, 4)
 
                     VStack(spacing: 6) {
                         Text(appName)
-                            .font(.system(size: 30, weight: .bold))
+                            .font(.system(size: 26, weight: .bold))
                             .foregroundStyle(.white)
 
                         Text(SaneAboutViewPolicy.versionLine(bundle: .main, override: versionLineText))
@@ -184,41 +187,49 @@
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
 
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(minimum: 150), spacing: 10),
-                            GridItem(.flexible(minimum: 150), spacing: 10)
-                        ],
-                        spacing: 10
-                    ) {
-                        aboutActionButton(title: primaryAction?.title ?? labels.githubButtonTitle, icon: "link") {
+                CompactSection("Links") {
+                    CompactRow(primaryAction?.title ?? labels.githubButtonTitle, icon: "link") {
+                        ActionButton("Open", icon: "arrow.up.right", style: .secondary) {
                             openURL(primaryAction?.url ?? SaneAboutViewPolicy.repositoryURL(githubRepo: githubRepo))
                         }
-
-                        if !licenses.isEmpty {
-                            aboutActionButton(title: labels.licensesButtonTitle, icon: "doc.text") {
+                    }
+                    CompactDivider()
+                    CompactRow(labels.moreAppsButtonTitle, icon: "square.grid.2x2") {
+                        ActionButton("Open", icon: "arrow.up.right", style: .secondary) {
+                            openURL(SaneAboutViewPolicy.moreAppsURL)
+                        }
+                    }
+                    if !licenses.isEmpty {
+                        CompactDivider()
+                        CompactRow(labels.licensesButtonTitle, icon: "doc.text") {
+                            ActionButton("View", icon: "doc.text", style: .secondary) {
                                 activeSheet = .licenses
                             }
                         }
-
-                        aboutActionButton(title: labels.reportBugButtonTitle, icon: "ladybug") {
+                    }
+                    CompactDivider()
+                    CompactRow(labels.reportBugButtonTitle, icon: "ladybug") {
+                        ActionButton("Report", icon: "ladybug", style: .secondary) {
                             openBugReporter()
                         }
-
-                        aboutActionButton(title: supportAction?.title ?? labels.viewIssuesButtonTitle, icon: "arrow.up.right.square") {
+                    }
+                    CompactDivider()
+                    CompactRow(supportAction?.title ?? labels.viewIssuesButtonTitle, icon: "arrow.up.right.square") {
+                        ActionButton("Open", icon: "arrow.up.right", style: .secondary) {
                             openURL(supportAction?.url ?? SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
                         }
                     }
-                    .frame(maxWidth: 420)
-                    .padding(.top, 2)
+                    if SaneAboutViewPolicy.showsDonate() {
+                        CompactDivider()
+                        CompactRow("Donate", icon: "heart.fill", iconColor: .pink) {
+                            SaneStickyDonateButton()
+                        }
+                    }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 18)
-                .padding(.bottom, 20)
-                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .sheet(item: $activeSheet) { destination in
                 switch destination {
                 case .licenses:
@@ -249,7 +260,7 @@
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 80, height: 80)
+                        .frame(width: 64, height: 64)
                         .overlay(
                             Circle()
                                 .stroke(Color.white.opacity(0.18), lineWidth: 1)
@@ -257,34 +268,15 @@
                         .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
 
                     Image(systemName: identitySymbolName)
-                        .font(.system(size: 32, weight: .semibold))
+                        .font(.system(size: 26, weight: .semibold))
                         .foregroundStyle(.white)
                 }
             } else {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
-                    .frame(width: 80, height: 80)
+                    .frame(width: 64, height: 64)
                     .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 4)
             }
-        }
-
-        private func aboutActionButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
-            Button(action: action) {
-                HStack(spacing: 10) {
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 16)
-
-                    Text(title)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(SaneActionButtonStyle())
         }
 
         private func openBugReporter() {
@@ -367,6 +359,13 @@
 
         static func issuesURL(githubRepo: String) -> URL? {
             URL(string: "https://github.com/sane-apps/\(githubRepo)/issues")
+        }
+
+        static let moreAppsURL = URL(string: "https://saneapps.com")!
+
+        static func showsDonate(bundle: Bundle = .main) -> Bool {
+            let channel = LicenseService.runtimeDistributionChannel(bundle: bundle) ?? .direct
+            return channel == .direct
         }
 
         static func showsSupportSection(channel: SaneDistributionChannel) -> Bool {

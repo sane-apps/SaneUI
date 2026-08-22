@@ -77,6 +77,32 @@ public struct CompactSection<Content: View>: View {
     }
 }
 
+/// Shared settings-page chrome: one scroll, one gutter, leading alignment.
+/// Use this for every settings tab so switching tabs cannot shift the left margin.
+public enum SaneSettingsChrome {
+    public static let gutter: CGFloat = 20
+    public static let stackSpacing: CGFloat = 24
+}
+
+public struct SaneSettingsPage<Content: View>: View {
+    private let content: Content
+
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: SaneSettingsChrome.stackSpacing) {
+                content
+            }
+            .padding(SaneSettingsChrome.gutter)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
 // MARK: - Preview
 
 #Preview("CompactSection") {

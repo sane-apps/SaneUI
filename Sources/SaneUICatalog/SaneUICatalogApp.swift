@@ -80,12 +80,8 @@ private struct CatalogScrollView<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                content
-            }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        SaneSettingsPage {
+            content
         }
     }
 }

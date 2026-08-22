@@ -109,15 +109,18 @@ public struct SaneActionButtonStyle: ButtonStyle {
     var prominent: Bool
     var destructive: Bool
     var compact: Bool
+    var expandsHorizontally: Bool
 
     public init(
         prominent: Bool = false,
         destructive: Bool = false,
-        compact: Bool = false
+        compact: Bool = false,
+        expandsHorizontally: Bool = false
     ) {
         self.prominent = prominent
         self.destructive = destructive
         self.compact = compact
+        self.expandsHorizontally = expandsHorizontally
     }
 
     public func makeBody(configuration: Configuration) -> some View {
@@ -125,7 +128,8 @@ public struct SaneActionButtonStyle: ButtonStyle {
             configuration: configuration,
             prominent: prominent,
             destructive: destructive,
-            compact: compact
+            compact: compact,
+            expandsHorizontally: expandsHorizontally
         )
     }
 
@@ -134,6 +138,7 @@ public struct SaneActionButtonStyle: ButtonStyle {
         let prominent: Bool
         let destructive: Bool
         let compact: Bool
+        let expandsHorizontally: Bool
 
         @Environment(\.isEnabled) private var isEnabled
         @Environment(\.saneBrandAccent) private var brandAccent
@@ -202,7 +207,8 @@ public struct SaneActionButtonStyle: ButtonStyle {
                 .foregroundStyle(isEnabled ? SaneTypography.text : SaneTypography.text.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(1)
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: expandsHorizontally ? .infinity : nil, alignment: .leading)
+                .fixedSize(horizontal: !expandsHorizontally, vertical: false)
                 .padding(.horizontal, compact ? 10 : 14)
                 .padding(.vertical, compact ? 6 : 8)
                 .background(

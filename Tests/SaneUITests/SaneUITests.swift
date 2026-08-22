@@ -461,7 +461,7 @@ struct ReadableHelpStandardTests {
         #expect(source.contains(".lineLimit(1)"))
         #expect(source.contains(".minimumScaleFactor(1)"))
         #expect(source.contains(".font(SaneTypography.label)"))
-        #expect(source.contains(".fixedSize(horizontal: true, vertical: false)"))
+        #expect(source.contains(".fixedSize(horizontal: !expandsHorizontally, vertical: false)"))
         #expect(!source.contains(".fixedSize(horizontal: false, vertical: true)"))
     }
 
@@ -535,6 +535,34 @@ struct ReadableHelpStandardTests {
     }
 
     struct SettingsContainerTests {
+        @Test("Shared settings page pins one gutter so tab switches cannot shift the left margin")
+        func settingsPagePinsOneGutterAndContentWidth() throws {
+            let source = try String(
+                contentsOf: saneUIPackageRootURL()
+                    .appendingPathComponent("Sources/SaneUI/Components/Section.swift"),
+                encoding: .utf8
+            )
+
+            #expect(source.contains("public struct SaneSettingsPage"))
+            #expect(source.contains("public enum SaneSettingsChrome"))
+            #expect(source.contains("public static let gutter: CGFloat = 20"))
+            #expect(source.contains("public static let stackSpacing: CGFloat = 24"))
+            #expect(source.contains(".frame(maxWidth: .infinity, alignment: .topLeading)"))
+            #expect(!source.contains(".padding(18)"))
+        }
+
+        @Test("Inline help uses the same 14pt inset as CompactRow labels")
+        func inlineHelpMatchesCompactRowInset() throws {
+            let source = try String(
+                contentsOf: saneUIPackageRootURL()
+                    .appendingPathComponent("Sources/SaneUI/Components/SaneHelp.swift"),
+                encoding: .utf8
+            )
+
+            #expect(source.contains(".padding(.horizontal, 14)"))
+            #expect(source.contains(".padding(.bottom, 4)"))
+        }
+
         @Test("Settings sidebar uses deterministic button selection")
         func settingsSidebarUsesDeterministicButtonSelection() throws {
             let source = try String(
@@ -557,6 +585,11 @@ struct ReadableHelpStandardTests {
             #expect(!source.contains("VisualEffectBlur"))
             #expect(!source.contains("NavigationSplitView"))
             #expect(source.contains("public final class SaneSettingsWindow: NSWindow"))
+            #expect(source.contains("func saneIgnoreIntrinsicWindowSize()"))
+            #expect(source.contains("func saneApplySettingsChrome(preferIdealSize: Bool = true)"))
+            #expect(source.contains("public static let maxWidth: CGFloat = SaneSettingsWindowMetrics.maxWidth"))
+            #expect(source.contains("sizingOptions = []"))
+            #expect(source.contains("contentMaxSize = maxSize"))
             #expect(source.contains("override public func performKeyEquivalent(with event: NSEvent)"))
             #expect(source.contains("forwardPasteToFirstResponder()"))
             #expect(source.contains("#selector(NSText.paste(_:))"))
@@ -2267,6 +2300,24 @@ struct SaneAboutViewPolicyTests {
     @Test("Issues URL stays on the shared issues route")
     func issuesURLUsesIssuesRoute() {
         #expect(SaneAboutViewPolicy.issuesURL(githubRepo: "SaneUI")?.absoluteString == "https://github.com/sane-apps/SaneUI/issues")
+    }
+
+    @Test("About sends people to live SaneApps apps and a working donate button")
+    func aboutIncludesMoreAppsAndLiveDonate() throws {
+        #expect(SaneAboutViewPolicy.moreAppsURL.absoluteString == "https://saneapps.com")
+        #expect(SaneAboutViewPolicy.showsDonate() == true)
+
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/Components/SaneAboutView.swift"),
+            encoding: .utf8
+        )
+        #expect(source.contains("labels.moreAppsButtonTitle"))
+        #expect(source.contains("SaneAboutViewPolicy.moreAppsURL"))
+        #expect(source.contains("SaneStickyDonateButton()"))
+        #expect(source.contains("showsDonate()"))
+        #expect(source.contains("CompactSection(\"Links\")"))
+        #expect(!source.contains("LazyVGrid"))
     }
 
     @Test("Bug reporter without diagnostics falls back to Issues, not supportAction")

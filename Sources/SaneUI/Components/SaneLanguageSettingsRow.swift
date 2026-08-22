@@ -67,12 +67,7 @@ public struct SaneLanguageSettingsRow: View {
 
             CompactDivider()
 
-            Text(canChangeLanguage ? labels.helperText : labels.singleLanguageHelperText)
-                .font(SaneTypography.body)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+            SaneInlineHelp(canChangeLanguage ? labels.helperText : labels.singleLanguageHelperText)
         }
     }
 

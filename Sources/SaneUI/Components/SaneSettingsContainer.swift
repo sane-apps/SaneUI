@@ -7,8 +7,10 @@ import SwiftUI
 private enum SaneSettingsWindowMetrics {
     static let minWidth: CGFloat = 640
     static let idealWidth: CGFloat = 720
+    static let maxWidth: CGFloat = 960
     static let minHeight: CGFloat = 400
-    static let idealHeight: CGFloat = 520
+    static let idealHeight: CGFloat = 600
+    static let maxHeight: CGFloat = 760
     static let sidebarMinWidth: CGFloat = 168
     static let sidebarIdealWidth: CGFloat = 180
     static let sidebarMaxWidth: CGFloat = 220
@@ -52,8 +54,10 @@ public extension SaneSettingsTab {
 public enum SaneSettingsWindowDefaults {
     public static let minWidth: CGFloat = SaneSettingsWindowMetrics.minWidth
     public static let idealWidth: CGFloat = SaneSettingsWindowMetrics.idealWidth
+    public static let maxWidth: CGFloat = SaneSettingsWindowMetrics.maxWidth
     public static let minHeight: CGFloat = SaneSettingsWindowMetrics.minHeight
     public static let idealHeight: CGFloat = SaneSettingsWindowMetrics.idealHeight
+    public static let maxHeight: CGFloat = SaneSettingsWindowMetrics.maxHeight
 }
 
 public enum SaneSettingsWindowSizingBehavior {
@@ -246,8 +250,10 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
             content.frame(
                 minWidth: SaneSettingsWindowMetrics.minWidth,
                 idealWidth: SaneSettingsWindowMetrics.idealWidth,
+                maxWidth: SaneSettingsWindowMetrics.maxWidth,
                 minHeight: SaneSettingsWindowMetrics.minHeight,
-                idealHeight: SaneSettingsWindowMetrics.idealHeight
+                idealHeight: SaneSettingsWindowMetrics.idealHeight,
+                maxHeight: SaneSettingsWindowMetrics.maxHeight
             )
         case .embedded:
             content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -302,6 +308,60 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         }
     }
 
+    public extension NSHostingController {
+        /// Keep SwiftUI from driving the host window's size. Settings windows
+        /// launch at the shared default and resize with the NSWindow, not the content.
+        func saneIgnoreIntrinsicWindowSize() {
+            if #available(macOS 13.0, *) {
+                sizingOptions = []
+            }
+        }
+    }
+
+    public extension NSWindow {
+        func saneIgnoreHostingIntrinsicSize() {
+            if let hostingController = contentViewController as? NSHostingController<AnyView> {
+                hostingController.saneIgnoreIntrinsicWindowSize()
+                return
+            }
+            if #available(macOS 13.0, *),
+               contentViewController?.responds(to: NSSelectorFromString("setSizingOptions:")) == true {
+                contentViewController?.setValue(0, forKey: "sizingOptions")
+            }
+        }
+
+        func saneApplySettingsChrome(preferIdealSize: Bool = true) {
+            let minSize = NSSize(
+                width: SaneSettingsWindowDefaults.minWidth,
+                height: SaneSettingsWindowDefaults.minHeight
+            )
+            let idealSize = NSSize(
+                width: SaneSettingsWindowDefaults.idealWidth,
+                height: SaneSettingsWindowDefaults.idealHeight
+            )
+            let maxSize = NSSize(
+                width: SaneSettingsWindowDefaults.maxWidth,
+                height: SaneSettingsWindowDefaults.maxHeight
+            )
+
+            contentMinSize = minSize
+            contentMaxSize = maxSize
+            saneIgnoreHostingIntrinsicSize()
+
+            if preferIdealSize {
+                setContentSize(idealSize)
+                return
+            }
+
+            let current = contentLayoutRect.size
+            let width = min(max(current.width, minSize.width), maxSize.width)
+            let height = min(max(current.height, minSize.height), maxSize.height)
+            if abs(width - current.width) > 0.5 || abs(height - current.height) > 0.5 {
+                setContentSize(NSSize(width: width, height: height))
+            }
+        }
+    }
+
     public struct SaneSettingsResizeGrip: NSViewRepresentable {
         public init() {}
 
@@ -337,7 +397,14 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
 
         override public func resetCursorRects() {
             super.resetCursorRects()
-            addCursorRect(bounds, cursor: .resizeLeftRight)
+            if #available(macOS 15.0, *) {
+                addCursorRect(
+                    bounds,
+                    cursor: NSCursor.frameResize(position: .bottomRight, directions: .all)
+                )
+            } else {
+                addCursorRect(bounds, cursor: .arrow)
+            }
         }
 
         override public func draw(_ dirtyRect: NSRect) {
@@ -408,7 +475,6 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
 
         final class Coordinator {
             private var resizeAttemptsByWindow: [Int: Int] = [:]
-            private let maxResizeAttempts = 3
 
             @MainActor
             func configure(window: NSWindow, minContentSize: NSSize, idealContentSize: NSSize) {
@@ -425,13 +491,14 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
                     window.toolbarStyle = .unifiedCompact
                 }
                 window.contentMinSize = minContentSize
+                window.contentMaxSize = NSSize(
+                    width: SaneSettingsWindowMetrics.maxWidth,
+                    height: SaneSettingsWindowMetrics.maxHeight
+                )
+                window.saneIgnoreHostingIntrinsicSize()
 
-                let currentContentSize = window.contentRect(forFrameRect: window.frame).size
-                let needsClamp = currentContentSize.width > idealContentSize.width + 1 ||
-                    currentContentSize.height > idealContentSize.height + 1
-
-                guard attempts == 0 || (needsClamp && attempts < maxResizeAttempts) else { return }
-                resizeAttemptsByWindow[windowNumber] = attempts + 1
+                guard attempts == 0 else { return }
+                resizeAttemptsByWindow[windowNumber] = 1
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     window.setContentSize(idealContentSize)

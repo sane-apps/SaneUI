@@ -43,6 +43,8 @@ public struct SaneInlineHelp: View {
             .foregroundStyle(SaneTypography.text)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 4)
             .accessibilityLabel(text)
             // Keep help readable even when a parent preview uses .disabled(true).
             .disabled(false)
