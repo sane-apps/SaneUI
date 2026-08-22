@@ -159,9 +159,24 @@ func settingsTypeFloorIsThirteenPointWhite() throws {
     #expect(row.contains(".font(SaneTypography.label)"))
     #expect(row.contains(".fixedSize(horizontal: true, vertical: false)"))
     #expect(row.contains(".layoutPriority(1)"))
+    #expect(row.contains(".layoutPriority(0)"))
     #expect(row.contains(".environment(\\.font, SaneTypography.label)"))
     #expect(row.contains(".environment(\\.controlSize, .regular)"))
     #expect(!row.contains(".fixedSize(horizontal: false, vertical: true)"))
+}
+
+@Test("Status badges refuse wrapping into a circle")
+func statusBadgesStaySingleLineCapsules() throws {
+    let source = try String(
+        contentsOf: saneUIPackageRootURL()
+            .appendingPathComponent("Sources/SaneUI/Components/Badge.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("public struct StatusBadge"))
+    #expect(source.contains(".lineLimit(1)"))
+    #expect(source.contains(".clipShape(Capsule())"))
+    #expect(source.contains(".fixedSize(horizontal: true, vertical: false)"))
 }
 
 @Test("Settings action buttons refuse shrink and stay on the 16pt floor")

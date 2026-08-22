@@ -32,12 +32,15 @@ public struct StatusBadge: View {
             }
             Text(text)
                 .font(SaneTypography.label)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(color.opacity(0.28))
         .foregroundStyle(.white)
         .clipShape(Capsule())
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

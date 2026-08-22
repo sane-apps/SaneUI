@@ -206,6 +206,15 @@ private struct ControlsCatalogView: View {
                     }
                 }
                 CompactDivider()
+                CompactRow("Menu Bar Geometry") {
+                    HStack(spacing: 8) {
+                        StatusBadge("Needs Check", color: .orange, icon: "exclamationmark.triangle.fill")
+                        ActionButton("Fix", style: .primary) {
+                            lastButtonAction = "Trailing chrome stayed a capsule, not a stacked circle."
+                        }
+                    }
+                }
+                CompactDivider()
                 CompactRow("Accent") {
                     HStack(spacing: 8) {
                         SaneAccentBadge(title: "Licensed", systemImage: "sparkles")

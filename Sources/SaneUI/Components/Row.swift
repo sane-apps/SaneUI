@@ -44,14 +44,14 @@ public struct CompactRow<Content: View>: View {
                 .foregroundStyle(SaneTypography.text)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
+                .layoutPriority(0)
             Spacer(minLength: 8)
             content
                 .environment(\.font, SaneTypography.body)
                 .foregroundStyle(SaneTypography.text)
                 .controlSize(.regular)
-                .layoutPriority(0)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
         }
         .environment(\.font, SaneTypography.label)
         .environment(\.controlSize, .regular)
@@ -97,10 +97,11 @@ public struct CompactToggle: View {
                 .foregroundStyle(SaneTypography.text)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
+                .layoutPriority(0)
             Spacer(minLength: 8)
             switchIndicator
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
         }
         .contentShape(Rectangle())
         .onTapGesture { isOn.toggle() }
