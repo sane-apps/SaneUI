@@ -32,6 +32,25 @@ public struct CompactRow<Content: View>: View {
     }
 
     public var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                rowLabel.fixedSize(horizontal: true, vertical: true)
+                Spacer(minLength: 8)
+                rowContent
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                rowLabel
+                rowContent.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .environment(\.font, SaneTypography.label)
+        .environment(\.controlSize, .regular)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var rowLabel: some View {
         HStack(spacing: 10) {
             if let icon {
                 Image(systemName: icon)
@@ -42,22 +61,16 @@ public struct CompactRow<Content: View>: View {
             Text(label)
                 .font(SaneTypography.label)
                 .foregroundStyle(SaneTypography.text)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
-                .layoutPriority(0)
-            Spacer(minLength: 8)
-            content
-                .environment(\.font, SaneTypography.body)
-                .foregroundStyle(SaneTypography.text)
-                .controlSize(.regular)
-                .frame(minWidth: 0, alignment: .trailing)
-                .layoutPriority(1)
         }
-        .environment(\.font, SaneTypography.label)
-        .environment(\.controlSize, .regular)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var rowContent: some View {
+        content
+            .environment(\.font, SaneTypography.body)
+            .foregroundStyle(SaneTypography.text)
+            .controlSize(.regular)
     }
 }
 
@@ -96,7 +109,7 @@ public struct CompactToggle: View {
             Text(label)
                 .font(SaneTypography.label)
                 .foregroundStyle(SaneTypography.text)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 .layoutPriority(0)
             Spacer(minLength: 8)

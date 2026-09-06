@@ -43,7 +43,7 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
 @Test("SaneVideo onboarding copy describes video creation instead of clipboard behavior")
 func saneVideoOnboardingCopyUsesVideoSemantics() {
     #expect(WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo") == "Record, polish, and export in one local workflow")
-    #expect(WelcomeGateCopy.proLead(appSlug: "sanevideo") == "Keep the complete local creator workflow after your trial.")
+    #expect(WelcomeGateCopy.proLead(appSlug: "sanevideo") == "Record, polish, and export with every local creator tool included.")
     #expect(WelcomeGateCopy.proTitle(appSlug: "sanevideo") == "Creator Tools")
     #expect(WelcomeGateCopy.proSubtitle(appSlug: "sanevideo") == "Captions, templates, smart polish, and flexible export")
     #expect(!WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo").contains("paste"))
@@ -162,7 +162,7 @@ func settingsTypeFloorIsThirteenPointWhite() throws {
     #expect(row.contains(".layoutPriority(0)"))
     #expect(row.contains(".environment(\\.font, SaneTypography.label)"))
     #expect(row.contains(".environment(\\.controlSize, .regular)"))
-    #expect(!row.contains(".fixedSize(horizontal: false, vertical: true)"))
+    #expect(row.contains("ViewThatFits(in: .horizontal)"))
 }
 
 @Test("Status badges refuse wrapping into a circle")
@@ -689,7 +689,7 @@ struct WelcomeGateFlowPolicyTests {
         #expect(source.contains("if usesDirectTrialFlow {\n            directTrialSummaryView"))
         #expect(source.contains("if usesDirectTrialFlow {\n                directTrialFeaturesPage"))
         #expect(source.contains("licenseService.distributionChannel == .direct"))
-        #expect(source.contains("if licenseService.hasExpiredProTrial {\n                trialOutcomeCard"))
+        #expect(source.contains("if licenseService.hasExpiredProTrial, !usesDonationSupport {\n                trialOutcomeCard"))
     }
 
     @Test("Permission onboarding scrolls instead of clipping content or controls")
