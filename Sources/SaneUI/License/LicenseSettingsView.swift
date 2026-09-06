@@ -337,23 +337,17 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
         }
     }
 
+    @ViewBuilder
     private var donateButton: some View {
-        Button {
-            if let donationURL {
-                NSWorkspace.shared.open(donationURL)
-            }
-        } label: {
-            fittedActionLabel("Donate")
+        if let donationURL {
+            SaneStickyDonateButton(url: donationURL)
+                .accessibilityIdentifier("saneui-license-donate")
         }
-        .buttonStyle(SaneActionButtonStyle(prominent: true))
-        .controlSize(.small)
-        .accessibilityIdentifier("saneui-license-donate")
-        .accessibilityLabel("Donate")
     }
 
     private var unlockProButton: some View {
         Group {
-            if let donationURL {
+            if donationURL != nil {
                 donateButton
             } else if licenseService.usesAppStorePurchase {
                 Button {
@@ -423,7 +417,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     private func statusBadge(title: String, color: Color) -> some View {
         Text(title)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(color)
+            .foregroundStyle(.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
