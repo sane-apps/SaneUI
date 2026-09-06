@@ -92,7 +92,7 @@ public struct SaneSettingsPage<Content: View>: View {
     }
 
     public var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: SaneSettingsChrome.stackSpacing) {
                 content
             }
