@@ -312,7 +312,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
 
     @ViewBuilder
     private var unlockRow: some View {
-        CompactRow(labels.actionsLabel, icon: donationURL == nil ? "cart" : "heart.fill", iconColor: .saneAccent) {
+        CompactRow(labels.actionsLabel, icon: donationURL == nil ? "cart" : "heart.fill", iconColor: donationURL == nil ? .saneAccent : .pink) {
             if donationURL != nil {
                 donateButton
             } else if licenseService.usesSetappPurchase {

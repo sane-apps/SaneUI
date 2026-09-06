@@ -24,6 +24,7 @@ public struct SaneStickyDonateButton: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "heart.fill")
+                    .foregroundStyle(.pink)
                     .font(.system(size: 13, weight: .bold))
                 Text("Donate")
                     .font(.system(size: 13, weight: .bold))
