@@ -82,7 +82,8 @@ public struct LicenseEntryView<Service: LicenseSettingsServiceProtocol>: View {
         .task {
             await focusLicenseField()
         }
-        .onChange(of: licenseService.isPro) { _, newValue in
+        // Trial access is already Pro; activation ends the trial without changing isPro.
+        .onChange(of: licenseService.isPro && !licenseService.isProTrialActive) { _, newValue in
             if newValue {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showingSuccess = true

@@ -142,3 +142,156 @@ struct SaneLicenseServiceSetappGateTests {
         #expect(!body.contains(".setapp"))
     }
 }
+
+#if os(macOS)
+import AppKit
+import Observation
+import SwiftUI
+
+/// Exercises the real SwiftUI activation observer and delayed close with no keys or network.
+/// Success text still requires the separate customer-app visual acceptance check.
+@Suite("License entry purchase feedback", .serialized)
+@MainActor
+struct LicenseEntryPurchaseFeedbackTests {
+    @Test("Buying during an active trial closes after the feedback delay")
+    func activeTrialPurchaseClosesAfterFeedbackDelay() async throws {
+        try await assertPurchaseFeedback(trialActive: true)
+    }
+
+    @Test("Buying after a trial expires closes after the feedback delay")
+    func expiredTrialPurchaseClosesAfterFeedbackDelay() async throws {
+        try await assertPurchaseFeedback(trialActive: false)
+    }
+
+    @Test("Starting a trial does not trigger purchase dismissal")
+    func startingTrialDoesNotTriggerPurchaseDismissal() async throws {
+        let service = EntryTestLicenseService(trialActive: false)
+        let host = EntryTestHost(service: service)
+        defer { host.dispose() }
+        #expect(await host.waitForMount())
+        service.trialActive = true
+        try await Task.sleep(for: .milliseconds(1800))
+        #expect(service.isPro && service.isProTrialActive)
+        #expect(host.closeCount == 0)
+    }
+
+    @Test("Existing Setapp access does not trigger purchase dismissal")
+    func managedAccessDoesNotTriggerPurchaseDismissal() async throws {
+        let service = EntryTestLicenseService(trialActive: false, channel: .setapp)
+        service.paid = true
+        let host = EntryTestHost(service: service)
+        defer { host.dispose() }
+        #expect(await host.waitForMount())
+        service.purchaseError = "Fixture state refresh"
+        try await Task.sleep(for: .milliseconds(1800))
+        #expect(host.closeCount == 0)
+    }
+
+    private func assertPurchaseFeedback(trialActive: Bool) async throws {
+        let service = EntryTestLicenseService(trialActive: trialActive)
+        let host = EntryTestHost(service: service)
+        defer { host.dispose() }
+        #expect(await host.waitForMount())
+        #expect(service.isPro == trialActive)
+        // Mimic successful activation through the same protocol the real form calls.
+        let activatedAt = Date()
+        await service.activate(key: "fixture-only")
+        #expect(service.isPro && !service.isProTrialActive)
+        #expect(await host.waitForClose())
+        #expect(host.closeCount == 1)
+        let closedAt = try #require(host.closedAt)
+        #expect(closedAt.timeIntervalSince(activatedAt) >= 1.2)
+        #expect(closedAt.timeIntervalSince(activatedAt) < 3)
+    }
+}
+
+@MainActor
+@Observable
+private final class EntryTestLicenseService: LicenseSettingsServiceProtocol {
+    var paid = false
+    var trialActive: Bool
+    let distributionChannel: SaneDistributionChannel
+    var isPro: Bool { paid || trialActive }
+    var isProTrialActive: Bool { !paid && trialActive }
+    var hasExpiredProTrial: Bool { !paid && !trialActive && distributionChannel == .direct }
+    var licenseEmail: String? { nil }
+    var isValidating: Bool { false }
+    var isPurchasing: Bool { false }
+    var validationError: String?
+    var purchaseError: String?
+    var appStoreDisplayPrice: String? { nil }
+    var displayPriceLabel: String { "Fixture price" }
+    var alternateEntryLabel: String { "License Key" }
+    var accessManagementLabel: String { "Deactivate License" }
+    var alternateEntryInstruction: String { "Enter the fixture key." }
+    var checkoutURL: URL? { nil }
+    var usesAppStorePurchase: Bool { distributionChannel == .appStore }
+    var usesSetappPurchase: Bool { distributionChannel == .setapp }
+    var proAccessBadgeTitle: String { isProTrialActive ? "Trial" : "Licensed" }
+    var proAccessDetail: String? { nil }
+
+    init(trialActive: Bool, channel: SaneDistributionChannel = .direct) {
+        self.trialActive = trialActive
+        distributionChannel = channel
+    }
+
+    func checkCachedLicense() {}
+    func preloadAppStoreProduct() async {}
+    func purchasePro() async { paid = true }
+    func restorePurchases() async { paid = true }
+    func activate(key: String) async { paid = true }
+    func deactivate() { paid = false }
+}
+
+/// Mounts the real view; observes only its public close callback and lifecycle.
+@MainActor
+private final class EntryTestHost {
+    let window: NSWindow
+    private(set) var closeCount = 0
+    private(set) var closedAt: Date?
+    private var mounted = false
+
+    init(service: EntryTestLicenseService) {
+        _ = NSApplication.shared
+        window = NSWindow(
+            contentRect: NSRect(x: 100, y: 100, width: 448, height: 420),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.title = "SaneUI license fixture"
+        window.contentView = NSHostingView(rootView: LicenseEntryView(
+            licenseService: service,
+            onClose: { [weak self] in
+                self?.closeCount += 1
+                self?.closedAt = Date()
+                self?.window.close()
+            }
+        ).onAppear { [weak self] in self?.mounted = true })
+        window.makeKeyAndOrderFront(nil)
+        window.contentView?.layoutSubtreeIfNeeded()
+    }
+
+    func dispose() {
+        window.contentView = nil
+        window.close()
+    }
+
+    func waitForMount() async -> Bool {
+        for _ in 0..<50 {
+            if mounted { return true }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return false
+    }
+
+    func waitForClose() async -> Bool {
+        for _ in 0..<100 {
+            if closeCount > 0 { return true }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return false
+    }
+}
+#endif
