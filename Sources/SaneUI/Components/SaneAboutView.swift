@@ -160,35 +160,37 @@
 
         public var body: some View {
             SaneSettingsPage {
-                VStack(spacing: 10) {
+                HStack(alignment: .center, spacing: 16) {
                     identityView
 
-                    VStack(spacing: 6) {
-                        Text(appName)
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(appName)
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
 
-                        Text(SaneAboutViewPolicy.versionLine(bundle: .main, override: versionLineText))
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white)
+                            Text(SaneAboutViewPolicy.versionLine(bundle: .main, override: versionLineText))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(labels.trustPrefix) ")
+                                .fontWeight(.medium) +
+                                Text(Image(systemName: "heart.fill"))
+                                .foregroundStyle(.pink)
+                                .fontWeight(.medium) +
+                                Text(" \(labels.trustSuffix)")
+                                .fontWeight(.medium)
+
+                            Text(labels.secondaryTrustLine)
+                        }
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.leading)
                     }
-
-                    VStack(spacing: 4) {
-                        Text("\(labels.trustPrefix) ")
-                            .fontWeight(.medium) +
-                            Text(Image(systemName: "heart.fill"))
-                            .foregroundStyle(.pink)
-                            .fontWeight(.medium) +
-                            Text(" \(labels.trustSuffix)")
-                            .fontWeight(.medium)
-
-                        Text(labels.secondaryTrustLine)
-                    }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 CompactSection("Links") {
                     CompactRow(primaryAction?.title ?? labels.githubButtonTitle, icon: "link") {

@@ -202,10 +202,6 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
         private var windowSizingBackground: some View {
             if windowSizing == .standalone {
                 SaneSettingsWindowConfigurator(
-                    minContentSize: NSSize(
-                        width: SaneSettingsWindowMetrics.minWidth,
-                        height: SaneSettingsWindowMetrics.minHeight
-                    ),
                     idealContentSize: NSSize(
                         width: SaneSettingsWindowMetrics.idealWidth,
                         height: SaneSettingsWindowMetrics.idealHeight
@@ -314,6 +310,9 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
         }
 
         func saneApplySettingsChrome(preferIdealSize: Bool = true) {
+            if !styleMask.contains(.resizable) {
+                styleMask.insert(.resizable)
+            }
             let minSize = NSSize(
                 width: SaneSettingsWindowDefaults.minWidth,
                 height: SaneSettingsWindowDefaults.minHeight
@@ -434,7 +433,6 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
     }
 
     private struct SaneSettingsWindowConfigurator: NSViewRepresentable {
-        let minContentSize: NSSize
         let idealContentSize: NSSize
 
         func makeCoordinator() -> Coordinator {
@@ -450,7 +448,6 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
                 guard let window = nsView.window else { return }
                 context.coordinator.configure(
                     window: window,
-                    minContentSize: minContentSize,
                     idealContentSize: idealContentSize
                 )
             }
@@ -460,7 +457,7 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
             private var resizeAttemptsByWindow: [Int: Int] = [:]
 
             @MainActor
-            func configure(window: NSWindow, minContentSize: NSSize, idealContentSize: NSSize) {
+            func configure(window: NSWindow, idealContentSize: NSSize) {
                 let windowNumber = window.windowNumber
                 let attempts = resizeAttemptsByWindow[windowNumber, default: 0]
 
@@ -473,12 +470,7 @@ private struct SaneSettingsWindowSizingModifier: ViewModifier {
                 if #available(macOS 13.0, *) {
                     window.toolbarStyle = .unifiedCompact
                 }
-                window.contentMinSize = minContentSize
-                window.contentMaxSize = NSSize(
-                    width: SaneSettingsWindowMetrics.maxWidth,
-                    height: SaneSettingsWindowMetrics.maxHeight
-                )
-                window.saneIgnoreHostingIntrinsicSize()
+                window.saneApplySettingsChrome(preferIdealSize: false)
 
                 guard attempts == 0 else { return }
                 resizeAttemptsByWindow[windowNumber] = 1
