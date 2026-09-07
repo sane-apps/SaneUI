@@ -465,31 +465,47 @@ struct ReadableHelpStandardTests {
         #expect(!source.contains(".fixedSize(horizontal: false, vertical: true)"))
     }
 
-    @Test("Compact settings card visibly fills its available grid column")
+    @Test("Settings cards fill their column and keep white text readable over any backdrop")
     @MainActor
     func compactSectionsFillTheirAvailableColumn() throws {
-        let renderer = ImageRenderer(
-            content: ZStack {
-                Color.red
-                CompactSection("Layout probe", icon: "square.grid.2x2") {
-                    Text("Short content")
-                        .foregroundStyle(.white)
-                        .padding(12)
+        func sample(over background: Color) throws -> NSColor {
+            let renderer = ImageRenderer(
+                content: ZStack {
+                    background
+                    CompactSection("Layout probe", icon: "square.grid.2x2") {
+                        Text("Short content")
+                            .foregroundStyle(.white)
+                            .padding(12)
+                    }
                 }
-            }
-            .frame(width: 400, height: 110)
-        )
-        renderer.scale = 1
+                .frame(width: 400, height: 110)
+                .preferredColorScheme(.dark)
+            )
+            renderer.scale = 1
+            let image = try #require(renderer.nsImage)
+            let tiff = try #require(image.tiffRepresentation)
+            let bitmap = try #require(NSBitmapImageRep(data: tiff))
+            return try #require(bitmap.colorAt(x: 380, y: 70)?.usingColorSpace(.deviceRGB))
+        }
 
-        let image = try #require(renderer.nsImage)
-        let tiff = try #require(image.tiffRepresentation)
-        let bitmap = try #require(NSBitmapImageRep(data: tiff))
-        let farEdgeCardPixel = try #require(bitmap.colorAt(x: 380, y: 30)?.usingColorSpace(.deviceRGB))
-
-        // A collapsed intrinsic-width card leaves this pixel pure red. The
-        // real full-column glass card tints it with visible green/blue light.
-        #expect(farEdgeCardPixel.greenComponent > 0.02)
-        #expect(farEdgeCardPixel.blueComponent > 0.02)
+        let dark = try sample(over: .black)
+        let light = try sample(over: .white)
+        // A collapsed card or translucent wash exposes the changing backdrop.
+        for (a, b) in zip(
+            [dark.redComponent, dark.greenComponent, dark.blueComponent],
+            [light.redComponent, light.greenComponent, light.blueComponent]
+        ) {
+            #expect(abs(a - b) < 0.005)
+        }
+        func linear(_ value: CGFloat) -> CGFloat {
+            value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(light.redComponent)
+            + 0.7152 * linear(light.greenComponent)
+            + 0.0722 * linear(light.blueComponent)
+        #expect(1.05 / (luminance + 0.05) >= 7)
+        #expect(light.greenComponent > 0.02)
+        #expect(light.blueComponent > 0.02)
     }
 }
 
@@ -573,15 +589,15 @@ struct ReadableHelpStandardTests {
 
             #expect(source.contains("HStack(spacing: 0)"))
             #expect(source.contains("ScrollViewReader { proxy in"))
-            #expect(source.contains("ScrollView(.vertical, showsIndicators: false)"))
+            #expect(source.contains("ScrollView(.vertical, showsIndicators: true)"))
             #expect(source.contains("selection.wrappedValue = tab"))
             #expect(source.contains(".accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])"))
             #expect(source.contains(".id(tab.id)"))
             #expect(source.contains("didRevealInitialSidebarSelection"))
             #expect(source.contains("proxy.scrollTo(selectedTab.id, anchor: .center)"))
             #expect(source.contains("private struct SaneSettingsBackground: View"))
-            #expect(source.contains("useSystemVibrancy: false"))
-            #expect(source.contains("SaneGradientBackground("))
+            #expect(source.contains("SanePalette.navy"))
+            #expect(source.contains(".background(SaneSettingsBackground())"))
             #expect(!source.contains("VisualEffectBlur"))
             #expect(!source.contains("NavigationSplitView"))
             #expect(source.contains("public final class SaneSettingsWindow: NSWindow"))

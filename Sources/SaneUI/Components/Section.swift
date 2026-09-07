@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Compact Section
 
-/// A grouped section with header, glass background, and shadow.
+/// A grouped section with a steady, high-contrast content surface.
 ///
 /// Use this to group related content in settings or detail views.
 ///
@@ -60,16 +60,12 @@ public struct CompactSection<Content: View>: View {
             .environment(\.controlSize, .regular)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                SaneGlassRoundedBackground(
-                    cornerRadius: 14,
-                    tint: SanePanelChrome.panelTint,
-                    tintStrength: 0.12,
-                    glowOpacity: 0.14,
-                    interactive: true,
-                    shadowOpacity: 0.28,
-                    shadowRadius: 16,
-                    shadowY: 6
-                )
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(SanePalette.navyTeal)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                    }
             )
             .padding(.horizontal, 2)
         }

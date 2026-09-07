@@ -45,7 +45,7 @@ swift test
 - Shared settings text, helper text, highlights, badges, status messages, and subsection text must stay bright white, high contrast, and at least `13pt` (`SaneTypography.bodySize`). Row labels use `SaneTypography.label`. Sidebar, section headers, and row labels share the same point size so Control settings read as one type system. Prefer adult density over oversized “chunky” type.
 - Settings and right-click menu items must be ordered from the customer's most likely/common need to the least likely/most advanced need.
 - Settings sections should use plain language, balanced spacing, and visual symmetry.
-- Prefer frosted / liquid-glass rows (`SaneGlassRoundedBackground`) over a living mesh panel background. Flat linear backgrounds are a last-resort fallback only when glass cannot composite — never ship gray helper text or sub-16pt settings copy as part of that fallback.
+- Owner correction (2026-09-07): settings use steady opaque navy surfaces and simple section borders. No animated mesh, wallpaper bleed, or glossy glass on content cards. Reserve emphasis for the selected navigation row and actual controls; keep unselected destinations unboxed. This replaces the prior glass-first settings guidance.
 - Do not wrap CompactToggle labels in `Button` — macOS control sizing shrinks absolute fonts inside buttons. Keep the tappable `HStack` + `onTapGesture` pattern in `Row.swift`.
 - Do not reintroduce gray helper text, `mailto:` bug-report links, `Manage Access` copy, or `.buttonStyle(.bordered)` in shared surfaces.
 - Prefer extending existing shared views over adding app-local one-offs.

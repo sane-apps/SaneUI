@@ -11,9 +11,7 @@ private enum SaneSettingsWindowMetrics {
     static let minHeight: CGFloat = 400
     static let idealHeight: CGFloat = 600
     static let maxHeight: CGFloat = 760
-    static let sidebarMinWidth: CGFloat = 168
     static let sidebarIdealWidth: CGFloat = 180
-    static let sidebarMaxWidth: CGFloat = 220
 }
 
 /// A tab definition for `SaneSettingsContainer`.
@@ -67,8 +65,8 @@ public enum SaneSettingsWindowSizingBehavior {
 
 /// Standardized settings window container with sidebar navigation.
 ///
-/// Provides: deterministic dark sidebar with icons + colors, gradient background,
-/// glass group box style, and consistent window sizing with a tighter default footprint.
+/// Provides clear sidebar selection, opaque high-contrast surfaces,
+/// and consistent window sizing.
 ///
 /// ```swift
 /// SaneSettingsContainer(defaultTab: MyTab.general) { tab in
@@ -121,14 +119,9 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                 .environment(\.font, SaneTypography.body)
                 .environment(\.controlSize, .regular)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(
-                    SaneGradientBackground(
-                        style: .panel,
-                        motion: .animated,
-                        useSystemVibrancy: true
-                    )
-                )
+                .background(SaneSettingsBackground())
         }
+        .background(SaneSettingsBackground())
         .groupBoxStyle(GlassGroupBoxStyle())
         .modifier(SaneSettingsBrandTintModifier())
         .modifier(SaneSettingsWindowSizingModifier(windowSizing: windowSizing))
@@ -148,7 +141,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
 
     private var sidebar: some View {
         ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: false) {
+            ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(Tab.allCases), id: \.id) { tab in
                         Button {
@@ -158,12 +151,12 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                                 Text(tab.title)
                                     .font(SaneTypography.label)
                                     .foregroundStyle(SaneTypography.text)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(1)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                             } icon: {
                                 Image(systemName: tab.icon)
                                     .font(.system(size: SaneTypography.bodySize, weight: .semibold))
-                                    .foregroundStyle(tab.iconColor)
+                                    .foregroundStyle(selection.wrappedValue == tab ? .white : tab.iconColor)
                                     .frame(width: 22)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,6 +169,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                         .buttonStyle(.plain)
                         .saneHelp(tab.title)
                         .accessibilityLabel(tab.title)
+                        .accessibilityIdentifier("settings.tab.\(tab.id)")
                         .accessibilityAddTraits(selection.wrappedValue == tab ? .isSelected : [])
                         .id(tab.id)
                     }
@@ -193,20 +187,13 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
             }
         }
         .frame(
-            minWidth: SaneSettingsWindowMetrics.sidebarMinWidth,
-            idealWidth: SaneSettingsWindowMetrics.sidebarIdealWidth,
-            maxWidth: SaneSettingsWindowMetrics.sidebarMaxWidth,
+            width: SaneSettingsWindowMetrics.sidebarIdealWidth
+        )
+        .frame(
             maxHeight: .infinity,
             alignment: .topLeading
         )
-        .background(
-            SaneGradientBackground(
-                style: .panel,
-                motion: .animated,
-                useSystemVibrancy: true
-            )
-            .overlay(SanePanelChrome.controlNavyDeep.opacity(0.08))
-        )
+        .background(SanePalette.navyDeep)
     }
 
     #if os(macOS)
@@ -228,16 +215,11 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
     #endif
 }
 
-/// Settings host background: living mesh. Prefer vibrancy on so glass rows have
-/// something alive to frost over. If a native `Settings {}` host blanks again on a
-/// future OS, set `useSystemVibrancy: false` at that call site only.
+/// Stable settings canvas: no wallpaper bleed or animation behind controls.
 private struct SaneSettingsBackground: View {
     var body: some View {
-        SaneGradientBackground(
-            style: .panel,
-            motion: .animated,
-            useSystemVibrancy: true
-        )
+        SanePalette.navy
+            .ignoresSafeArea()
     }
 }
 
@@ -527,7 +509,15 @@ private struct SaneSettingsSidebarRowBackground: View {
             .fill(
                 isSelected
                     ? (brandAccent ?? SanePanelChrome.accentStart).opacity(0.40)
-                    : Color.white.opacity(0.06)
+                    : Color.clear
             )
+            .overlay(alignment: .leading) {
+                if isSelected {
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: 3, height: 16)
+                        .padding(.leading, 4)
+                }
+            }
     }
 }
