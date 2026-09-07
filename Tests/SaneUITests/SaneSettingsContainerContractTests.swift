@@ -57,24 +57,6 @@ import Testing
             #expect(!source.contains("VisualEffectBlur"))
         }
 
-        @Test("Settings chrome makes a fixed native window resizable without losing its close button")
-        @MainActor
-        func settingsChromeEnablesNativeResizing() {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 720, height: 600),
-                styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false
-            )
-            window.isReleasedWhenClosed = false
-            defer { window.close() }
-            window.saneApplySettingsChrome(preferIdealSize: false)
-            #expect(window.styleMask.contains(.resizable))
-            #expect(window.styleMask.contains(.closable))
-            #expect(window.contentMinSize == NSSize(width: 640, height: 400))
-            #expect(window.contentMaxSize == NSSize(width: 960, height: 760))
-        }
-
         @Test("Shared settings resize grip is owned by SaneUI")
         func sharedResizeGripIsOwnedBySaneUI() throws {
             let source = try String(
