@@ -165,6 +165,7 @@ public struct SaneSettingsContainer<Tab: SaneSettingsTab, Detail: View>: View {
                             .background {
                                 SaneSettingsSidebarRowBackground(isSelected: selection.wrappedValue == tab)
                             }
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .saneHelp(tab.title)

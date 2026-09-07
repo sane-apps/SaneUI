@@ -45,6 +45,7 @@ import Testing
 
             #expect(source.contains("HStack(spacing: 0)"))
             #expect(source.contains("selection.wrappedValue = tab"))
+            #expect(source.contains(".contentShape(Rectangle())"))
             #expect(source.contains("ScrollViewReader { proxy in"))
             #expect(source.contains("proxy.scrollTo((selection.wrappedValue ?? defaultTab).id, anchor: .center)"))
             #expect(source.contains(".onChange(of: selection.wrappedValue)"))
