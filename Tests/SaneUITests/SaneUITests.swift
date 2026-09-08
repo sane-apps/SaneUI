@@ -1277,7 +1277,7 @@ struct SharedLicenseUIPolicyTests {
         #expect(source.contains("Every feature stays unlocked. Donate only if you want to support it."))
         #expect(source.contains("allowsContinueWithoutPurchase: Bool = false"))
         #expect(source.contains("if allowsContinueWithoutPurchase"))
-        #expect(source.contains("return \"Buy \\(licenseService.appName)\""))
+        #expect(source.contains("return \"Buy \\(licenseService.appName) — \\(licenseService.displayPriceLabel)\""))
         #expect(source.contains("if donationURL != nil {\n            return \"Donate\""))
         #expect(source.contains("Text(\"Enter License\")"))
         #expect(source.contains("Text(\"Quit\")"))
@@ -1298,6 +1298,23 @@ struct SharedLicenseUIPolicyTests {
         #expect(!source.contains("directSupportURL"))
         #expect(!source.contains("\"Buy Pro\""))
         #expect(!source.contains("\"Unlock Pro"))
+        #expect(source.contains("ExpiredTrialSinceUpdateList(updates: sinceTrialUpdates)"))
+        #expect(source.contains("sinceTrialUpdates: [String] = []"))
+    }
+
+    @Test("Expired trial since-update list is white 13pt and app-supplied")
+    func expiredTrialSinceUpdateListUsesWhiteBodyTypeAndAppBullets() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/ExpiredTrialSinceUpdateList.swift"),
+            encoding: .utf8
+        )
+        #expect(source.contains("Text(\"Since your trial\")"))
+        #expect(source.contains("SaneTypography.bodySize"))
+        #expect(source.contains(".foregroundStyle(.white)"))
+        #expect(source.contains("public let updates: [String]"))
+        #expect(!source.contains(".secondary"))
+        #expect(!source.contains("Not now"))
     }
 
     @Test("Sticky donate button opens the live GitHub Sponsors URL")

@@ -503,6 +503,7 @@ public struct WelcomeGateView: View {
     let proTierTitleOverride: String?
     let proTierPriceOverride: String?
     let permissionConfig: WelcomeGatePermissionConfig
+    let sinceTrialUpdates: [String]
     @Bindable var licenseService: LicenseService
     private let donationURL: URL?
     @Environment(\.dismiss) private var dismiss
@@ -559,7 +560,8 @@ public struct WelcomeGateView: View {
         secondaryCompletionAccessibilityIdentifier: String? = nil,
         onSecondaryCompletion: (() -> Void)? = nil,
         onPageChange: ((Int) -> Void)? = nil,
-        onComplete: (() -> Void)? = nil
+        onComplete: (() -> Void)? = nil,
+        sinceTrialUpdates: [String] = []
     ) {
         self.appName = appName
         self.appIcon = appIcon
@@ -586,6 +588,7 @@ public struct WelcomeGateView: View {
         self.onSecondaryCompletion = onSecondaryCompletion
         self.onPageChange = onPageChange
         self.onComplete = onComplete
+        self.sinceTrialUpdates = sinceTrialUpdates
         _currentPage = State(initialValue: max(0, min(initialPage, Self.pageCount - 1)))
         _permissionGrantedStates = State(initialValue: self.permissionConfig.sections.map(\.initiallyGranted))
     }
@@ -1575,6 +1578,10 @@ public struct WelcomeGateView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            ExpiredTrialSinceUpdateList(updates: sinceTrialUpdates)
+                .padding(.horizontal, 20)
+                .frame(maxWidth: 420)
 
             trialOutcomeCard(
                 title: usesDonationSupport ? "Donate" : "Buy Once",

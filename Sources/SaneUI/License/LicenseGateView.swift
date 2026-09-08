@@ -16,6 +16,7 @@ public struct LicenseGateView: View {
     @Bindable var licenseService: LicenseService
     let appIcon: String
     let expiredDetail: String?
+    let sinceTrialUpdates: [String]
     let allowsContinueWithoutPurchase: Bool
     let donationURL: URL?
 
@@ -27,18 +28,21 @@ public struct LicenseGateView: View {
     ///   - licenseService: The license service instance to validate against.
     ///   - appIcon: SF Symbol name for the app icon displayed at top.
     ///   - expiredDetail: Optional replacement for the default expired-trial subtitle.
+    ///   - sinceTrialUpdates: Short factual list of what shipped after the trial.
     ///   - allowsContinueWithoutPurchase: Legacy escape hatch. Leave false so
     ///     the trial ends in a hard buy screen instead of a free forever mode.
     public init(
         licenseService: LicenseService,
         appIcon: String,
         expiredDetail: String? = nil,
+        sinceTrialUpdates: [String] = [],
         allowsContinueWithoutPurchase: Bool = false,
         donationURL: URL? = nil
     ) {
         self.licenseService = licenseService
         self.appIcon = appIcon
         self.expiredDetail = expiredDetail
+        self.sinceTrialUpdates = sinceTrialUpdates
         self.allowsContinueWithoutPurchase = allowsContinueWithoutPurchase
         self.donationURL = donationURL
     }
@@ -126,6 +130,9 @@ public struct LicenseGateView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            ExpiredTrialSinceUpdateList(updates: sinceTrialUpdates)
+                .padding(.top, 8)
         }
     }
 
@@ -284,10 +291,7 @@ public struct LicenseGateView: View {
         if licenseService.usesSetappPurchase {
             return "Managed by Setapp"
         }
-        if licenseService.usesAppStorePurchase {
-            return "Buy \(licenseService.appName) — \(licenseService.displayPriceLabel)"
-        }
-        return "Buy \(licenseService.appName)"
+        return "Buy \(licenseService.appName) — \(licenseService.displayPriceLabel)"
     }
 
     // MARK: - Key Entry View

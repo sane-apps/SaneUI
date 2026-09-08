@@ -356,6 +356,7 @@ private struct LicenseCatalogView: View {
         case basic = "Not Licensed"
         case pro = "Licensed"
         case setapp = "Setapp"
+        case expired = "Trial Ended"
     }
 
     @State private var basicService = LicenseService(
@@ -402,6 +403,18 @@ private struct LicenseCatalogView: View {
                     LicenseSettingsView(licenseService: proService, style: .panel)
                 case .setapp:
                     LicenseSettingsView(licenseService: setappService, style: .panel)
+                case .expired:
+                    LicenseGateView(
+                        licenseService: basicService,
+                        appIcon: "list.clipboard.fill",
+                        expiredDetail: "Buy SaneUI Catalog once to keep using it.",
+                        sinceTrialUpdates: [
+                            "Nine-tab Settings",
+                            "On-device Rewrite and Summarize",
+                            "Compact snippet library"
+                        ]
+                    )
+                    .frame(width: 520, height: 680)
                 }
             }
             .frame(maxWidth: 520)
@@ -433,6 +446,8 @@ private struct LicenseCatalogView: View {
             )
         case .setapp:
             setappService.applyDemoState(isLicensed: true)
+        case .expired:
+            basicService.applyDemoState(isLicensed: false)
         }
     }
 }
