@@ -40,6 +40,16 @@ private final class MockKeychainService: KeychainServiceProtocol, @unchecked Sen
     }
 }
 
+private struct UnavailableKeychainError: Error {}
+
+private final class UnavailableKeychainService: KeychainServiceProtocol, @unchecked Sendable {
+    func bool(forKey key: String) throws -> Bool? { throw UnavailableKeychainError() }
+    func set(_ value: Bool, forKey key: String) throws { throw UnavailableKeychainError() }
+    func string(forKey key: String) throws -> String? { throw UnavailableKeychainError() }
+    func set(_ value: String, forKey key: String) throws { throw UnavailableKeychainError() }
+    func delete(_ key: String) throws { throw UnavailableKeychainError() }
+}
+
 @Test("SaneVideo onboarding copy describes video creation instead of clipboard behavior")
 func saneVideoOnboardingCopyUsesVideoSemantics() {
     #expect(WelcomeGateCopy.coreSubtitle(appSlug: "sanevideo") == "Record, polish, and export in one local workflow")
@@ -359,6 +369,15 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(legacy[kSecUseDataProtectionKeychain] == nil)
         #expect(legacy[kSecAttrAccessGroup] == nil)
 
+        let sandboxed = KeychainService.makeBaseQuery(
+            service: "com.saneclip.app",
+            account: "license_key",
+            accessGroup: nil,
+            useDataProtection: true
+        )
+        #expect(sandboxed[kSecUseDataProtectionKeychain] as? Bool == true)
+        #expect(sandboxed[kSecAttrAccessGroup] == nil)
+
         let modern = KeychainService.makeBaseQuery(
             service: "com.mrsane.SaneHosts",
             account: "license_key",
@@ -367,6 +386,18 @@ struct RuntimeEnvironmentPolicyTests {
         #expect(modern[kSecAttrService] as? String == "com.mrsane.SaneHosts")
         #expect(modern[kSecUseDataProtectionKeychain] as? Bool == true)
         #expect(modern[kSecAttrAccessGroup] as? String == "M78L6FXD48.com.mrsane.SaneHosts")
+    }
+
+    @Test("Legacy login-keychain migration runs for sandboxed apps without an access group")
+    func sandboxedDataProtectionStillMigratesLegacyLoginItems() throws {
+        let source = try String(
+            contentsOf: saneUIPackageRootURL()
+                .appendingPathComponent("Sources/SaneUI/License/KeychainService.swift"),
+            encoding: .utf8
+        )
+        #expect(source.contains("usesDataProtectionKeychain"))
+        #expect(source.contains("guard usesDataProtectionKeychain else { return nil }"))
+        #expect(!source.contains("guard accessGroup != nil else { return nil }"))
     }
 
 }
@@ -945,6 +976,33 @@ struct SaneLicenseServiceTests {
         )
 
         #expect(service.displayPriceLabel == "$14.99")
+    }
+
+    @Test("Unavailable keychain does not mint a new Pro trial")
+    @MainActor
+    func unavailableKeychainDoesNotStartANewProTrial() throws {
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
+        defer { unsetenv("SANEAPPS_FORCE_LICENSE_CHECK") }
+        let suiteName = "tests.saneui.unavailablekeychain.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let service = LicenseService(
+            appName: "SaneClip",
+            checkoutURL: LicenseService.directCheckoutURL(appSlug: "saneclip"),
+            keychain: UnavailableKeychainService(),
+            proTrial: .init(storageKeyPrefix: "saneclip.pro_trial"),
+            userDefaults: defaults
+        )
+
+        service.checkCachedLicense()
+
+        #expect(!service.isLicensed)
+        #expect(!service.isPro)
+        #expect(!service.isProTrialActive)
+        #expect(!service.hasExpiredProTrial)
+        #expect(defaults.object(forKey: "saneclip.pro_trial.started_at") == nil)
+        #expect(defaults.bool(forKey: "sane.license.unlocked") == false)
     }
 
     @Test("Opt-in direct Pro trial starts automatically without a cached license")

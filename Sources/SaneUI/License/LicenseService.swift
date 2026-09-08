@@ -532,9 +532,23 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             }
         #endif
 
-        guard let storedKey = try? keychain.string(forKey: Keys.licenseKey),
-              !storedKey.isEmpty
-        else {
+        let storedKey: String?
+        do {
+            storedKey = try keychain.string(forKey: Keys.licenseKey)
+        } catch {
+            if applyStickyUnlockIfValid() {
+                debugLog("sticky unlock from defaults after keychain error")
+                return
+            }
+            isLicensed = false
+            licenseEmail = nil
+            hasCompletedPurchaseStateRefresh = true
+            debugLog("keychain unavailable")
+            logger.info("Unlock credential unreadable — not starting a new trial")
+            return
+        }
+
+        guard let storedKey, !storedKey.isEmpty else {
             if applyStickyUnlockIfValid() {
                 debugLog("sticky unlock from defaults")
                 return
@@ -569,6 +583,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         // Grace expired or no date — attempt background revalidation
         isLicensed = true // Optimistic while validating
         hasCompletedPurchaseStateRefresh = true
+        persistStickyUnlock(email: licenseEmail)
         Task {
             await revalidate(key: storedKey)
         }

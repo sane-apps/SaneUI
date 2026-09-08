@@ -105,7 +105,9 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             return fallbackBoolValue(forKey: fallbackKey(key))
         }
         if Self.isSilentKeychainFailure(status) {
-            return fallbackBoolValue(forKey: fallbackKey(key))
+            if let data = migrateFromLegacyIfNeeded(account: key) { return data.first == 1 }
+            if let fallback = fallbackBoolValue(forKey: fallbackKey(key)) { return fallback }
+            throw KeychainError(status: status)
         }
         throw KeychainError(status: status)
     }
@@ -147,7 +149,13 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             return fallbackValue(forKey: fallbackKey(key)) as? String
         }
         if Self.isSilentKeychainFailure(status) {
-            return fallbackValue(forKey: fallbackKey(key)) as? String
+            if let data = migrateFromLegacyIfNeeded(account: key) {
+                return String(data: data, encoding: .utf8)
+            }
+            if let fallback = fallbackValue(forKey: fallbackKey(key)) as? String {
+                return fallback
+            }
+            throw KeychainError(status: status)
         }
         throw KeychainError(status: status)
     }
@@ -210,12 +218,16 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
         ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
     }
 
+    private var usesDataProtectionKeychain: Bool {
+        accessGroup != nil || Self.isSandboxedProcess
+    }
+
     private func baseQuery(account: String) -> [CFString: Any] {
         Self.makeBaseQuery(
             service: service,
             account: account,
             accessGroup: accessGroup,
-            useDataProtection: accessGroup != nil || Self.isSandboxedProcess
+            useDataProtection: usesDataProtectionKeychain
         )
     }
 
@@ -240,17 +252,22 @@ public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable
             || status == errSecWrPerm
     }
 
-    /// One-time migration: when this service is configured for the
-    /// data-protection keychain but an item is only present in the legacy login
-    /// keychain (written by a pre-accessGroup build), copy it across so future
-    /// reads are silent. Returns the recovered data if a migration happened.
+    /// One-time migration: when this service reads the data-protection keychain
+    /// (access group or sandboxed process) but the item still lives in the
+    /// legacy login keychain, copy it across so future reads are silent.
+    ///
+    /// Sandboxed Sparkle builds hit this after SaneUI started setting
+    /// `kSecUseDataProtectionKeychain` without an access group: older items
+    /// stay in the login keychain, the new query misses them, and
+    /// access-group-only migration never ran. Returns the recovered data if a
+    /// migration happened.
     ///
     /// The legacy read is silent. If the old ACL no longer matches, migration
     /// is skipped and callers fall back to UserDefaults instead of prompting.
     /// After a successful copy the value lives in the data-protection keychain.
     /// The legacy item is left in place so delete cannot raise an ACL prompt.
     private func migrateFromLegacyIfNeeded(account: String) -> Data? {
-        guard accessGroup != nil else { return nil }
+        guard usesDataProtectionKeychain else { return nil }
         var legacyQuery: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
