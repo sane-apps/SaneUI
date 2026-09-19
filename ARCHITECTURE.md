@@ -90,3 +90,9 @@ stateDiagram-v2
 - Visual consistency still depends on app repos actually adopting shared surfaces.
 - Changes affect all consuming apps; versioning must be handled carefully.
 - If app repos redefine shared settings surfaces locally, design drift returns. The intended mitigation is to extend SaneUI, inspect the catalog first, and let SaneProcess drift checks block known clone patterns.
+
+### Adaptive settings rows (verified 2026-09-06; review by 2026-12-05)
+
+CompactRow uses SwiftUI ViewThatFits in the horizontal axis. Keep the label at its ideal width in the horizontal candidate and offer a vertical candidate with wrapping text. This prevents fixed-width controls from squeezing labels into ellipses. CompactToggle also lets labels wrap without a two-line cap. The native hosting regression exercises 400pt and 700pt rows; it fails against the former layout. This is shared behavior, so consumers need a new SaneUI pin plus normal-width runtime proof.
+
+Primary references: https://developer.apple.com/documentation/SwiftUI/ViewThatFits and https://developer.apple.com/documentation/swiftui/view/fixedsize(horizontal:vertical:). Native verification and negative-control receipts: SaneProcess/outputs/portfolio-review-20260906/clip-settings-visual/shared-adaptive-*.log. Source commit60176f30007e0f931195785aa769e4ef5172f7ee; full152tests pass.
