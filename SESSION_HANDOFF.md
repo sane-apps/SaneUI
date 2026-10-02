@@ -1,3 +1,12 @@
+## 2026-09-08 — Clip 2.3.24 paid-license loss (Glenn #1446)
+
+- Symptom: Sparkle 2.3.24 dropped a paid Clip unlock to a fresh 14-day trial. Re-entering the key restored Pro. Screenshot: `~/Desktop/Screenshots/email1446-att346-Screenshot 2026-09-09 at 5.05.13 am.png`.
+- Cause: 2.3.23 (SaneUI `10cd3ad`) stored the key in the login keychain. 2.3.24 (SaneUI `cefaf8c` / `8568997`) sets `kSecUseDataProtectionKeychain` for sandboxed Clip and only migrated when `accessGroup != nil`. Clip Sparkle has no access group, so the old key was invisible. Missing key + no sticky (sticky did not exist in 2.3.23) called `startProTrialIfNeeded` and minted a new trial.
+- Shared fix (uncommitted): migrate whenever data-protection is in use, not only with an access group; if keychain read throws, apply sticky and do not start a new trial; persist sticky on the optimistic revalidate path.
+- Tests: Mini `swift test --filter "License|Keychain|ProTrial"` 49 passed, including `unavailableKeychainDoesNotStartANewProTrial`.
+- Do not ship Click 1.3.4 / Hosts 1.1.26 / Video 1.0.5 until they pin this SaneUI. Click live 1.3.3 is not sandboxed and already has sticky; Hosts already uses an access group; Video has no license gate. Clip 2.3.25 still needs this commit pushed and pinned.
+- No email sent. Draft for #1446 is in the chat.
+
 ## 2026-09-07 11:49 ET — Settings contrast pass complete, source pushed
 
 - SaneVideo main bb0c640132444026666f18b70dc0d82ae69bd883 and SaneUI main7286410171399b8cb0ba2ef7b253f267bd3d26d0 are published and synchronized on Air/Mini. Unrelated dirty work remains preserved; Air pre-sync stash retained.
@@ -5,6 +14,8 @@
 - Final clean720x600 captures inspected: General11-46-12, Privacy11-47-03, About11-48-00. Bright white text, opaque dark cards, clear selection and semantic nav icons; no clipping/overlap, full About actions including pink Donate fit. Earlier eight-page content pass remains recorded below.
 - Final General AX confirms automatic checksOff restored. Real Settings close removes its window while24545 remains alive; normal Quit15:48:54Z closes24545. Live log covered launch through quit: outputs/runtime-logs/20260907T154439Z-20260907-24220-xlhows/.
 - Detailed receipt: apps/SaneVideo/outputs/portfolio-finish-20260907/settings-contrast-proof.json. Final images reside in that directory on Air; Mini originals captured by approved helper. Native resizing remains unchanged; failed attempts removed. No public app release/LS replacement; shared change adoption by other apps remains broader goal work.
+
+
 
 ## 2026-09-07 11:39 ET — Appearance scope final; resize attempt withdrawn
 
