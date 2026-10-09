@@ -341,7 +341,7 @@ public struct LicenseSettingsView<Service: LicenseSettingsServiceProtocol>: View
     private var donateButton: some View {
         if let donationURL {
             SaneStickyDonateButton(url: donationURL)
-                .accessibilityIdentifier("saneui-license-donate")
+                .accessibilityIdentifier("saneui-license-support")
         }
     }
 

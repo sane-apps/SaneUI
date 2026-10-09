@@ -118,14 +118,13 @@ public struct LicenseGateView: View {
                 .foregroundStyle(Color.saneAccent)
                 .shadow(color: Color.saneAccent.opacity(0.3), radius: 12)
 
-            Text(donationURL == nil ? "Your 14-day trial has ended" : "This app is free now")
+            Text(directSupport?.freeAppTitle ?? "Your 14-day trial has ended")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
 
             Text(expiredDetail
-                ?? (donationURL == nil
-                    ? "Buy \(licenseService.appName) once to keep using it."
-                    : "Every feature stays unlocked. Donate only if you want to support it."))
+                ?? directSupport?.freeAppDetail
+                ?? "Buy \(licenseService.appName) once to keep using it.")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -284,9 +283,14 @@ public struct LicenseGateView: View {
         .controlSize(.small)
     }
 
+    private var directSupport: SaneDirectSupportCopy? {
+        guard donationURL != nil else { return nil }
+        return SaneDirectSupportCopy.current
+    }
+
     private var primaryPurchaseLabel: String {
-        if donationURL != nil {
-            return "Donate"
+        if let title = directSupport?.buttonTitle {
+            return title
         }
         if licenseService.usesSetappPurchase {
             return "Managed by Setapp"

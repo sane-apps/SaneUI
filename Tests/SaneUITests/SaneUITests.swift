@@ -1330,13 +1330,14 @@ struct SharedLicenseUIPolicyTests {
             encoding: .utf8
         )
 
-        #expect(source.contains("donationURL == nil ? \"Your 14-day trial has ended\" : \"This app is free now\""))
+        #expect(source.contains("directSupport?.freeAppTitle ?? \"Your 14-day trial has ended\""))
         #expect(source.contains("Buy \\(licenseService.appName) once to keep using it."))
-        #expect(source.contains("Every feature stays unlocked. Donate only if you want to support it."))
+        #expect(source.contains("directSupport?.freeAppDetail"))
+        #expect(!source.contains("Donate"))
         #expect(source.contains("allowsContinueWithoutPurchase: Bool = false"))
         #expect(source.contains("if allowsContinueWithoutPurchase"))
         #expect(source.contains("return \"Buy \\(licenseService.appName) — \\(licenseService.displayPriceLabel)\""))
-        #expect(source.contains("if donationURL != nil {\n            return \"Donate\""))
+        #expect(source.contains("if let title = directSupport?.buttonTitle"))
         #expect(source.contains("Text(\"Enter License\")"))
         #expect(source.contains("Text(\"Quit\")"))
 
@@ -1375,19 +1376,32 @@ struct SharedLicenseUIPolicyTests {
         #expect(!source.contains("Not now"))
     }
 
-    @Test("Sticky donate button opens the live GitHub Sponsors URL")
-    func stickyDonateButtonOpensLiveGitHubSponsorsURL() throws {
+    @Test("Sticky support button reads installed copy and ships no support literals")
+    func stickySupportButtonReadsInstalledCopy() throws {
         let source = try String(
             contentsOf: saneUIPackageRootURL()
                 .appendingPathComponent("Sources/SaneUI/Components/SaneStickyDonateButton.swift"),
             encoding: .utf8
         )
 
-        #expect(source.contains("https://github.com/sponsors/MrSaneApps"))
+        #expect(source.contains("SaneDirectSupportCopy.current"))
         #expect(source.contains("SanePlatform.open(url)"))
-        #expect(source.contains("accessibilityIdentifier(\"sticky-donate\")"))
-        #expect(source.contains("Text(\"Donate\")"))
-        #expect(SaneDonation.githubSponsorsURL.absoluteString == "https://github.com/sponsors/MrSaneApps")
+        #expect(source.contains("accessibilityIdentifier(\"sticky-support\")"))
+        #expect(source.contains("Text(title)"))
+        #expect(!source.contains("github.com/sponsors"))
+        #expect(!source.contains("Text(\"Donate\")"))
+
+        let library = saneUIPackageRootURL().appendingPathComponent("Sources/SaneUI", isDirectory: true)
+        let banned = try Regex(#"\bDonate\b|Donate to|Sponsor on GitHub|GitHub Sponsors|github\.com/sponsors"#)
+            .ignoresCase()
+        guard let walker = FileManager.default.enumerator(at: library, includingPropertiesForKeys: nil) else {
+            Issue.record("Could not read Sources/SaneUI")
+            return
+        }
+        for case let url as URL in walker where url.pathExtension == "swift" {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            #expect(text.firstMatch(of: banned) == nil, "Banned support literal in \(url.lastPathComponent)")
+        }
     }
 
     @Test("License gate logs anonymous aggregate view, buy, and quit events")
@@ -2405,8 +2419,11 @@ struct SaneAboutViewPolicyTests {
         )
         #expect(source.contains("labels.moreAppsButtonTitle"))
         #expect(source.contains("SaneAboutViewPolicy.moreAppsURL"))
+        #expect(source.contains("SaneDirectSupportCopy.current"))
+        #expect(source.contains("support.aboutRowTitle"))
         #expect(source.contains("SaneStickyDonateButton()"))
         #expect(source.contains("showsDonate()"))
+        #expect(!source.contains("CompactRow(\"Donate\""))
         #expect(source.contains("CompactSection(\"Links\")"))
         #expect(!source.contains("LazyVGrid"))
     }

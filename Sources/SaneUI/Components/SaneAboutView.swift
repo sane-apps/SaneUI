@@ -224,9 +224,9 @@
                             openURL(supportAction?.url ?? SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
                         }
                     }
-                    if SaneAboutViewPolicy.showsDonate() {
+                    if SaneAboutViewPolicy.showsDonate(), let support = SaneDirectSupportCopy.current {
                         CompactDivider()
-                        CompactRow("Donate", icon: "heart.fill", iconColor: .pink) {
+                        CompactRow(support.aboutRowTitle, icon: "heart.fill", iconColor: .pink) {
                             SaneStickyDonateButton()
                         }
                     }
@@ -287,7 +287,7 @@
                 return
             }
 
-            // Never fall back to supportAction (often Donate/Sponsors). Bug reports go to Issues.
+            // Never fall back to supportAction. Bug reports go to Issues.
             openURL(SaneAboutViewPolicy.issuesURL(githubRepo: githubRepo))
         }
 

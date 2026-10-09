@@ -5,20 +5,33 @@ import SwiftUI
     import UIKit
 #endif
 
-/// Canonical GitHub Sponsors destination for SaneApps donate buttons.
-public enum SaneDonation {
-    public static let githubSponsorsURL = URL(string: "https://github.com/sponsors/MrSaneApps")!
-}
-
-/// Persistent Donate control for open-source apps. Always opens GitHub Sponsors.
+/// Support link for direct-download builds. Titles and the destination come from
+/// `SaneDirectSupportCopy.current`, which App Store builds leave unset.
 public struct SaneStickyDonateButton: View {
-    private let url: URL
+    private let urlOverride: URL?
+    private let titleOverride: String?
+    private let helpOverride: String?
+    private let accessibilityOverride: String?
 
-    public init(url: URL = SaneDonation.githubSponsorsURL) {
-        self.url = url
+    public init(
+        url: URL? = nil,
+        title: String? = nil,
+        helpText: String? = nil,
+        accessibilityLabel: String? = nil
+    ) {
+        urlOverride = url
+        titleOverride = title
+        helpOverride = helpText
+        accessibilityOverride = accessibilityLabel
     }
 
     public var body: some View {
+        let copy = SaneDirectSupportCopy.current
+        let url = urlOverride ?? copy?.destinationURL ?? URL(string: "about:blank")!
+        let title = titleOverride ?? copy?.buttonTitle ?? ""
+        let helpText = helpOverride ?? copy?.buttonHelp ?? ""
+        let accessibility = accessibilityOverride ?? copy?.accessibilityLabel ?? title
+
         Button {
             SanePlatform.open(url)
         } label: {
@@ -26,7 +39,7 @@ public struct SaneStickyDonateButton: View {
                 Image(systemName: "heart.fill")
                     .foregroundStyle(.pink)
                     .font(.system(size: 13, weight: .bold))
-                Text("Donate")
+                Text(title)
                     .font(.system(size: 13, weight: .bold))
             }
             .foregroundStyle(.white)
@@ -43,16 +56,16 @@ public struct SaneStickyDonateButton: View {
             .shadow(color: Color.black.opacity(0.28), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("sticky-donate")
-        .accessibilityLabel("Donate")
-        .help("Donate on GitHub Sponsors")
+        .accessibilityIdentifier("sticky-support")
+        .accessibilityLabel(accessibility)
+        .help(helpText)
     }
 }
 
 public extension View {
-    /// Pins a working Donate button to the bottom-trailing corner of the live app.
+    /// Pins the direct-download support link to the bottom-trailing corner.
     func saneStickyDonate(
-        url: URL = SaneDonation.githubSponsorsURL,
+        url: URL? = nil,
         bottomPadding: CGFloat = 16,
         trailingPadding: CGFloat = 16
     ) -> some View {

@@ -508,7 +508,12 @@ public struct WelcomeGateView: View {
     private let donationURL: URL?
     @Environment(\.dismiss) private var dismiss
 
-    private var usesDonationSupport: Bool { donationURL != nil }
+    private var directSupport: SaneDirectSupportCopy? {
+        guard donationURL != nil else { return nil }
+        return SaneDirectSupportCopy.current
+    }
+
+    private var usesDonationSupport: Bool { directSupport != nil }
     private var supportURL: URL? { donationURL ?? licenseService.checkoutURL }
 
     @State private var currentPage = 0
@@ -1052,9 +1057,8 @@ public struct WelcomeGateView: View {
                     (Text("Everything ").foregroundStyle(.white) + Text("Included").foregroundStyle(saneAccentGradient))
                         .font(.system(size: 30, weight: .bold, design: .serif))
 
-                    Text(donationURL == nil
-                        ? "Try every feature for 14 days. Buy once if it works for you."
-                        : "Every feature is included. Setup stays the same. Donate only if you want to support it.")
+                    Text(directSupport?.welcomeIncludedDetail
+                        ?? "Try every feature for 14 days. Buy once if it works for you.")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
@@ -1449,9 +1453,8 @@ public struct WelcomeGateView: View {
             .font(.system(size: 28, weight: .bold, design: .serif))
             .foregroundStyle(.white)
 
-            Text(usesDonationSupport
-                ? "Every feature is included. Setup stays the same. Donate only if you want to support it."
-                : WelcomeGateDirectTrialCopy.message(
+            Text(directSupport?.welcomeIncludedDetail
+                ?? WelcomeGateDirectTrialCopy.message(
                     isLicensed: licenseService.isPro,
                     isTrialActive: licenseService.isProTrialActive,
                     hasExpiredTrial: licenseService.hasExpiredProTrial,
@@ -1571,9 +1574,8 @@ public struct WelcomeGateView: View {
                 .font(.system(size: 28, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
 
-            Text(usesDonationSupport
-                ? "SaneApps open-sourced this app. Every feature stays unlocked. Donate only if you want to support it."
-                : "Your trial has ended. A one-time purchase is required to keep using these tools.")
+            Text(directSupport?.expiredOpenSourceDetail
+                ?? "Your trial has ended. A one-time purchase is required to keep using these tools.")
                 .font(.system(size: 15))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -1584,8 +1586,8 @@ public struct WelcomeGateView: View {
                 .frame(maxWidth: 420)
 
             trialOutcomeCard(
-                title: usesDonationSupport ? "Donate" : "Buy Once",
-                subtitle: usesDonationSupport ? "Optional. The app stays free." : "One-time — yours forever",
+                title: directSupport?.expiredCardTitle ?? "Buy Once",
+                subtitle: directSupport?.expiredCardSubtitle ?? "One-time — yours forever",
                 features: expiredTrialProFeatures,
                 isHighlighted: true
             )
@@ -1593,7 +1595,7 @@ public struct WelcomeGateView: View {
             .frame(maxWidth: 420)
 
             if !licenseService.usesSetappPurchase {
-                Button(usesDonationSupport ? "Donate" : "Buy \(appName) — \(licenseService.displayPriceLabel)") {
+                Button(directSupport?.buttonTitle ?? "Buy \(appName) — \(licenseService.displayPriceLabel)") {
                     runSingleOutboundAction {
                         if let donationURL {
                             SanePlatform.open(donationURL)
