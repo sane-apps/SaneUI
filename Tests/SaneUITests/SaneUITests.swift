@@ -2036,6 +2036,54 @@ struct LicenseValidationErrorTests {
         #expect(message == "Invalid license key.")
     }
 
+    @Test("The app asks the SaneApps licence server, on its permanent address")
+    @MainActor
+    func validationURLIsTheSaneAppsLicenceServer() {
+        #expect(LicenseService.licenseValidationURL().absoluteString == "https://license.saneapps.com/v1/licenses/validate")
+    }
+
+    @Test("A clear yes from the licence server unlocks, with the product it names")
+    @MainActor
+    func validAnswerIsRead() {
+        let body = Data(#"{"valid":true,"error":null,"meta":{"product_name":"SaneClip","variant_name":"Default","customer_email":"buyer@example.test"}}"#.utf8)
+        let answer = LicenseService.interpretValidationResponse(statusCode: 200, mimeType: "application/json", data: body)
+        #expect(answer == .valid(email: "buyer@example.test", productName: "SaneClip", variantName: "Default"))
+    }
+
+    @Test(
+        "Only the server's own 'not valid' refuses a key",
+        arguments: [
+            (200, #"{"valid":false,"error":"This license key has been disabled."}"#, "This license key has been disabled."),
+            (404, #"{"valid":false,"error":"license_key not found."}"#, "license_key not found."),
+            (400, #"{"valid":false}"#, "Invalid code.")
+        ]
+    )
+    @MainActor
+    func definiteNoIsInvalid(status: Int, body: String, message: String) {
+        let answer = LicenseService.interpretValidationResponse(statusCode: status, mimeType: "application/json", data: Data(body.utf8))
+        #expect(answer == .invalid(message: message))
+    }
+
+    @Test(
+        "A server problem is never read as an invalid key, so a paying customer stays unlocked",
+        arguments: [
+            (500, #"{"valid":false,"error":"Licence server error."}"#, "application/json"),
+            (503, #"{"valid":false,"error":"The licence server could not confirm this key."}"#, "application/json"),
+            (404, "<html><body>Not Found</body></html>", "text/html"),
+            (410, "Gone", "text/plain"),
+            (403, "<!DOCTYPE html><title>Just a moment...</title>", "text/html; charset=UTF-8"),
+            (200, "", "application/json"),
+            (200, #"{"error":"unexpected shape"}"#, "application/json"),
+            (404, #"{"errors":[{"status":"404","title":"Not Found"}]}"#, "application/vnd.api+json"),
+            (201, #"{"valid":true}"#, "application/json")
+        ]
+    )
+    @MainActor
+    func serverTroubleIsNotARefusal(status: Int, body: String, mime: String) {
+        let answer = LicenseService.interpretValidationResponse(statusCode: status, mimeType: mime, data: Data(body.utf8))
+        #expect(answer == .serverUnavailable)
+    }
+
     @Test("License metadata must match the app product")
     @MainActor
     func licenseMetadataMustMatchAppProduct() {

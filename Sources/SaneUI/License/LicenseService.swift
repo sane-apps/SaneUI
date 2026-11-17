@@ -87,7 +87,7 @@ public protocol LicenseSettingsServiceProtocol: AnyObject, Observable {
     func deactivate()
 }
 
-/// Manages purchase status for paid SaneApps. Validates via LemonSqueezy API, caches in Keychain,
+/// Manages purchase status for paid SaneApps. Validates with the SaneApps licence server, caches in Keychain,
 /// and can start a direct-download Pro trial before the expired-trial gate asks to buy.
 ///
 /// App Store and Setapp builds use their platform purchase state instead of direct trials.
@@ -352,12 +352,15 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         return sparkleFeedURL == nil
     }
 
-    private nonisolated static func lemonSqueezyValidationURL() -> URL {
+    /// The SaneApps licence server (license.saneapps.com). It took over from the payment provider's
+    /// own endpoint in November 2026 and answers in the same JSON shape. Never change the host:
+    /// shipped apps depend on it.
+    nonisolated static func licenseValidationURL() -> URL {
         var components = URLComponents()
         components.scheme = ascii([104, 116, 116, 112, 115])
         components.host = [
-            ascii([97, 112, 105]),
-            ascii([108, 101, 109, 111, 110, 115, 113, 117, 101, 101, 122, 121]),
+            ascii([108, 105, 99, 101, 110, 115, 101]),
+            ascii([115, 97, 110, 101, 97, 112, 112, 115]),
             ascii([99, 111, 109])
         ].joined(separator: ".")
         components.path = "/" + [
@@ -366,7 +369,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             ascii([118, 97, 108, 105, 100, 97, 116, 101])
         ].joined(separator: "/")
         guard let url = components.url else {
-            preconditionFailure("Failed to construct LemonSqueezy validation URL")
+            preconditionFailure("Failed to construct license validation URL")
         }
         return url
     }
@@ -832,7 +835,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
     // MARK: - Activation
 
-    /// Validate a purchase key with LemonSqueezy and unlock the app.
+    /// Validate a purchase key with the licence server and unlock the app.
     public func activate(key: String) async {
         if usesAppStorePurchase {
             validationError = "Use in-app purchase to unlock the full app in this App Store build."
@@ -854,7 +857,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         validationError = nil
 
         do {
-            let result = try await validateWithLemonSqueezy(key: trimmed)
+            let result = try await validateLicense(key: trimmed)
             if result.valid {
                 guard Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) else {
                     validationError = "This code is for a different SaneApps product."
@@ -1034,7 +1037,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
     private func revalidate(key: String) async {
         do {
-            let result = try await validateWithLemonSqueezy(key: key)
+            let result = try await validateLicense(key: key)
             if result.valid, Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) {
                 try? keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
                 isLicensed = true
@@ -1045,8 +1048,9 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                 logger.info("Background revalidation failed — locking app")
             }
         } catch {
-            // Network error — keep licensed (grace period)
-            logger.info("Background revalidation network error — maintaining license")
+            // No connection, or the licence server is in trouble — keep licensed. Only a definite
+            // "this key is not valid" from the server locks a paying customer.
+            logger.info("Background revalidation could not get an answer — maintaining license")
         }
     }
 
@@ -1114,8 +1118,37 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         return json?["error"] as? String ?? "Invalid code."
     }
 
-    private func validateWithLemonSqueezy(key: String) async throws -> ValidationResult {
-        let url = Self.lemonSqueezyValidationURL()
+    /// The licence server gave no usable answer (an error page, a 5xx, a reply that is not the
+    /// expected JSON). This is never the same as "the key is not valid".
+    struct LicenseServerUnavailable: Error {}
+
+    enum ValidationAnswer: Equatable {
+        case valid(email: String?, productName: String?, variantName: String?)
+        case invalid(message: String)
+        case serverUnavailable
+    }
+
+    /// Reads the licence server's reply. A key is refused only when the server says so itself:
+    /// JSON with `"valid": false` and a status below 500. Anything else that is not a clear yes is
+    /// a server problem, which must not lock a customer who has paid.
+    static func interpretValidationResponse(statusCode: Int, mimeType: String?, data: Data) -> ValidationAnswer {
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard statusCode < 500, let json, let valid = json["valid"] as? Bool else { return .serverUnavailable }
+        if valid {
+            guard statusCode == 200 else { return .serverUnavailable }
+            let meta = json["meta"] as? [String: Any]
+            return .valid(
+                email: meta?["customer_email"] as? String,
+                productName: meta?["product_name"] as? String,
+                variantName: meta?["variant_name"] as? String
+            )
+        }
+        let body = String(data: data, encoding: .utf8) ?? ""
+        return .invalid(message: validationFailureMessage(statusCode: statusCode, mimeType: mimeType, body: body, json: json))
+    }
+
+    private func validateLicense(key: String) async throws -> ValidationResult {
+        let url = Self.licenseValidationURL()
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1127,21 +1160,19 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let http = response as? HTTPURLResponse else {
-            return ValidationResult(valid: false, email: nil, error: "Unexpected response", productName: nil, variantName: nil)
-        }
+        guard let http = response as? HTTPURLResponse else { throw LicenseServerUnavailable() }
 
-        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        if http.statusCode == 200 {
-            let valid = json?["valid"] as? Bool ?? false
-            let meta = json?["meta"] as? [String: Any]
-            let email = meta?["customer_email"] as? String
-            let productName = meta?["product_name"] as? String
-            let variantName = meta?["variant_name"] as? String
-            return ValidationResult(valid: valid, email: email, error: nil, productName: productName, variantName: variantName)
+        switch Self.interpretValidationResponse(
+            statusCode: http.statusCode,
+            mimeType: http.value(forHTTPHeaderField: "Content-Type"),
+            data: data
+        ) {
+        case let .valid(email, productName, variantName):
+            return ValidationResult(valid: true, email: email, error: nil, productName: productName, variantName: variantName)
+        case let .invalid(message):
+            return ValidationResult(valid: false, email: nil, error: message, productName: nil, variantName: nil)
+        case .serverUnavailable:
+            throw LicenseServerUnavailable()
         }
-        let responseBody = String(data: data, encoding: .utf8) ?? ""
-        let error = Self.validationFailureMessage(statusCode: http.statusCode, mimeType: http.value(forHTTPHeaderField: "Content-Type"), body: responseBody, json: json)
-        return ValidationResult(valid: false, email: nil, error: error, productName: nil, variantName: nil)
     }
 }
