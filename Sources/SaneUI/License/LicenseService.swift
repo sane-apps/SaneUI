@@ -402,10 +402,28 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private var isForceFreeMode = false
     /// Session used for licence checks. Tests swap in a stubbed session.
     @ObservationIgnored package var validationSession: URLSession = .shared
-    /// The stored key a background recheck is asking about right now.
-    @ObservationIgnored private var revalidationInFlightKey: String?
-    /// The stored key the licence server refused during this run of the app.
-    @ObservationIgnored private var revalidationRejectedKey: String?
+
+    // Background recheck bookkeeping, shared by every LicenseService in the process and keyed by
+    // the stored key (SaneClick makes a new service for each Finder action).
+    /// Keys a background recheck is asking about right now (one recheck per key at a time).
+    private static var recheckInFlightKeys: Set<String> = []
+    /// Keys the licence server explicitly called not valid during this run. Only a clear
+    /// "not valid" answer goes here; no answer, an error page or a 5xx never does.
+    private static var recheckRefusedKeys: Set<String> = []
+    /// When the last background recheck of each key started.
+    private static var recheckLastStartedAt: [String: Date] = [:]
+    /// Minimum time between background rechecks of the same key, whatever calls this.
+    package static let minimumRecheckInterval: TimeInterval = 300
+
+    /// Test hook: pretend the minimum gap has passed for every key.
+    package static func forgetRecheckStartTimesForTesting() {
+        recheckLastStartedAt.removeAll()
+    }
+
+    private static func forgetRecheckState(forKey key: String) {
+        recheckRefusedKeys.remove(key)
+        recheckLastStartedAt[key] = nil
+    }
     #if canImport(StoreKit)
         @ObservationIgnored private var hasConfiguredAppStoreObservation = false
         @ObservationIgnored private var appStoreTransactionUpdatesTask: Task<Void, Never>?
@@ -572,18 +590,14 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return
         }
 
-        // One recheck per stored key per run. Apps call this from view onAppear; a refusal locks
-        // the app, which swaps the window to the expired-trial gate, whose onAppear calls this
-        // again. Starting a fresh optimistic unlock and recheck each time made a loop that sent
-        // about 12 requests a second to the licence server (SaneClick, 18 Nov 2026).
-        if storedKey == revalidationRejectedKey {
+        // Apps call this from view onAppear. A refusal locks the app, which swaps the window to the
+        // expired-trial gate, whose onAppear called this again; each call unlocked optimistically
+        // and asked again: about 12 requests a second to the licence server (SaneClick, 18 Nov
+        // 2026). A key the server explicitly refused this run stays locked without a new request.
+        if Self.recheckRefusedKeys.contains(storedKey) {
             isLicensed = false
             hasCompletedPurchaseStateRefresh = true
             debugLog("cached key already refused this session")
-            return
-        }
-        if storedKey == revalidationInFlightKey {
-            debugLog("recheck already running for cached key")
             return
         }
 
@@ -608,7 +622,17 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         isLicensed = true // Optimistic while validating
         hasCompletedPurchaseStateRefresh = true
         persistStickyUnlock(email: licenseEmail)
-        revalidationInFlightKey = storedKey
+        if Self.recheckInFlightKeys.contains(storedKey) {
+            debugLog("recheck already running for cached key")
+            return
+        }
+        if let startedAt = Self.recheckLastStartedAt[storedKey],
+           Date().timeIntervalSince(startedAt) < Self.minimumRecheckInterval {
+            debugLog("recheck for cached key started recently; not asking again yet")
+            return
+        }
+        Self.recheckInFlightKeys.insert(storedKey)
+        Self.recheckLastStartedAt[storedKey] = Date()
         Task {
             await revalidate(key: storedKey)
         }
@@ -893,7 +917,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                     licenseEmail = email
                 }
                 try keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
-                revalidationRejectedKey = nil
+                Self.forgetRecheckState(forKey: trimmed)
                 isLicensed = true
                 persistStickyUnlock(email: licenseEmail)
                 validationError = nil
@@ -922,11 +946,13 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             purchaseError = "This Setapp build is managed by Setapp."
             return
         }
+        if let storedKey = try? keychain.string(forKey: Keys.licenseKey) {
+            Self.forgetRecheckState(forKey: storedKey)
+        }
         try? keychain.delete(Keys.licenseKey)
         try? keychain.delete(Keys.licenseEmail)
         try? keychain.delete(Keys.lastValidation)
         clearStickyUnlock()
-        revalidationRejectedKey = nil
         isLicensed = false
         licenseEmail = nil
         validationError = nil
@@ -1060,19 +1086,17 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     private func revalidate(key: String) async {
-        defer {
-            if revalidationInFlightKey == key { revalidationInFlightKey = nil }
-        }
+        defer { Self.recheckInFlightKeys.remove(key) }
         do {
             let result = try await validateLicense(key: key)
             if result.valid, Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) {
                 try? keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
-                revalidationRejectedKey = nil
+                Self.recheckRefusedKeys.remove(key)
                 isLicensed = true
                 persistStickyUnlock(email: licenseEmail)
                 logger.info("Background revalidation succeeded")
             } else {
-                revalidationRejectedKey = key
+                Self.recheckRefusedKeys.insert(key)
                 isLicensed = false
                 logger.info("Background revalidation failed — locking app")
             }

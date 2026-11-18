@@ -28,11 +28,18 @@ private final class RecheckKeychain: KeychainServiceProtocol, @unchecked Sendabl
     }
 }
 
-/// Stands in for license.saneapps.com: answers every check with the server's
-/// "not found" reply and counts how many checks arrived.
-private final class RefusingLicenseServer: URLProtocol, @unchecked Sendable {
+/// Stands in for license.saneapps.com and counts every check it receives.
+/// Keys starting with GOOD- are valid SaneClick keys; any other key gets the reply set in `mode`.
+private final class StubLicenseServer: URLProtocol, @unchecked Sendable {
+    enum Mode {
+        case refuse // 404 JSON {"valid": false}: an explicit "not valid"
+        case serverError // 503 JSON {"error": "try again"}: the server is in trouble
+        case timeout // no answer at all
+    }
+
     private static let lock = NSLock()
     private nonisolated(unsafe) static var count = 0
+    private nonisolated(unsafe) static var currentMode = Mode.refuse
 
     static var requestCount: Int {
         lock.lock()
@@ -40,9 +47,10 @@ private final class RefusingLicenseServer: URLProtocol, @unchecked Sendable {
         return count
     }
 
-    static func reset() {
+    static func reset(mode: Mode) {
         lock.lock()
         count = 0
+        currentMode = mode
         lock.unlock()
     }
 
@@ -54,41 +62,75 @@ private final class RefusingLicenseServer: URLProtocol, @unchecked Sendable {
         request
     }
 
-    override func startLoading() {
-        Self.lock.lock()
-        Self.count += 1
-        Self.lock.unlock()
-        let url = request.url ?? URL(fileURLWithPath: "/")
+    private func requestedKey() -> String {
+        var data = request.httpBody ?? Data()
+        if data.isEmpty, let stream = request.httpBodyStream {
+            stream.open()
+            var buffer = [UInt8](repeating: 0, count: 4096)
+            while stream.hasBytesAvailable {
+                let read = stream.read(&buffer, maxLength: buffer.count)
+                if read <= 0 {
+                    break
+                }
+                data.append(buffer, count: read)
+            }
+            stream.close()
+        }
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return json?["license_key"] as? String ?? ""
+    }
+
+    private func reply(status: Int, body: String) {
         let response = HTTPURLResponse(
-            url: url,
-            statusCode: 404,
+            url: request.url ?? URL(fileURLWithPath: "/"),
+            statusCode: status,
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
-        let body = Data(#"{"valid":false,"error":"license_key not found.","license_key":null,"meta":null}"#.utf8)
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
         client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func startLoading() {
+        Self.lock.lock()
+        Self.count += 1
+        let mode = Self.currentMode
+        Self.lock.unlock()
+
+        if requestedKey().hasPrefix("GOOD-") {
+            reply(status: 200, body: #"{"valid":true,"meta":{"product_name":"SaneClick","variant_name":"Default","customer_email":"test@example.com"}}"#)
+            return
+        }
+        switch mode {
+        case .refuse:
+            reply(status: 404, body: #"{"valid":false,"error":"license_key not found.","license_key":null,"meta":null}"#)
+        case .serverError:
+            reply(status: 503, body: #"{"error":"Licence check is busy. Try again shortly."}"#)
+        case .timeout:
+            client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+        }
     }
 
     override func stopLoading() {}
 }
 
-/// SaneClick 1.3.6 test, 18 Nov 2026: a stored key the server refuses, last checked over
-/// 30 days ago, made the app send about 12 checks a second. Each refusal locked the app,
-/// the window swapped to the expired-trial gate, the gate's onAppear called
-/// checkCachedLicense() again, which unlocked optimistically and asked again.
-@Suite("License Service — one recheck per refused key", .serialized)
+/// SaneClick 1.3.6 test on the Mini, 18 Nov 2026: a stored key the server refused, last checked
+/// over 30 days ago, made the app send about 12 checks a second. Each refusal locked the app, the
+/// window swapped to the expired-trial gate, the gate's onAppear called checkCachedLicense() again,
+/// which unlocked optimistically, swapped back to the main window (whose onAppear also calls it)
+/// and asked again.
+@Suite("License Service — background recheck of a stored key", .serialized)
 @MainActor
 struct LicenseRecheckLoopTests {
-    private func makeService() throws -> (LicenseService, RecheckKeychain) {
+    private func makeService(storedKey: String) throws -> (LicenseService, RecheckKeychain) {
         // Debug builds auto-grant a licence unless this is set; `swift test` runs Debug.
         setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
         let keychain = RecheckKeychain()
-        try storeStaleKey(in: keychain)
+        try storeStaleKey(storedKey, in: keychain)
         let defaults = try #require(UserDefaults(suiteName: "saneui-recheck-\(UUID().uuidString)"))
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [RefusingLicenseServer.self]
+        configuration.protocolClasses = [StubLicenseServer.self]
         let service = LicenseService(
             appName: "SaneClick",
             purchaseBackend: .direct(checkoutURL: URL(string: "https://example.com/buy")!),
@@ -99,55 +141,147 @@ struct LicenseRecheckLoopTests {
         return (service, keychain)
     }
 
-    private func storeStaleKey(in keychain: RecheckKeychain) throws {
-        try keychain.set("REFUSED-KEY", forKey: "license_key")
+    private func storeStaleKey(_ key: String, in keychain: RecheckKeychain) throws {
+        try keychain.set(key, forKey: "license_key")
         let sixtyDaysAgo = Date().addingTimeInterval(-60 * 86400)
         try keychain.set(ISO8601DateFormatter().string(from: sixtyDaysAgo), forKey: "last_validation")
     }
 
+    private func uniqueKey(_ prefix: String) -> String {
+        // No dashes: activate() reduces anything shaped like a UUID to the bare UUID.
+        "\(prefix)-\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
+    }
+
     private func waitUntil(_ condition: () -> Bool) async {
-        var tries = 0
-        while !condition(), tries < 300 {
+        // Generous deadline: the full suite runs UI tests on the main actor at the same time.
+        let deadline = Date().addingTimeInterval(15)
+        while !condition(), Date() < deadline {
             try? await Task.sleep(nanoseconds: 10_000_000)
-            tries += 1
         }
     }
 
-    @Test("A refused stored key is checked once, however often views ask again")
-    func refusedKeyIsCheckedOnce() async throws {
-        RefusingLicenseServer.reset()
-        let (service, _) = try makeService()
-
+    /// Debug builds auto-grant a licence unless SANEAPPS_FORCE_LICENSE_CHECK is set, and other
+    /// suites running in parallel set and unset it. Set it right before every call.
+    private func check(_ service: LicenseService) {
+        setenv("SANEAPPS_FORCE_LICENSE_CHECK", "1", 1)
         service.checkCachedLicense()
-        service.checkCachedLicense() // a second view appears while the first check is running
-        await waitUntil { !service.isLicensed && RefusingLicenseServer.requestCount >= 1 }
-        #expect(!service.isLicensed)
-        #expect(RefusingLicenseServer.requestCount == 1)
+    }
 
-        // The lock swaps views; each onAppear asks again. None may unlock or send a request.
+    /// Lets queued work (a finished recheck, a view swap) run before the next onAppear.
+    private func settle() async {
+        try? await Task.sleep(nanoseconds: 20_000_000)
+    }
+
+    @Test("The gate/main-window onAppear loop sends one request for a refused key")
+    func gateAndMainWindowLoopSendsOneRequest() async throws {
+        StubLicenseServer.reset(mode: .refuse)
+        let (service, _) = try makeService(storedKey: uniqueKey("REFUSED"))
+
+        // Drive it the way SaneClick's views do: whichever view is showing calls
+        // checkCachedLicense() when it appears, and a state change swaps the view.
+        for _ in 0 ..< 40 {
+            check(service)
+            await settle()
+        }
+        await waitUntil { !service.isLicensed } // the one answer can arrive late on a busy machine
+        for _ in 0 ..< 10 {
+            check(service)
+            await settle()
+        }
+
+        #expect(StubLicenseServer.requestCount == 1)
+        #expect(!service.isLicensed)
+    }
+
+    @Test("A cached refusal stops repeat requests, also from a second service in the same app")
+    func cachedRefusalStopsRepeatRequests() async throws {
+        StubLicenseServer.reset(mode: .refuse)
+        let key = uniqueKey("REFUSED")
+        let (service, _) = try makeService(storedKey: key)
+
+        check(service)
+        check(service) // a second view appears while the first check is running
+        await waitUntil { !service.isLicensed && StubLicenseServer.requestCount >= 1 }
+        #expect(StubLicenseServer.requestCount == 1)
+
         for _ in 0 ..< 20 {
-            service.checkCachedLicense()
+            check(service)
             #expect(!service.isLicensed)
         }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        #expect(!service.isLicensed)
-        #expect(RefusingLicenseServer.requestCount == 1)
+        let (second, _) = try makeService(storedKey: key) // SaneClick makes one per Finder action
+        check(second)
+        #expect(!second.isLicensed)
+        await settle()
+        #expect(StubLicenseServer.requestCount == 1)
     }
 
-    @Test("Deactivating clears the refusal so a newly stored key is checked again")
-    func deactivateClearsRefusal() async throws {
-        RefusingLicenseServer.reset()
-        let (service, keychain) = try makeService()
+    @Test("A server error never locks a licensed user and is not cached as a no", arguments: [
+        "serverError",
+        "timeout"
+    ])
+    func serverTroubleKeepsUserLicensed(trouble: String) async throws {
+        let mode: StubLicenseServer.Mode = trouble == "timeout" ? .timeout : .serverError
+        StubLicenseServer.reset(mode: mode)
+        let (service, _) = try makeService(storedKey: uniqueKey("PAID"))
 
-        service.checkCachedLicense()
-        await waitUntil { !service.isLicensed && RefusingLicenseServer.requestCount >= 1 }
-        #expect(RefusingLicenseServer.requestCount == 1)
+        check(service)
+        await waitUntil { StubLicenseServer.requestCount >= 1 }
+        await settle()
+        #expect(service.isLicensed)
+
+        // Views keep appearing: still licensed, and the minimum gap holds off a new request.
+        for _ in 0 ..< 10 {
+            check(service)
+            #expect(service.isLicensed)
+        }
+        await settle()
+        #expect(StubLicenseServer.requestCount == 1)
+
+        // Once the gap has passed, the key is asked about again: the error was not stored as a no.
+        LicenseService.forgetRecheckStartTimesForTesting()
+        check(service)
+        await waitUntil { StubLicenseServer.requestCount >= 2 }
+        await settle()
+        #expect(StubLicenseServer.requestCount == 2)
+        #expect(service.isLicensed)
+    }
+
+    @Test("Entering a key after a refusal always asks the server again")
+    func enteringAKeyAfterRefusalMakesAFreshRequest() async throws {
+        StubLicenseServer.reset(mode: .refuse)
+        let refused = uniqueKey("REFUSED")
+        let (service, _) = try makeService(storedKey: refused)
+
+        check(service)
+        await waitUntil { !service.isLicensed && StubLicenseServer.requestCount >= 1 }
+        #expect(StubLicenseServer.requestCount == 1)
+
+        // The same refused key typed in again is still checked, not answered from the cache.
+        await service.activate(key: refused)
+        #expect(StubLicenseServer.requestCount == 2)
+        #expect(!service.isLicensed)
+
+        // A new, valid key is checked and unlocks.
+        await service.activate(key: uniqueKey("GOOD"))
+        #expect(StubLicenseServer.requestCount == 3)
+        #expect(service.isLicensed)
+    }
+
+    @Test("Deactivating clears the refusal so the key is checked again when stored later")
+    func deactivateClearsRefusal() async throws {
+        StubLicenseServer.reset(mode: .refuse)
+        let key = uniqueKey("REFUSED")
+        let (service, keychain) = try makeService(storedKey: key)
+
+        check(service)
+        await waitUntil { !service.isLicensed && StubLicenseServer.requestCount >= 1 }
+        #expect(StubLicenseServer.requestCount == 1)
 
         service.deactivate()
-        try storeStaleKey(in: keychain)
-        service.checkCachedLicense()
-        await waitUntil { RefusingLicenseServer.requestCount >= 2 && !service.isLicensed }
-        #expect(RefusingLicenseServer.requestCount == 2)
+        try storeStaleKey(key, in: keychain)
+        check(service)
+        await waitUntil { StubLicenseServer.requestCount >= 2 && !service.isLicensed }
+        #expect(StubLicenseServer.requestCount == 2)
         #expect(!service.isLicensed)
     }
 }
