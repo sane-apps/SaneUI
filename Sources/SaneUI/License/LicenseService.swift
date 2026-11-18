@@ -1183,10 +1183,13 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
 
     /// Reads the licence server's reply. A key is refused only when the server says so itself:
     /// JSON with `"valid": false` and a status below 500. Anything else that is not a clear yes is
-    /// a server problem, which must not lock a customer who has paid.
+    /// a server problem, which must not lock a customer who has paid. A rate limit (429) or a
+    /// request timeout (408) is server trouble even when its body says `"valid": false`: a refusal
+    /// is remembered for the rest of the run, so it must never come from a busy server.
     static func interpretValidationResponse(statusCode: Int, mimeType: String?, data: Data) -> ValidationAnswer {
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard statusCode < 500, let json, let valid = json["valid"] as? Bool else { return .serverUnavailable }
+        guard statusCode < 500, statusCode != 429, statusCode != 408,
+              let json, let valid = json["valid"] as? Bool else { return .serverUnavailable }
         if valid {
             guard statusCode == 200 else { return .serverUnavailable }
             let meta = json["meta"] as? [String: Any]

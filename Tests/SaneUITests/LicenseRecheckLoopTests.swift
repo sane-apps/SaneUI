@@ -238,12 +238,37 @@ struct LicenseRecheckLoopTests {
         #expect(StubLicenseServer.requestCount == 1)
 
         // Once the gap has passed, the key is asked about again: the error was not stored as a no.
-        LicenseService.forgetRecheckStartTimesForTesting()
-        check(service)
-        await waitUntil { StubLicenseServer.requestCount >= 2 }
+        // Keep appearing until the first check has finished and a second one starts.
+        await waitUntil {
+            LicenseService.forgetRecheckStartTimesForTesting()
+            check(service)
+            return StubLicenseServer.requestCount >= 2
+        }
         await settle()
-        #expect(StubLicenseServer.requestCount == 2)
+        #expect(StubLicenseServer.requestCount >= 2) // the waiting loop itself may ask more than once
         #expect(service.isLicensed)
+    }
+
+    @Test("A paying customer with an old last check is asked once and stays licensed")
+    func oldValidKeyIsRecheckedAndStaysLicensed() async throws {
+        StubLicenseServer.reset(mode: .refuse)
+        let (service, keychain) = try makeService(storedKey: uniqueKey("GOOD"))
+
+        for _ in 0 ..< 10 {
+            check(service)
+            #expect(service.isLicensed)
+            await settle()
+        }
+        await waitUntil {
+            (try? keychain.string(forKey: "last_validation")).flatMap { ISO8601DateFormatter().date(from: $0) }
+                .map { Date().timeIntervalSince($0) < 60 } ?? false
+        }
+
+        #expect(StubLicenseServer.requestCount == 1)
+        #expect(service.isLicensed)
+        let lastCheck = try #require(try keychain.string(forKey: "last_validation"))
+        let lastDate = try #require(ISO8601DateFormatter().date(from: lastCheck))
+        #expect(Date().timeIntervalSince(lastDate) < 60)
     }
 
     @Test("Entering a key after a refusal always asks the server again")

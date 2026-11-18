@@ -2069,6 +2069,8 @@ struct LicenseValidationErrorTests {
         arguments: [
             (500, #"{"valid":false,"error":"Licence server error."}"#, "application/json"),
             (503, #"{"valid":false,"error":"The licence server could not confirm this key."}"#, "application/json"),
+            (429, #"{"valid":false,"error":"Too many requests. Try again shortly."}"#, "application/json"),
+            (408, #"{"valid":false,"error":"Request timed out."}"#, "application/json"),
             (404, "<html><body>Not Found</body></html>", "text/html"),
             (410, "Gone", "text/plain"),
             (403, "<!DOCTYPE html><title>Just a moment...</title>", "text/html; charset=UTF-8"),
