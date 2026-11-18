@@ -400,6 +400,12 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     private let userDefaults: UserDefaults
     private let logger: Logger
     private var isForceFreeMode = false
+    /// Session used for licence checks. Tests swap in a stubbed session.
+    @ObservationIgnored package var validationSession: URLSession = .shared
+    /// The stored key a background recheck is asking about right now.
+    @ObservationIgnored private var revalidationInFlightKey: String?
+    /// The stored key the licence server refused during this run of the app.
+    @ObservationIgnored private var revalidationRejectedKey: String?
     #if canImport(StoreKit)
         @ObservationIgnored private var hasConfiguredAppStoreObservation = false
         @ObservationIgnored private var appStoreTransactionUpdatesTask: Task<Void, Never>?
@@ -566,6 +572,21 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
             return
         }
 
+        // One recheck per stored key per run. Apps call this from view onAppear; a refusal locks
+        // the app, which swaps the window to the expired-trial gate, whose onAppear calls this
+        // again. Starting a fresh optimistic unlock and recheck each time made a loop that sent
+        // about 12 requests a second to the licence server (SaneClick, 18 Nov 2026).
+        if storedKey == revalidationRejectedKey {
+            isLicensed = false
+            hasCompletedPurchaseStateRefresh = true
+            debugLog("cached key already refused this session")
+            return
+        }
+        if storedKey == revalidationInFlightKey {
+            debugLog("recheck already running for cached key")
+            return
+        }
+
         licenseEmail = try? keychain.string(forKey: Keys.licenseEmail)
         debugLog("cached key found email=\(licenseEmail ?? "nil")")
 
@@ -587,6 +608,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         isLicensed = true // Optimistic while validating
         hasCompletedPurchaseStateRefresh = true
         persistStickyUnlock(email: licenseEmail)
+        revalidationInFlightKey = storedKey
         Task {
             await revalidate(key: storedKey)
         }
@@ -871,6 +893,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
                     licenseEmail = email
                 }
                 try keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
+                revalidationRejectedKey = nil
                 isLicensed = true
                 persistStickyUnlock(email: licenseEmail)
                 validationError = nil
@@ -903,6 +926,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         try? keychain.delete(Keys.licenseEmail)
         try? keychain.delete(Keys.lastValidation)
         clearStickyUnlock()
+        revalidationRejectedKey = nil
         isLicensed = false
         licenseEmail = nil
         validationError = nil
@@ -1036,14 +1060,19 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
     }
 
     private func revalidate(key: String) async {
+        defer {
+            if revalidationInFlightKey == key { revalidationInFlightKey = nil }
+        }
         do {
             let result = try await validateLicense(key: key)
             if result.valid, Self.licenseProductMatchesApp(appName: appName, productName: result.productName, variantName: result.variantName) {
                 try? keychain.set(ISO8601DateFormatter().string(from: Date()), forKey: Keys.lastValidation)
+                revalidationRejectedKey = nil
                 isLicensed = true
                 persistStickyUnlock(email: licenseEmail)
                 logger.info("Background revalidation succeeded")
             } else {
+                revalidationRejectedKey = key
                 isLicensed = false
                 logger.info("Background revalidation failed — locking app")
             }
@@ -1158,7 +1187,7 @@ public final class LicenseService: LicenseSettingsServiceProtocol {
         request.httpBody = try JSONEncoder().encode(body)
         request.timeoutInterval = 15
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await validationSession.data(for: request)
 
         guard let http = response as? HTTPURLResponse else { throw LicenseServerUnavailable() }
 
